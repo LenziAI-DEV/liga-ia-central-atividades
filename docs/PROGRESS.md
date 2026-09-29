@@ -23,11 +23,13 @@
 | 2026-09-28 | PRD com 13 features, critérios de aceitação e 13 cenários de validação | `docs/PRD.md` (v0.2) |
 | 2026-09-28 | Aprovação das 17 decisões de produto (DN-01…DN-17) | `docs/PRD.md` §13 |
 | 2026-09-28 | Documentação canônica criada (ARCHITECTURE, DECISIONS, PROGRESS) | `docs/` |
+| 2026-09-28 | Arquitetura aprovada (DEC-007) com cortes de escopo (DEC-008) | `docs/ARCHITECTURE.md` |
+| 2026-09-28 | Repositório **privado** criado e 1º commit enviado; convite de colaboradora enviado a `LunkiBR` (permissão *write*, **pendente de aceite**) | https://github.com/LenziAI-DEV/liga-ia-central-atividades |
 
 ## Em andamento
 
 - **Arquitetura — APROVADA em 2026-09-28 (DEC-007, cortes de escopo DEC-008):** `docs/ARCHITECTURE.md`, com 18 ADRs, desenhada pelo agente `ecc:architect` e revisada (marcas **[rev]**). Next.js + TypeScript em um processo; SQLite via `node:sqlite`; varredura do Drive a cada 60 s; OAuth `drive.readonly` com tokens cifrados; IA Claude Sonnet 5.5 atrás de `AiProvider` com validador determinístico.
-- **M1 — plano em revisão:** `docs/plans/M1-pasta-conectada.plan.md` (será realinhado à arquitetura depois da aprovação).
+- **Plano de implementação completo — aguardando aprovação:** `docs/plans/IMPLEMENTATION_PLAN.md` (Fases 0–10, sub-marcos verificáveis e política de corte). Substitui o rascunho `M1-pasta-conectada.plan.md`.
 - **Setup externo do usuário (em paralelo):** GitHub (feito pelo assistente com `gh` depois da aprovação), Google Cloud, pasta do Drive e chave Anthropic. Passo a passo entregue no terminal em 2026-09-28.
 - Nenhum código escrito ainda.
 - Ambiente verificado em 2026-09-28: Node 24.19, npm 11.17, git 2.55, gh 2.100 logado como `LenziAI-DEV`; `node:sqlite` funcional.
@@ -54,7 +56,8 @@
 
 | # | Pendência | Depende de | Impacto |
 |---|---|---|---|
-| B-1 | Projeto Google Cloud + tela de consentimento OAuth + cliente Web + pasta de teste `LIA case teste` com os dados fictícios [GUIA §1–§6], [LEIA] | Usuário (conta Google própria) | Bloqueia o M1 |
+| B-1 | Projeto Google Cloud + tela de consentimento OAuth + cliente Web + pasta de teste `LIA case teste` com os dados fictícios [GUIA §1–§6], [LEIA]. Guia com os nomes em português entregue no terminal em 2026-09-28 | Usuário (conta Google própria) | Bloqueia o teste real do M1 (o scaffold e os testes com Drive falso podem avançar) |
+| B-4 | Convite de colaboradora `LunkiBR` aguardando aceite | Organizador | Não bloqueia; conferir antes da entrega |
 | ~~B-2~~ | ~~Q-1 a Q-4 enviadas à banca~~ **Resolvido em 2026-09-28:** a banca confirmou DN-02, DN-03 e DN-06. A demo é ao vivo na máquina do candidato, com um arquivo fictício entregue pela Liga (ver PRD §14) | — | — |
 | B-3 | Q-6: provedor de IA, chave de API e teto de custo | Usuário + protótipo | Bloqueia o M6 |
 

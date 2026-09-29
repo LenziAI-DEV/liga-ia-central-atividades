@@ -115,6 +115,14 @@
   3. **Testes de interface (Playwright + axe, ADR-17):** **mantidos**, com 4 a 6 testes. São a evidência de acessibilidade e de persistência depois de reiniciar.
 - **Motivo:** DEC-003 ("menor e correto") e prazo de 2026-10-04.
 
+## DEC-009 — Plano de implementação e forma de trabalho
+- **Data:** 2026-09-28 · **Status:** aceita ("aprovo o plano, P2 opção a, P3 opção a")
+- **Decisão:**
+  - vale `docs/plans/IMPLEMENTATION_PLAN.md` (Fases 0–10);
+  - **Autonomia:** o assistente avança de fase em fase sem pedir aprovação a cada uma. Só para quando precisar do usuário (credenciais, arquivos no Drive, decisões) e envia um relatório curto no fim de cada fase;
+  - **Git:** uma branch por fase (`fase-N-<nome>`), com commit e push a cada sub-marco e merge na `main` ao fim da fase, para a `main` estar sempre funcional. Os commits e pushes desse fluxo estão autorizados.
+- **Estado externo:** o usuário concluiu o Google Cloud (projeto, consentimento, cliente OAuth) e a pasta do Drive. As credenciais estão guardadas fora do repositório e serão inseridas no `.env.local` quando o assistente pedir (B-1 resolvido do lado do usuário).
+
 ---
 
 ## Decisões técnicas pendentes

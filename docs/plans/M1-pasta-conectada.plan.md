@@ -4,7 +4,7 @@
 **Selected Milestone**: #1 "Pasta conectada e fontes visíveis" (F1, F2, F13)
 **Complexity**: Large (inclui setup do projeto, OAuth e o pipeline de ingestão, que serão base de todos os marcos)
 **Meta de data**: terça-feira 2026-09-29 (junto com o M2 — ver `docs/PROGRESS.md`)
-**Status**: aguardando aprovação. ⚠️ **Rascunho anterior à arquitetura.** Depois que o `docs/ARCHITECTURE.md` for aprovado, este plano será realinhado a ele: `@googleapis/drive` + `google-auth-library` em vez de `googleapis`; `version` só como gatilho, com o hash do conteúdo como chave (ADR-06); PKCE; lease em `sync_runs`; atalhos não seguidos; IDs de decisão renumerados.
+**Status**: ❌ **SUBSTITUÍDO** por `docs/plans/IMPLEMENTATION_PLAN.md` (2026-09-28). Mantido só como histórico. ⚠️ **Rascunho anterior à arquitetura.** Depois que o `docs/ARCHITECTURE.md` for aprovado, este plano será realinhado a ele: `@googleapis/drive` + `google-auth-library` em vez de `googleapis`; `version` só como gatilho, com o hash do conteúdo como chave (ADR-06); PKCE; lease em `sync_runs`; atalhos não seguidos; IDs de decisão renumerados.
 
 ## Summary
 
