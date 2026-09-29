@@ -1,0 +1,40 @@
+# Dependências e build
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Segredos e credenciais (nunca versionar) [GUIA §10]
+.env
+.env.*
+!.env.example
+client_secret*.json
+*token*.json
+*.pem
+
+# Dados locais da aplicação (banco SQLite, cache, logs)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Material da banca não redistribuído (DEC-004)
+instrucoes_iniciais/
+
+# Configuração local de ferramentas
+.claude/settings.local.json
+
+# Testes e relatórios
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Sistema e logs
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
