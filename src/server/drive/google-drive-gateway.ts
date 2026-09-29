@@ -1,0 +1,132 @@
+import { drive, type drive_v3 } from "@googleapis/drive";
+import type { OAuth2Client } from "google-auth-library";
+import { DriveError } from "./errors";
+import { MIME, type DriveAccount, type DriveGateway, type DriveItem } from "./gateway";
+import { withRetry } from "./retry";
+
+const FILE_FIELDS =
+  "id,name,mimeType,modifiedTime,version,size,md5Checksum,parents,webViewLink,trashed,capabilities(canDownload)";
+
+/** Implementação real, somente leitura, da porta `DriveGateway` (Drive API v3). */
+export class GoogleDriveGateway implements DriveGateway {
+  private readonly api: drive_v3.Drive;
+
+  constructor(auth: OAuth2Client) {
+    this.api = drive({ version: "v3", auth });
+  }
+
+  async getItem(fileId: string): Promise<DriveItem> {
+    const res = await call(() =>
+      this.api.files.get({ fileId, fields: FILE_FIELDS, supportsAllDrives: true }),
+    );
+    return toItem(res.data);
+  }
+
+  async listChildren(folderId: string, pageToken?: string) {
+    const res = await call(() =>
+      this.api.files.list({
+        q: `'${folderId.replace(/'/g, "\\'")}' in parents and trashed = false`,
+        spaces: "drive",
+        pageSize: 1000,
+        pageToken,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+        fields: `nextPageToken, files(${FILE_FIELDS})`,
+      }),
+    );
+    return { items: (res.data.files ?? []).map(toItem), nextPageToken: res.data.nextPageToken ?? undefined };
+  }
+
+  async download(fileId: string, maxBytes: number): Promise<Uint8Array> {
+    const res = await call(() =>
+      this.api.files.get({ fileId, alt: "media", supportsAllDrives: true }, { responseType: "arraybuffer" }),
+    );
+    const bytes = new Uint8Array(res.data as unknown as ArrayBuffer);
+    if (bytes.byteLength > maxBytes) throw new DriveError("too_large", "Arquivo acima do limite de tamanho (10 MB).");
+    return bytes;
+  }
+
+  async exportDoc(fileId: string, mimeType: "text/markdown" | "text/plain"): Promise<string> {
+    const res = await call(() => this.api.files.export({ fileId, mimeType }, { responseType: "text" }));
+    return String(res.data ?? "");
+  }
+
+  async getAccount(): Promise<DriveAccount> {
+    const res = await call(() => this.api.about.get({ fields: "user(displayName,emailAddress)" }));
+    return { displayName: res.data.user?.displayName ?? null, email: res.data.user?.emailAddress ?? null };
+  }
+}
+
+function toItem(file: drive_v3.Schema$File): DriveItem {
+  return {
+    id: file.id ?? "",
+    name: file.name ?? "(sem nome)",
+    mimeType: file.mimeType ?? "",
+    modifiedTime: file.modifiedTime ?? null,
+    version: file.version ?? null,
+    size: file.size != null ? Number(file.size) : null,
+    md5Checksum: file.md5Checksum ?? null,
+    parents: file.parents ?? [],
+    webViewLink: file.webViewLink ?? null,
+    trashed: file.trashed ?? false,
+    canDownload: file.capabilities?.canDownload ?? file.mimeType !== MIME.folder,
+  };
+}
+
+function call<T>(fn: () => Promise<T>): Promise<T> {
+  return withRetry(async () => {
+    try {
+      return await fn();
+    } catch (error) {
+      throw toDriveError(error);
+    }
+  });
+}
+
+interface GaxiosLikeError {
+  status?: number;
+  code?: string | number;
+  message?: string;
+  response?: { status?: number; data?: unknown };
+}
+
+function errorReason(data: unknown): string | undefined {
+  if (!data || typeof data !== "object" || !("error" in data)) return undefined;
+  const inner = (data as { error?: unknown }).error;
+  if (!inner || typeof inner !== "object") return undefined;
+  return (inner as { errors?: Array<{ reason?: string }> }).errors?.[0]?.reason;
+}
+
+/** Traduz erros da API em `DriveError` com mensagem segura ([GUIA §11]). */
+export function toDriveError(error: unknown): DriveError {
+  if (error instanceof DriveError) return error;
+  const e = (error ?? {}) as GaxiosLikeError;
+  const status = e.response?.status ?? e.status ?? (typeof e.code === "number" ? e.code : undefined);
+  const data = e.response?.data;
+  const reason = errorReason(data);
+  const dataText = typeof data === "string" ? data : data && typeof data === "object" ? JSON.stringify(data) : "";
+  const message = e.message ?? "";
+
+  if (message.includes("invalid_grant") || dataText.includes("invalid_grant") || status === 401) {
+    return new DriveError("auth", "Autorização do Google expirada ou revogada. Reconecte a conta.", { cause: error });
+  }
+  if (status === 429 || reason === "rateLimitExceeded" || reason === "userRateLimitExceeded") {
+    return new DriveError("rate_limited", "Limite de uso da API do Google atingido; nova tentativa em seguida.", { cause: error });
+  }
+  if (reason === "exportSizeLimitExceeded") {
+    return new DriveError("too_large", "Documento acima do limite de exportação de 10 MB do Google.", { cause: error });
+  }
+  if (reason === "fileNotDownloadable") {
+    return new DriveError("not_downloadable", "Este tipo de arquivo não pode ser baixado diretamente.", { cause: error });
+  }
+  if (status === 404) return new DriveError("not_found", "Arquivo não encontrado ou sem acesso.", { cause: error });
+  if (status === 403) return new DriveError("forbidden", "Sem permissão para ler este item.", { cause: error });
+  if ((status !== undefined && status >= 500) || isNetworkError(e)) {
+    return new DriveError("transient", "Falha temporária ao falar com o Google Drive.", { cause: error });
+  }
+  return new DriveError("unknown", "Erro inesperado ao ler o Google Drive.", { cause: error });
+}
+
+function isNetworkError(e: GaxiosLikeError): boolean {
+  return typeof e.code === "string" && ["ECONNRESET", "ENOTFOUND", "ETIMEDOUT", "ECONNREFUSED", "EAI_AGAIN"].includes(e.code);
+}
