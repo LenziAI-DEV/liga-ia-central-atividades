@@ -123,6 +123,18 @@
   - **Git:** uma branch por fase (`fase-N-<nome>`), com commit e push a cada sub-marco e merge na `main` ao fim da fase, para a `main` estar sempre funcional. Os commits e pushes desse fluxo estão autorizados.
 - **Estado externo:** o usuário concluiu o Google Cloud (projeto, consentimento, cliente OAuth) e a pasta do Drive. As credenciais estão guardadas fora do repositório e serão inseridas no `.env.local` quando o assistente pedir (B-1 resolvido do lado do usuário).
 
+## DEC-010 — Decisões técnicas da Fase 0
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Decisões:**
+  1. **Next.js 16.3.6** (estável atual) com React 19.2, Tailwind 4, Vitest 5 e zod 4. **Sem Cache Components**: todas as rotas são `force-dynamic` via layout raiz (confirmado na documentação empacotada em `node_modules/next/dist/docs/`).
+  2. **`node:sqlite` confirmado (ADR-03)** em `next dev` e em `next build && next start`, carregado por `process.getBuiltinModule`. O fallback `better-sqlite3` não é necessário.
+  3. **Migrações como módulos TypeScript** (`src/server/db/migrations/NNN-*.ts`), em vez de arquivos `.sql` lidos do disco, para não depender de rastreamento de arquivos do bundler. Aplicadas no primeiro `getDb()`, que o `instrumentation` chama no boot.
+  4. **`server-only` fora dos módulos importados pelo `instrumentation`** (`db`, `logger`, `boot`), porque o `instrumentation` não roda na camada React Server.
+  5. **Fontes do sistema** em vez de `next/font/google`, para o build funcionar sem internet.
+  6. **npm 11 não executa scripts de instalação por padrão.** Só o `unrs-resolver` (opcional, do ESLint) fica pendente, e o lint funciona sem ele. Registrar no README.
+  7. **Encerrar processos pelo PID da porta**, nunca por nome de imagem.
+- **Consequências:** `DATABASE_PATH` é lido direto do `process.env` no `getDb()`, para um env inválido não derrubar o boot. As demais configurações passam por `getEnv()` (zod).
+
 ---
 
 ## Decisões técnicas pendentes
