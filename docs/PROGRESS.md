@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: 2026-09-28 (segunda-feira).
+> Última atualização: 2026-09-29 (terça-feira), fim da Fase 0.
 
 ## Prazo
 
@@ -12,57 +12,51 @@
 
 ## Estado atual
 
-**Fase:** requisitos concluídos. Próximo passo: planejamento de implementação do Marco 1 (`/plan docs/PRD.md`).
-**Código:** nenhum. Repositório sem scaffolding e sem stack definida.
+**Fase:** Fase 0 (fundação) **concluída**. Próximo passo: **Fase 1 — Drive conectado e inventário de fontes** (branch `fase-1-drive`).
+**Plano vigente:** `docs/plans/IMPLEMENTATION_PLAN.md` (aprovado, DEC-009). Autonomia entre fases; branch por fase; commit e push por sub-marco.
+**Como rodar hoje:** `npm install` → `npm run setup` → `npm run app` → http://localhost:3000 (6 áreas; `/api/health`).
 
 ## Concluído
 
 | Data | Item | Artefato |
 |---|---|---|
 | 2026-09-28 | Análise completa dos documentos da banca e dos dados fictícios | `docs/CASE_ANALYSIS.md` |
-| 2026-09-28 | PRD com 13 features, critérios de aceitação e 13 cenários de validação | `docs/PRD.md` (v0.2) |
-| 2026-09-28 | Aprovação das 17 decisões de produto (DN-01…DN-17) | `docs/PRD.md` §13 |
-| 2026-09-28 | Documentação canônica criada (ARCHITECTURE, DECISIONS, PROGRESS) | `docs/` |
+| 2026-09-28 | PRD com 13 features, critérios de aceitação e 13 cenários de validação; 17 decisões aprovadas | `docs/PRD.md` (v0.2) |
 | 2026-09-28 | Arquitetura aprovada (DEC-007) com cortes de escopo (DEC-008) | `docs/ARCHITECTURE.md` |
-| 2026-09-28 | Repositório **privado** criado e 1º commit enviado; convite de colaboradora enviado a `LunkiBR` (permissão *write*, **pendente de aceite**) | https://github.com/LenziAI-DEV/liga-ia-central-atividades |
+| 2026-09-28 | Plano de implementação aprovado (DEC-009) | `docs/plans/IMPLEMENTATION_PLAN.md` |
+| 2026-09-28 | Repositório **privado** criado; convite de colaboradora enviado a `LunkiBR` (permissão *write*, pendente de aceite) | https://github.com/LenziAI-DEV/liga-ia-central-atividades |
+| 2026-09-29 | **Fase 0 — Fundação** (0.1–0.5): Next.js 16.3.6 + TS + Tailwind 4 + Vitest; SQLite via `node:sqlite` validado em dev e build; migrações; env com zod; `npm run setup` e `npm run data:clear`; logger com redação; datas no fuso de São Paulo; casca da UI com as 6 áreas e paleta testada (contraste). 41 testes verdes | DEC-010; `docs/DIARIO_DE_BORDO.md`; `docs/VALIDACAO.md` |
 
 ## Em andamento
 
-- **Arquitetura — APROVADA em 2026-09-28 (DEC-007, cortes de escopo DEC-008):** `docs/ARCHITECTURE.md`, com 18 ADRs, desenhada pelo agente `ecc:architect` e revisada (marcas **[rev]**). Next.js + TypeScript em um processo; SQLite via `node:sqlite`; varredura do Drive a cada 60 s; OAuth `drive.readonly` com tokens cifrados; IA Claude Sonnet 5.5 atrás de `AiProvider` com validador determinístico.
-- **Plano de implementação completo — aguardando aprovação:** `docs/plans/IMPLEMENTATION_PLAN.md` (Fases 0–10, sub-marcos verificáveis e política de corte). Substitui o rascunho `M1-pasta-conectada.plan.md`.
-- **Setup externo do usuário (em paralelo):** GitHub (feito pelo assistente com `gh` depois da aprovação), Google Cloud, pasta do Drive e chave Anthropic. Passo a passo entregue no terminal em 2026-09-28.
-- Nenhum código escrito ainda.
-- Ambiente verificado em 2026-09-28: Node 24.19, npm 11.17, git 2.55, gh 2.100 logado como `LenziAI-DEV`; `node:sqlite` funcional.
+- Fase 1 (a iniciar): OAuth, gateway do Drive, extratores, SyncService, tela "Estado da sincronização".
 
 ## Próximos passos
 
-1. Resolver os pré-requisitos do usuário (abaixo), em paralelo ao planejamento.
-2. `/plan` do Marco 1 (pasta conectada e fontes visíveis). O plano define a stack e registra a escolha em `DECISIONS.md` e `ARCHITECTURE.md`.
-3. Começar o diário de bordo (entregável E-3) junto com o primeiro código.
+1. **Fase 1** (1.1 a 1.5) com Drive falso e testes. Depois, **teste real** com as credenciais do usuário no `.env.local` (B-1).
+2. Fase 2 (quarta de manhã): personas, índice, importação e painéis.
 
-## Cronograma proposto (marcos do PRD §16)
+## Cronograma (plano §5)
 
-| Dia | Data | Marcos | Observação |
+| Dia | Data | Fases | Situação |
 |---|---|---|---|
-| Seg | 09-28 | — | Análise, PRD, plano do M1 |
-| Ter | 09-29 | M1 Pasta conectada · M2 Atividades importadas | Depende do OAuth funcionando |
-| Qua | 09-30 | M3 Gestão de atividades · M4 Sincronização automática | |
-| Qui | 10-01 | M5 Autoridade e conflitos · início do M6 (IA) | Q-6 (provedor de IA) decidido antes |
-| Sex | 10-02 | M6 Sugestões + revisão · M7 "O que mudou para mim" | |
-| Sáb | 10-03 | M8 Comece aqui · M9 Experiência e acessibilidade | |
-| Dom | 10-04 | M10 Pacote de entrega (README, validação, demo) | Folga final. **M11 (PDF) só se sobrar tempo** |
+| Ter | 09-29 | 0, 1 | Fase 0 ✅ |
+| Qua | 09-30 | 2, 3, 4.1–4.3 | — |
+| Qui | 10-01 | 4.4, 5, 6.0–6.3 | Precisa da `ANTHROPIC_API_KEY` no `.env.local` |
+| Sex | 10-02 | 6.4–6.6, 7 | — |
+| Sáb | 10-03 | 8, 9 | — |
+| Dom | 10-04 | 10 (entrega) | — |
 
 ## Blockers e pendências
 
 | # | Pendência | Depende de | Impacto |
 |---|---|---|---|
-| B-1 | Projeto Google Cloud + tela de consentimento OAuth + cliente Web + pasta de teste `LIA case teste` com os dados fictícios [GUIA §1–§6], [LEIA]. Guia com os nomes em português entregue no terminal em 2026-09-28 | Usuário (conta Google própria) | Bloqueia o teste real do M1 (o scaffold e os testes com Drive falso podem avançar) |
+| B-1 | Google Cloud e pasta **prontos** (usuário, 2026-09-28). Falta **preencher o `.env.local`** (já criado pelo `npm run setup`): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DRIVE_TEST_FOLDER_ID` | Usuário | Bloqueia só o teste real da Fase 1 |
+| B-3 | `ANTHROPIC_API_KEY` no `.env.local` | Usuário | Bloqueia a Fase 6.0 (quinta) |
 | B-4 | Convite de colaboradora `LunkiBR` aguardando aceite | Organizador | Não bloqueia; conferir antes da entrega |
-| ~~B-2~~ | ~~Q-1 a Q-4 enviadas à banca~~ **Resolvido em 2026-09-28:** a banca confirmou DN-02, DN-03 e DN-06. A demo é ao vivo na máquina do candidato, com um arquivo fictício entregue pela Liga (ver PRD §14) | — | — |
-| B-3 | Q-6: provedor de IA, chave de API e teto de custo | Usuário + protótipo | Bloqueia o M6 |
 
 ## Riscos de prazo
 
-- 6 dias de implementação para 10 marcos. O corte de escopo segue a DEC-003: "menor e correto" e diferenciais por último.
-- O refresh token OAuth em modo Testing expira em 7 dias [GUIA §2]. Uma autorização feita em 09-29 vence por volta de 10-06, perto da janela de avaliação. É preciso reautorizar antes da demo.
+- 6 dias de implementação para 10 fases. Política de corte no plano §6 (pontos de controle: quarta e sexta à noite).
+- O refresh token OAuth em modo Testing expira em 7 dias [GUIA §2]. **Reautorizar no dia da demo.**
 - Datas dos dados fictícios: prazos de 10-05 a 10-11. Na entrega (10-04) nenhum estará vencido; se a avaliação for depois, aparecerão como vencidos (comportamento correto, [LEIA]).

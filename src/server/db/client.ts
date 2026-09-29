@@ -1,4 +1,3 @@
-import "server-only";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import type { DatabaseSync, StatementSync } from "node:sqlite";
@@ -56,6 +55,7 @@ export function openDb(path: string): Db {
   };
 
   let txDepth = 0;
+  let closed = false;
 
   return {
     get<T>(sql: string, ...params: SqlParam[]) {
@@ -87,6 +87,8 @@ export function openDb(path: string): Db {
       }
     },
     close() {
+      if (closed) return;
+      closed = true;
       statements.clear();
       db.close();
     },

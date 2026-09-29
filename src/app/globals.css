@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+/* Paleta da Liga (ver src/lib/contrast.ts — pares de contraste testados ≥ 4,5:1). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --lia-blue: #1433bd;
+  --lia-blue-dark: #0e2690;
+  --lia-cyan: #19dce3; /* acento: nunca com texto branco */
+  --lia-cyan-soft: #e6fbfc;
+  --ink: #111827;
+  --ink-muted: #4b5563;
+  --paper: #ffffff;
+  --paper-alt: #f5f7fb;
+  --line: #d1d5db;
+  --ok-ink: #166534;
+  --ok-bg: #dcfce7;
+  --warn-ink: #92400e;
+  --warn-bg: #fef3c7;
+  --danger-ink: #991b1b;
+  --danger-bg: #fee2e2;
+  --focus: #1433bd;
 }
 
+/* Fontes do sistema: nada é baixado da internet no build (execução offline pela banca). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  line-height: 1.55;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 50;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  background: var(--lia-blue);
+  color: var(--paper);
+}
+
+.skip-link:focus {
+  top: 1rem;
 }
