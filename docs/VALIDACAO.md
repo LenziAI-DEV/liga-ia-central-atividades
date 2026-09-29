@@ -27,3 +27,39 @@
 | Contraste da paleta (CA-F12.2) | 12 pares de texto ≥ 4,5:1 (teste automatizado); ciano + branco = 1,7:1 → proibido |
 | Segredos fora do Git | `.env.local` gerado pelo `npm run setup` e ignorado (`git check-ignore`) |
 | Env inválido | A mensagem lista só os **nomes** das variáveis (teste garante que o valor não aparece) |
+
+## Fase 1 — Drive conectado (2026-09-29)
+
+### Verificado automaticamente (Drive falso, 100 testes)
+
+| Critério | Entrada | Esperado | Observado |
+|---|---|---|---|
+| CA-F2.1 | Carga do pacote inicial com `Atas/` como subpasta | 6 arquivos processados, com caminho e link | ✅ 6 processados, inclusive `Atas/Ata_2026-10-01.md` |
+| CA-F2.2 | `.png` e `.docx` na pasta | "Formato ainda não processado" com motivo, sem conteúdo | ✅ motivo específico (imagem; .docx → converter para Documento Google) |
+| CA-F2.3 | Falha simulada no download do `INDEX.md` | Só ele falha; os outros processam; ciclo "com avisos" | ✅ 5 processados + 1 falha; o próximo ciclo reprocessa |
+| — | `.xlsx` corrompido | Falha com motivo, nunca "vazio" | ✅ "arquivo inválido ou corrompido" |
+| CA-F3.5 | Segundo ciclo sem mudanças | Nenhum download, nada duplicado | ✅ 0 downloads, 6 "sem mudança" |
+| CA-F3.1 | Ata nova adicionada | Detectada e processada, com data da reunião | ✅ `doc_date` 2026-10-04 |
+| CA-F3.2 | Google Doc editado | 1 só fonte, hash novo, 2 versões | ✅ |
+| CA-F3.3 | Arquivo renomeado | Mesma identidade, sem reprocessar | ✅ nome e caminho atualizados, 1 versão |
+| CA-F3.4 | Lixeira / acesso revogado | Indisponível, cache apagado, motivo | ✅ ("na lixeira" / "removido ou sem acesso") |
+| F3.7 | Movido para fora da pasta | "Fora da pasta" | ✅ |
+| CA-F3.6 | Drive fora do ar | Ciclo falha; banco inalterado | ✅ banco byte a byte igual |
+| CA-F1.3 | Token revogado | Pede reautorização; banco inalterado | ✅ |
+| — | Subpasta com falha de listagem | Nada sob ela é removido | ✅ |
+| — | `.xlsx` da banca (namespace `x:`) e `.xlsx` estilo Excel | Os dois lidos, datas puras | ✅ prazos 2026-10-05/06/09/11 (DEC-011) |
+
+**Correções importantes:**
+- troca do exceljs por um leitor próprio (DEC-011);
+- recuperação do cache de conteúdo quando um arquivo volta da lixeira (bug achado pelo teste).
+
+### Verificado manualmente (sem credenciais)
+
+| Verificação | Observado |
+|---|---|
+| `/sincronizacao` sem `.env.local` preenchido | "Configuração pendente" com os nomes das variáveis; faixa global "Google Drive ainda não configurado" |
+| "Conectar" sem credenciais | Redireciona para `?erro=config` (não quebra) |
+
+### Pendente: teste com o Google real (P-1 em `PROGRESS.md`)
+
+CA-F1.1, CA-F1.3 (revogar na Conta Google), CA-F1.4, CA-F2.1 com o Drive real, CA-F13.2 (consentimento só leitura).

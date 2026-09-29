@@ -328,7 +328,7 @@ Detalhes na §12.
 | `node:sqlite` | embutido | Banco | ADR-03 |
 | `google-auth-library` | 10.x | OAuth2Client: URL de consentimento, PKCE, troca do code, refresh, revogação | Biblioteca oficial [GUIA §3] |
 | `@googleapis/drive` | atual | Cliente Drive v3 | Pacote por API, muito menor que o `googleapis` completo (instala mais rápido para a banca). **Diverge do rascunho do M1**, que citava `googleapis` |
-| `exceljs` | 4.4 | Leitura de `.xlsx` (abas, células, datas) | MIT, no registro npm. SheetJS atual só é distribuído fora do npm |
+| `jszip` + `fast-xml-parser` | 3.10 / 5.x | Leitura de `.xlsx` por leitor próprio (abas, células, datas) | **[impl] Substitui o exceljs (DEC-011):** a planilha da banca usa namespace `x:`, caminhos absolutos e BOM, e o exceljs não a abre |
 | `@anthropic-ai/sdk` | atual | `AnthropicProvider` | SDK oficial. Retries embutidos para 429, 5xx e 529 |
 | `zod` | 4.x | Validação de env, formulários e saída da IA | Um validador para tudo. Gera JSON Schema para a saída estruturada |
 | Tailwind CSS | 4.x | Estilos | ADR-14 |
