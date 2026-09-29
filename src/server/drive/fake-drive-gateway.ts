@@ -76,6 +76,12 @@ export class FakeDriveGateway implements DriveGateway {
     this.bump(entry.item);
   }
 
+  untrash(id: string) {
+    const entry = this.require(id);
+    entry.item.trashed = false;
+    this.bump(entry.item);
+  }
+
   remove(id: string) {
     this.entries.delete(id);
   }
