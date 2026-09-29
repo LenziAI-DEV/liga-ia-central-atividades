@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # Case técnico — Liga IA UFSCar
 
 Central de contexto e atividades (lê uma pasta do Google Drive, painel de atividades, sugestões de IA com revisão humana).
