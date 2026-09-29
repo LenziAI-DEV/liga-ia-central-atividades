@@ -43,3 +43,12 @@
   - `npm run setup` gera o `.env.local` com a chave de cifra, e ele fica fora do Git;
   - `/api/health` → `db: ok`, as 6 áreas respondem, o boot pelo `instrumentation` migra o banco e grava log JSON.
 - **Contraste:** um teste automatizado prova que todos os pares de cor de texto usados têm ≥ 4,5:1, e que ciano com texto branco (1,7:1) é proibido.
+
+## 2026-09-29 (ter) — Fase 1: Drive conectado (código)
+
+- **Maior surpresa do dia:** o exceljs não abriu o `Ata_registro.xlsx` da banca ("Cannot read properties of undefined (reading 'sheets')"). Investiguei o zip por dentro: o arquivo foi gerado pelo OpenXML SDK do .NET, com prefixo `x:` em todos os elementos, caminhos absolutos nos `.rels` e BOM. Isso não é defeito do arquivo, é um estilo válido do formato que muitas bibliotecas não tratam. Tentei primeiro remover os prefixos e devolver o arquivo ao exceljs, mas ele também tropeçou nos caminhos absolutos. **Decisão:** escrever um leitor próprio e pequeno (JSZip + parser XML que ignora prefixos), testado com os arquivos da banca **e** com um arquivo no estilo do Excel. Registrado em DEC-011.
+- **Bug achado por teste:** um arquivo que ia para a lixeira e voltava com o mesmo conteúdo ficava sem conteúdo em cache, porque o cache era apagado no sumiço e o hash igual fazia pular a gravação. Corrigido.
+- **Decisão de desenho que o teste confirmou:** listar a árvore inteira antes de gravar qualquer coisa. No teste com "Drive fora do ar" e "token revogado", o banco fica byte a byte igual ao de antes do ciclo, ou seja, falha nunca vira ausência.
+- **Verificado com Drive falso:** 100 testes, entre eles carga inicial com subpasta, formatos não suportados, falha isolada, idempotência (segundo ciclo sem nenhum download), arquivo novo, edição, renomeação sem reprocessar, lixeira, acesso revogado, fora da pasta, subpasta removida e execução única.
+- **Tela "Estado da sincronização":** conferida sem credenciais. Mostra "configuração pendente" com os nomes das variáveis, e o "Conectar" sem credenciais volta com aviso em vez de quebrar.
+- **Pendente:** o teste com o Google real depende das credenciais no `.env.local`.

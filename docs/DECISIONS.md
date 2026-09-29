@@ -135,6 +135,34 @@
   7. **Encerrar processos pelo PID da porta**, nunca por nome de imagem.
 - **Consequências:** `DATABASE_PATH` é lido direto do `process.env` no `getDb()`, para um env inválido não derrubar o boot. As demais configurações passam por `getEnv()` (zod).
 
+## DEC-011 — Leitor de `.xlsx` próprio (substitui exceljs, ADR/DEC-009 do rascunho)
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Contexto:** o `Ata_registro.xlsx` da banca foi gerado pelo OpenXML SDK:
+  - elementos com prefixo de namespace (`<x:workbook>`, `<x:sheetData>`);
+  - `Target` absolutos nos `.rels` (`/xl/worksheets/sheet1.xml`);
+  - BOM nos XML;
+  - células `t="str"`.
+
+  O exceljs falha ao abrir esse arquivo (`parseWorkbook` devolve `undefined`). Como a banca usará "arquivos da mesma natureza", o formato precisa ser lido com robustez.
+- **Decisão:** leitor próprio em `src/server/extract/xlsx.ts`:
+  - **JSZip** abre o pacote;
+  - **fast-xml-parser** com `removeNSPrefix`;
+  - lê shared strings, inline strings e `t="str"`;
+  - detecta datas pelo `numFmt` (embutidos 14–22 e 45–47, ou formato customizado com d/m/y) e respeita `date1904`;
+  - datas viram `AAAA-MM-DD` pelos componentes UTC.
+- **Verificação:** testes com os dois arquivos da banca (prefixados) **e** com um `.xlsx` sintético no estilo do Excel (sem prefixo, shared strings, rich text, data nativa).
+- **Alternativa descartada:** SheetJS. A versão do npm (0.18.5) tem vulnerabilidade conhecida, e a versão corrigida só é distribuída fora do npm.
+
+## DEC-012 — Decisões técnicas da Fase 1
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Decisões:**
+  1. `@googleapis/drive` + `google-auth-library` 11.1.0 (a mesma versão usada internamente, deduplicada).
+  2. OAuth: `state` e `code_verifier` num cookie httpOnly de 10 min com path `/api/auth/google`. Host canônico: `/start` redireciona para `APP_BASE_URL`. O callback exige que o escopo concedido seja só leitura e que o ID configurado seja uma pasta acessível. A carga inicial é disparada com `after()` do Next.
+  3. O `runSync` lista a árvore inteira **antes** de gravar qualquer coisa: se o Drive falhar, nada muda (AR-16). O sumiço só é concluído sob pastas listadas por completo, confirmado por `files.get` (lixeira, sem acesso ou fora da árvore), com cascata para subpastas.
+  4. Arquivo que volta da lixeira com o mesmo conteúdo tem o cache recuperado (bug achado pelo teste).
+  5. "Sincronizar agora" é uma Server Action que espera o ciclo terminar (pasta pequena) e mostra o resultado. O polling de ciclos automáticos fica para a Fase 4.
+  6. No boot, execuções que estavam `running` viram `failed(interrupted)` (um processo por instalação).
+
 ---
 
 ## Decisões técnicas pendentes

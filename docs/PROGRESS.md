@@ -12,7 +12,7 @@
 
 ## Estado atual
 
-**Fase:** Fase 0 (fundação) **concluída**. Próximo passo: **Fase 1 — Drive conectado e inventário de fontes** (branch `fase-1-drive`).
+**Fase:** Fase 1 — código completo (1.1–1.5, 100 testes) na branch `fase-1-drive`. **Falta a validação com o Google real** (credenciais do usuário no `.env.local`); depois, merge na `main` e Fase 2.
 **Plano vigente:** `docs/plans/IMPLEMENTATION_PLAN.md` (aprovado, DEC-009). Autonomia entre fases; branch por fase; commit e push por sub-marco.
 **Como rodar hoje:** `npm install` → `npm run setup` → `npm run app` → http://localhost:3000 (6 áreas; `/api/health`).
 
@@ -29,7 +29,7 @@
 
 ## Em andamento
 
-- Fase 1 (a iniciar): OAuth, gateway do Drive, extratores, SyncService, tela "Estado da sincronização".
+- Fase 1: OAuth + tokens cifrados, gateway do Drive (real e falso), extratores (.md, .xlsx próprio — DEC-011, Google Docs), SyncService e tela "Estado da sincronização" prontos e testados. Aguardando o teste real (B-1).
 
 ## Próximos passos
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MainNav } from "@/components/main-nav";
+import { SyncBanner } from "@/components/sync-banner";
 import "./globals.css";
 
 // Dados vêm do banco local a cada requisição; nada é pré-renderizado (ADR-02).
@@ -31,6 +32,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div aria-hidden="true" className="h-1 bg-[var(--lia-cyan)]" />
         </header>
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+          <div className="mb-6 empty:hidden">
+            <SyncBanner />
+          </div>
           {children}
         </main>
       </body>
