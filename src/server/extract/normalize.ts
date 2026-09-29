@@ -1,6 +1,16 @@
 import { createHash } from "node:crypto";
 import type { Extracted } from "./types";
 
+/**
+ * Remove espaços e tabs do fim da linha em tempo linear. Uma regex como `/[ \t]+$/`
+ * é quadrática numa linha com muitos espaços seguidos de texto (ReDoS).
+ */
+export function trimLineEnd(line: string): string {
+  let end = line.length;
+  while (end > 0 && (line[end - 1] === " " || line[end - 1] === "\t")) end--;
+  return end === line.length ? line : line.slice(0, end);
+}
+
 /** Normaliza texto de documento: BOM, NFC, finais de linha, espaços de fim de linha. */
 export function normalizeText(raw: string): string {
   return raw
@@ -8,7 +18,7 @@ export function normalizeText(raw: string): string {
     .normalize("NFC")
     .replace(/\r\n?/g, "\n")
     .split("\n")
-    .map((line) => line.replace(/[ \t]+$/, ""))
+    .map(trimLineEnd)
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();

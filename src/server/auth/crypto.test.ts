@@ -22,6 +22,12 @@ describe("crypto (AES-256-GCM)", () => {
     expect(() => decryptJson(encrypted, randomBytes(32).toString("base64"))).toThrow();
   });
 
+  it("tag de autenticação truncada é recusada", () => {
+    const encrypted = encryptJson({ a: 1 }, key);
+    const shortTag = Buffer.from(encrypted.tag, "base64").subarray(0, 4).toString("base64");
+    expect(() => decryptJson({ ...encrypted, tag: shortTag }, key)).toThrow();
+  });
+
   it("dado adulterado falha na verificação de autenticidade", () => {
     const encrypted = encryptJson({ a: 1 }, key);
     const tampered = Buffer.from(encrypted.ciphertext, "base64");

@@ -91,8 +91,12 @@ export class FakeDriveGateway implements DriveGateway {
   }
 
   moveOut(id: string) {
+    this.move(id, "pasta-fora-do-escopo");
+  }
+
+  move(id: string, parentId: string) {
     const entry = this.require(id);
-    entry.item.parents = ["pasta-fora-do-escopo"];
+    entry.item.parents = [parentId];
     this.bump(entry.item);
   }
 

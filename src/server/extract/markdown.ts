@@ -1,18 +1,42 @@
 import { normalizeText } from "./normalize";
 import type { Section, TextExtract } from "./types";
 
-const HEADING = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
+/**
+ * As expressões abaixo são lineares de propósito: o conteúdo vem de arquivos do
+ * Drive (não confiável), e o extrator roda no mesmo processo da interface. Nada de
+ * quantificadores sobrepostos como `(.+?)\s*#*\s*$` (backtracking catastrófico).
+ */
+const HEADING = /^(#{1,6})[ \t]+(.*)$/;
 /** `chave: valor` com chave de uma palavra (ex.: `status`, `data_da_reuniao`). */
-const METADATA = /^\s*([\p{L}_][\p{L}\p{N}_]*)\s*:\s*(.+?)\s*$/u;
+const METADATA = /^[ \t]*([\p{L}_][\p{L}\p{N}_]*)[ \t]*:(.*)$/u;
 const METADATA_SCAN_LINES = 20;
+/** Linhas maiores que isso não são títulos nem metadados (continuam no texto). */
+const MAX_STRUCTURE_LINE = 4096;
 
 /** Remove escapes de Markdown (o export de Google Docs escreve `data\_da\_reuniao`). */
 function unescapeMarkdown(value: string): string {
   return value.replace(/\\([\\`*_{}[\]()#+\-.!|>])/g, "$1");
 }
 
+const EMPHASIS = new Set(["*", "_", "`"]);
+
+/** Tira marcadores de ênfase das pontas (`**texto**` → `texto`), em tempo linear. */
 function stripEmphasis(value: string): string {
-  return value.replace(/^[*_`]+|[*_`]+$/g, "").trim();
+  let start = 0;
+  let end = value.length;
+  while (start < end && EMPHASIS.has(value[start])) start++;
+  while (end > start && EMPHASIS.has(value[end - 1])) end--;
+  return value.slice(start, end).trim();
+}
+
+/** Sequência `#` de fechamento do título (CommonMark: precisa vir depois de espaço). */
+function stripClosingHashes(value: string): string {
+  const text = value.trimEnd();
+  let end = text.length;
+  while (end > 0 && text[end - 1] === "#") end--;
+  if (end === text.length) return text;
+  if (end === 0) return "";
+  return text[end - 1] === " " || text[end - 1] === "\t" ? text.slice(0, end).trimEnd() : text;
 }
 
 /**
@@ -29,20 +53,24 @@ export function extractMarkdown(raw: string): TextExtract {
   let metadataOpen = true;
 
   lines.forEach((line, index) => {
+    if (line.length > MAX_STRUCTURE_LINE) return;
     const heading = HEADING.exec(line);
     if (heading) {
-      const level = heading[1].length;
-      const headingText = stripEmphasis(unescapeMarkdown(heading[2]));
-      sections.push({ heading: headingText, level, line: index + 1 });
-      if (level === 1 && title === null) title = headingText;
-      if (level >= 2) metadataOpen = false;
-      return;
+      const headingText = stripEmphasis(unescapeMarkdown(stripClosingHashes(heading[2])));
+      if (headingText) {
+        const level = heading[1].length;
+        sections.push({ heading: headingText, level, line: index + 1 });
+        if (level === 1 && title === null) title = headingText;
+        if (level >= 2) metadataOpen = false;
+        return;
+      }
     }
     if (!metadataOpen || index >= METADATA_SCAN_LINES) return;
     const meta = METADATA.exec(unescapeMarkdown(stripEmphasis(line)));
     if (meta) {
       const key = meta[1].toLowerCase();
-      if (!(key in metadata)) metadata[key] = stripEmphasis(meta[2]);
+      const value = stripEmphasis(meta[2].trim());
+      if (value && !(key in metadata)) metadata[key] = value;
     }
   });
 

@@ -1,4 +1,7 @@
+import "server-only";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+
+const TAG_BYTES = 16;
 
 export interface Encrypted {
   ciphertext: string;
@@ -26,8 +29,12 @@ export function encryptJson(value: unknown, base64Key: string): Encrypted {
 
 /** Decifra e verifica a autenticidade. Chave errada ou dado adulterado lançam erro. */
 export function decryptJson<T>(encrypted: Encrypted, base64Key: string): T {
-  const decipher = createDecipheriv("aes-256-gcm", keyFrom(base64Key), Buffer.from(encrypted.iv, "base64"));
-  decipher.setAuthTag(Buffer.from(encrypted.tag, "base64"));
+  const tag = Buffer.from(encrypted.tag, "base64");
+  if (tag.length !== TAG_BYTES) throw new Error("Tag de autenticação com tamanho inválido.");
+  const decipher = createDecipheriv("aes-256-gcm", keyFrom(base64Key), Buffer.from(encrypted.iv, "base64"), {
+    authTagLength: TAG_BYTES,
+  });
+  decipher.setAuthTag(tag);
   const plain = Buffer.concat([decipher.update(Buffer.from(encrypted.ciphertext, "base64")), decipher.final()]);
   return JSON.parse(plain.toString("utf8")) as T;
 }

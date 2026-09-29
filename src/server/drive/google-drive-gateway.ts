@@ -1,3 +1,4 @@
+import "server-only";
 import { drive, type drive_v3 } from "@googleapis/drive";
 import type { OAuth2Client } from "google-auth-library";
 import { DriveError } from "./errors";
@@ -7,12 +8,24 @@ import { withRetry } from "./retry";
 const FILE_FIELDS =
   "id,name,mimeType,modifiedTime,version,size,md5Checksum,parents,webViewLink,trashed,capabilities(canDownload)";
 
+/** Uma chamada parada não pode segurar o ciclo (e o "Sincronizar agora") por minutos. */
+const REQUEST_TIMEOUT_MS = 30_000;
+
+/** Motivos de 403/429 que indicam cota ou limite de uso: têm nova tentativa ([GUIA §9, §11]). */
+const QUOTA_REASONS = new Set([
+  "rateLimitExceeded",
+  "userRateLimitExceeded",
+  "dailyLimitExceeded",
+  "quotaExceeded",
+  "sharingRateLimitExceeded",
+]);
+
 /** Implementação real, somente leitura, da porta `DriveGateway` (Drive API v3). */
 export class GoogleDriveGateway implements DriveGateway {
   private readonly api: drive_v3.Drive;
 
   constructor(auth: OAuth2Client) {
-    this.api = drive({ version: "v3", auth });
+    this.api = drive({ version: "v3", auth, timeout: REQUEST_TIMEOUT_MS });
   }
 
   async getItem(fileId: string): Promise<DriveItem> {
@@ -90,6 +103,24 @@ interface GaxiosLikeError {
   response?: { status?: number; data?: unknown };
 }
 
+/**
+ * O corpo do erro chega como objeto, texto (export com `responseType: "text"`) ou
+ * bytes (download com `arraybuffer`) — normaliza para objeto quando for JSON.
+ */
+function errorBody(data: unknown): { parsed: unknown; text: string } {
+  let text = "";
+  if (typeof data === "string") text = data;
+  else if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+    const view = data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    text = new TextDecoder().decode(view);
+  } else if (data && typeof data === "object") return { parsed: data, text: JSON.stringify(data) };
+  try {
+    return { parsed: JSON.parse(text), text };
+  } catch {
+    return { parsed: undefined, text };
+  }
+}
+
 function errorReason(data: unknown): string | undefined {
   if (!data || typeof data !== "object" || !("error" in data)) return undefined;
   const inner = (data as { error?: unknown }).error;
@@ -102,15 +133,14 @@ export function toDriveError(error: unknown): DriveError {
   if (error instanceof DriveError) return error;
   const e = (error ?? {}) as GaxiosLikeError;
   const status = e.response?.status ?? e.status ?? (typeof e.code === "number" ? e.code : undefined);
-  const data = e.response?.data;
-  const reason = errorReason(data);
-  const dataText = typeof data === "string" ? data : data && typeof data === "object" ? JSON.stringify(data) : "";
+  const { parsed, text: dataText } = errorBody(e.response?.data);
+  const reason = errorReason(parsed);
   const message = e.message ?? "";
 
   if (message.includes("invalid_grant") || dataText.includes("invalid_grant") || status === 401) {
     return new DriveError("auth", "Autorização do Google expirada ou revogada. Reconecte a conta.", { cause: error });
   }
-  if (status === 429 || reason === "rateLimitExceeded" || reason === "userRateLimitExceeded") {
+  if (status === 429 || (reason !== undefined && QUOTA_REASONS.has(reason))) {
     return new DriveError("rate_limited", "Limite de uso da API do Google atingido; nova tentativa em seguida.", { cause: error });
   }
   if (reason === "exportSizeLimitExceeded") {

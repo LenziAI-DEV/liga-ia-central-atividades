@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { canonicalHostResponse } from "@/lib/host-policy";
 import { createAuthorizationRequest } from "@/server/auth/google-oauth";
 import {
   OAUTH_COOKIE,
@@ -20,8 +21,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/sincronizacao?erro=config", base));
   }
   // Host canônico: o cookie de state precisa voltar no mesmo host do callback cadastrado.
-  if (request.nextUrl.host !== base.host) {
-    return NextResponse.redirect(new URL("/api/auth/google/start", base));
+  // O `proxy.ts` já faz isso; esta checagem fica como defesa em profundidade. Usa o
+  // cabeçalho Host: `request.nextUrl` normaliza 127.0.0.1 para localhost.
+  if (request.headers.get("host")?.toLowerCase() !== base.host.toLowerCase()) {
+    return canonicalHostResponse(new URL("/api/auth/google/start", base).toString());
   }
 
   try {

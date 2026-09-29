@@ -1,3 +1,4 @@
+import "server-only";
 import { join } from "node:path";
 import { systemClock } from "@/lib/datetime";
 import { authorizedClient } from "@/server/auth/google-oauth";
@@ -46,7 +47,11 @@ export function getDriveContext(): DriveContext {
   return { gateway: new GoogleDriveGateway(client), rootFolderId: env.DRIVE_TEST_FOLDER_ID!, mode: "google" };
 }
 
-/** Pede um ciclo de sincronização; um de cada vez por processo (o gatilho manual se junta ao em curso). */
+/**
+ * Pede um ciclo de sincronização; um de cada vez por processo. Se já houver um em
+ * curso, devolve `already_running` sem esperar (a agregação do gatilho manual ao
+ * ciclo automático entra com o scheduler, Fase 4.1).
+ */
 export function requestSync(trigger: SyncTrigger): Promise<SyncOutcome> {
   if (globals.__liaSyncInFlight) {
     return Promise.resolve({ runId: null, status: "already_running", counts: emptyCounts() });

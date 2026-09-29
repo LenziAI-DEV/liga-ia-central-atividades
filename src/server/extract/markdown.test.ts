@@ -39,6 +39,30 @@ describe("extractMarkdown", () => {
     expect(doc.metadata).toEqual({ status: "ativo", data_da_reuniao: "2026-10-03" });
   });
 
+  it("remove a sequência de # de fechamento do título", () => {
+    const doc = extractMarkdown("# Ata final ##\n\n## Seção ###\n\n## C# ##\n\n### Só#");
+    expect(doc.sections.map((s) => s.heading)).toEqual(["Ata final", "Seção", "C#", "Só#"]);
+  });
+
+  it("linhas hostis não travam o processo (sem backtracking catastrófico)", () => {
+    const spaces = " ".repeat(50_000);
+    const hostile = [
+      `# a${" ".repeat(4000)}b`, // abaixo do limite de linha estrutural: ainda é título
+      `status:${" ".repeat(4000)}x${" ".repeat(4000)}`.slice(0, 4096),
+      `# a${spaces}b`,
+      `texto${spaces}fim${spaces}`,
+      `# ${"#".repeat(50_000)}a`,
+      `**${"*".repeat(50_000)}a`,
+    ].join("\n");
+    const start = performance.now();
+    const doc = extractMarkdown(hostile);
+    expect(performance.now() - start).toBeLessThan(500);
+    expect(doc.sections).toHaveLength(1);
+    expect(doc.sections[0].heading).toMatch(/^a +b$/);
+    expect(doc.metadata.status).toBe("x");
+    expect(doc.text).toContain("fim");
+  });
+
   it("o hash não muda com CRLF, BOM ou espaços no fim da linha", () => {
     const a = extractMarkdown("# T\n\nstatus: ativo\n\ntexto");
     const b = extractMarkdown("﻿# T  \r\n\r\nstatus: ativo \r\n\r\ntexto\r\n");

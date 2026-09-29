@@ -4,6 +4,19 @@ import { extractMarkdown } from "@/server/extract/markdown";
 import type { Extracted } from "@/server/extract/types";
 import { extractXlsx } from "@/server/extract/xlsx";
 
+/**
+ * Texto de arquivo `.md`: UTF-8 estrito; se não for UTF-8 válido, Windows-1252
+ * (comum em arquivos salvos no Windows). Nunca troca bytes por U+FFFD em silêncio —
+ * isso quebraria a conferência de evidência literal.
+ */
+export function decodeText(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder("windows-1252").decode(bytes);
+  }
+}
+
 /** Lê o conteúdo de um item suportado: download para `.md`/`.xlsx`, export para Google Docs ([GUIA §8]). */
 export async function extractSource(
   gateway: DriveGateway,
@@ -12,10 +25,8 @@ export async function extractSource(
   maxBytes: number,
 ): Promise<Extracted> {
   switch (kind) {
-    case "md": {
-      const bytes = await gateway.download(item.id, maxBytes);
-      return extractMarkdown(new TextDecoder("utf-8").decode(bytes));
-    }
+    case "md":
+      return extractMarkdown(decodeText(await gateway.download(item.id, maxBytes)));
     case "xlsx":
       return extractXlsx(await gateway.download(item.id, maxBytes));
     case "gdoc": {

@@ -214,3 +214,54 @@ describe("runSync — falhas (CA-F1.3, CA-F3.6, AR-16)", () => {
     expect((await sync()).status).toBe("already_running");
   });
 });
+
+describe("runSync — escopo da pasta monitorada (F3.7, AR-16)", () => {
+  it("pasta configurada trocada: o que era da pasta antiga sai do escopo", async () => {
+    const { db, drive, ids, sync } = setup();
+    await sync("initial");
+    const newRoot = drive.addFolder("Outra pasta", "fora-da-arvore");
+    const novo = drive.addFile({ name: "INDEX.md", content: "# Índice novo", parentId: newRoot });
+    const clock = steppingClock("2026-09-30T12:00:00.000Z");
+    const outcome = await runSync({ db, gateway: drive, rootFolderId: newRoot, clock }, "manual");
+    expect(outcome.status).toBe("success");
+    expect(getSource(db, novo)?.sync_status).toBe("processed");
+    for (const name of ["INDEX.md", "Ata_registro.xlsx", "Atas", "Ata_2026-10-01.md"]) {
+      expect(getSource(db, ids[name]), name).toMatchObject({ sync_status: "out_of_scope" });
+      expect(getContent(db, ids[name]), name).toBeUndefined();
+    }
+  });
+
+  it("pasta movida para fora leva o conteúdo junto como 'fora da pasta'", async () => {
+    const { db, drive, ids, sync } = setup();
+    await sync("initial");
+    drive.moveOut(ids.Atas);
+    await sync();
+    expect(getSource(db, ids.Atas)?.sync_status).toBe("out_of_scope");
+    expect(getSource(db, ids["Ata_2026-10-01.md"])).toMatchObject({
+      sync_status: "out_of_scope",
+      status_reason: expect.stringMatching(/fora da pasta/i),
+    });
+  });
+
+  it("arquivo movido para dentro de subpasta cuja listagem falhou não é dado como fora da pasta", async () => {
+    const { db, drive, ids, sync } = setup();
+    await sync("initial");
+    const deep = drive.addFolder("Arquivo morto", ids.Atas);
+    await sync();
+    drive.move(ids["INDEX.md"], deep);
+    drive.failNext("listChildren", ids.Atas, "transient");
+    const outcome = await sync();
+    expect(outcome.status).toBe("partial");
+    expect(getSource(db, ids["INDEX.md"])?.sync_status).toBe("processed");
+    expect(getContent(db, ids["INDEX.md"])).toBeDefined();
+  });
+
+  it("arquivo acima do limite não é baixado e falha com motivo", async () => {
+    const { db, drive } = setup();
+    const big = drive.addFile({ name: "grande.md", content: "x".repeat(64 * 1024) });
+    const downloads = drive.calls.download;
+    await runSync({ db, gateway: drive, rootFolderId: drive.rootId, clock: steppingClock(), maxFileBytes: 32 * 1024 }, "manual");
+    expect(getSource(db, big)).toMatchObject({ sync_status: "failed", status_reason: expect.stringMatching(/limite/) });
+    expect(drive.calls.download - downloads).toBe(6); // só os 6 arquivos do pacote
+  });
+});

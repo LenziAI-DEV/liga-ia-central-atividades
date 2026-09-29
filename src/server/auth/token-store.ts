@@ -1,3 +1,4 @@
+import "server-only";
 import type { Db } from "@/server/db/client";
 import { decryptJson, encryptJson } from "./crypto";
 
@@ -113,6 +114,16 @@ export function saveTokens(
   );
 }
 
+/**
+ * Persiste um token renovado pelo cliente durante um ciclo. Só vale para uma
+ * conexão ainda ativa: se o operador desconectou (ou a autorização caiu) no meio do
+ * ciclo, a renovação não pode reativá-la. Verificação e escrita são síncronas.
+ */
+export function saveRefreshedTokens(db: Db, key: string, tokens: StoredTokens, now: string) {
+  if (readRow(db)?.status !== "connected") return;
+  saveTokens(db, key, tokens, { now });
+}
+
 function loadTokensQuietly(row: ConnectionRow, key: string): StoredTokens | null {
   if (!row.token_ciphertext || !row.token_iv || !row.token_tag) return null;
   try {
@@ -122,9 +133,11 @@ function loadTokensQuietly(row: ConnectionRow, key: string): StoredTokens | null
   }
 }
 
+/** Só uma conexão ativa passa a "reautorizar": um ciclo antigo não desfaz um "Desconectar". */
 export function markReauthRequired(db: Db, errorCode: string, now: string) {
   db.run(
-    "UPDATE oauth_connection SET status = 'reauth_required', last_error_code = ?, updated_at = ? WHERE id = 1",
+    `UPDATE oauth_connection SET status = 'reauth_required', last_error_code = ?, updated_at = ?
+     WHERE id = 1 AND status = 'connected'`,
     errorCode,
     now,
   );

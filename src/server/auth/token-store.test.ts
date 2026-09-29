@@ -1,7 +1,14 @@
 import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { testDb } from "../../../tests/helpers/db";
-import { getConnection, loadTokens, markDisconnected, markReauthRequired, saveTokens } from "./token-store";
+import {
+  getConnection,
+  loadTokens,
+  markDisconnected,
+  markReauthRequired,
+  saveRefreshedTokens,
+  saveTokens,
+} from "./token-store";
 
 const key = randomBytes(32).toString("base64");
 const now = "2026-09-29T12:00:00.000Z";
@@ -29,6 +36,34 @@ describe("token-store", () => {
     saveTokens(db, key, { refresh_token: "1//r" }, { now, newConnection: true });
     expect(loadTokens(db, randomBytes(32).toString("base64"), now)).toBeNull();
     expect(getConnection(db)).toMatchObject({ status: "reauth_required", lastErrorCode: "decrypt_failed" });
+  });
+
+  it("renovação durante um ciclo não reativa uma conexão já encerrada (M-5)", () => {
+    const db = testDb();
+    saveTokens(db, key, { access_token: "a1", refresh_token: "1//r" }, { now, newConnection: true });
+    markDisconnected(db, now);
+    saveRefreshedTokens(db, key, { access_token: "a2" }, now);
+    expect(getConnection(db)).toMatchObject({ status: "disconnected", hasTokens: false });
+
+    saveTokens(db, key, { access_token: "a1", refresh_token: "1//r" }, { now, newConnection: true });
+    markReauthRequired(db, "invalid_grant", now);
+    saveRefreshedTokens(db, key, { access_token: "a3" }, now);
+    expect(getConnection(db)?.status).toBe("reauth_required");
+  });
+
+  it("renovação com a conexão ativa é persistida", () => {
+    const db = testDb();
+    saveTokens(db, key, { access_token: "a1", refresh_token: "1//r" }, { now, newConnection: true });
+    saveRefreshedTokens(db, key, { access_token: "a2" }, now);
+    expect(loadTokens(db, key, now)).toMatchObject({ access_token: "a2", refresh_token: "1//r" });
+  });
+
+  it("falha de autenticação de um ciclo antigo não troca 'desconectado' por 'reautorizar'", () => {
+    const db = testDb();
+    saveTokens(db, key, { refresh_token: "1//r" }, { now, newConnection: true });
+    markDisconnected(db, now);
+    markReauthRequired(db, "invalid_grant", now);
+    expect(getConnection(db)?.status).toBe("disconnected");
   });
 
   it("reautorização e desconexão", () => {

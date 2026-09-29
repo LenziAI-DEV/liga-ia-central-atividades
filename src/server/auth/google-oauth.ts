@@ -1,10 +1,11 @@
+import "server-only";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { CodeChallengeMethod, OAuth2Client, type Credentials } from "google-auth-library";
 import { DRIVE_READONLY_SCOPE, type AppEnv } from "@/server/config/env";
 import type { Db } from "@/server/db/client";
 import { AppError } from "@/server/errors";
 import { logger } from "@/server/observability/logger";
-import { loadTokens, markDisconnected, saveTokens } from "./token-store";
+import { loadTokens, markDisconnected, saveRefreshedTokens } from "./token-store";
 
 /** Cliente OAuth do fluxo web server, executado só no servidor ([GUIA §3]). */
 export function createOAuthClient(env: AppEnv): OAuth2Client {
@@ -72,7 +73,7 @@ export function authorizedClient(db: Db, env: AppEnv): OAuth2Client | null {
   client.setCredentials({ ...tokens, scope: tokens.scope ?? undefined });
   client.on("tokens", (fresh) => {
     try {
-      saveTokens(db, key, fresh, { now: new Date().toISOString() });
+      saveRefreshedTokens(db, key, fresh, new Date().toISOString());
     } catch (error) {
       logger.warn("oauth.token_persist_failed", { error });
     }
@@ -80,18 +81,28 @@ export function authorizedClient(db: Db, env: AppEnv): OAuth2Client | null {
   return client;
 }
 
-/** Revoga no Google (melhor esforço) e apaga os tokens locais ([GUIA §12]). */
-export async function revokeConnection(db: Db, env: AppEnv) {
+/**
+ * Revoga a concessão no Google. Devolve `false` quando não foi possível (sem rede,
+ * erro do Google, token ilegível): a interface precisa dizer isso ao operador.
+ */
+export async function revokeGrant(env: AppEnv, tokens: Pick<Credentials, "refresh_token" | "access_token"> | null) {
+  const token = tokens?.refresh_token ?? tokens?.access_token;
+  if (!token) return false;
+  try {
+    await createOAuthClient(env).revokeToken(token);
+    return true;
+  } catch (error) {
+    logger.warn("oauth.revoke_failed", { error });
+    return false;
+  }
+}
+
+/** Revoga no Google e apaga os tokens locais ([GUIA §12]); informa se a revogação remota funcionou. */
+export async function revokeConnection(db: Db, env: AppEnv): Promise<{ revoked: boolean }> {
   const now = new Date().toISOString();
   const tokens = env.APP_ENCRYPTION_KEY ? loadTokens(db, env.APP_ENCRYPTION_KEY, now) : null;
-  const token = tokens?.refresh_token ?? tokens?.access_token;
-  if (token) {
-    try {
-      await createOAuthClient(env).revokeToken(token);
-    } catch (error) {
-      logger.warn("oauth.revoke_failed", { error });
-    }
-  }
+  const revoked = await revokeGrant(env, tokens);
   markDisconnected(db, now);
-  logger.info("oauth.disconnected");
+  logger.info("oauth.disconnected", { revoked });
+  return { revoked };
 }

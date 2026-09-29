@@ -1,6 +1,7 @@
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 import JSZip from "jszip";
 import { isoDateFromUtcParts } from "@/lib/datetime";
+import { AppError } from "@/server/errors";
 import type { CellValue, Sheet, SheetExtract, SheetRow } from "./types";
 
 /**
@@ -8,6 +9,10 @@ import type { CellValue, Sheet, SheetExtract, SheetRow } from "./types";
  * Motivo: a planilha do pacote da banca é gerada pelo OpenXML SDK com prefixo
  * `x:` nos elementos, caminhos absolutos nos `.rels` e BOM — formatos que o exceljs
  * não lê. Este leitor aceita esse estilo e o do Excel (DEC-011).
+ *
+ * Regra de robustez (F2.8, AR-16): estrutura ilegível lança erro — parte ausente,
+ * XML inválido, relacionamento quebrado ou shared string inexistente nunca viram
+ * "planilha vazia" nem "célula vazia".
  */
 
 const parser = new XMLParser({
@@ -22,17 +27,33 @@ const parser = new XMLParser({
 
 type XmlNode = Record<string, unknown>;
 
-/** Formatos de data embutidos do Excel (numFmtId). */
-const BUILTIN_DATE_FORMATS = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47]);
+/**
+ * Formatos de data embutidos do Excel (numFmtId): 14–17 são datas e 22 é data e
+ * hora. 18–21 e 45–47 são só hora/duração e não viram data.
+ */
+const BUILTIN_DATE_FORMATS = new Set([14, 15, 16, 17, 22]);
+
+const REL_TYPE = {
+  sharedStrings: "/sharedStrings",
+  styles: "/styles",
+} as const;
+
+/** Erro de leitura com motivo seguro para a tabela de fontes. */
+class XlsxError extends AppError {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super("xlsx_invalid", message, options);
+  }
+}
 
 function asText(node: unknown): string {
   if (node === undefined || node === null) return "";
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(asText).join("");
   const obj = node as XmlNode;
-  if ("#text" in obj) return asText(obj["#text"]);
+  // `t`/`r` primeiro: com `trimValues: false`, a indentação entre elementos vira `#text`.
   if ("t" in obj) return asText(obj.t);
   if ("r" in obj) return asText(obj.r);
+  if ("#text" in obj) return asText(obj["#text"]);
   return "";
 }
 
@@ -51,20 +72,47 @@ function resolveTarget(target: string): string {
   return parts.join("/");
 }
 
+/** Nomes de partes OPC não diferenciam maiúsculas; o JSZip diferencia. */
+function findEntry(zip: JSZip, path: string): JSZip.JSZipObject | null {
+  const exact = zip.file(path);
+  if (exact) return exact;
+  const lower = path.toLowerCase();
+  const match = Object.keys(zip.files).find((name) => name.toLowerCase() === lower);
+  return match ? zip.file(match) : null;
+}
+
 async function readXml(zip: JSZip, path: string): Promise<XmlNode | null> {
-  const file = zip.file(path) ?? zip.file(path.replace(/^\//, ""));
+  const file = findEntry(zip, path);
   if (!file) return null;
   const xml = (await file.async("string")).replace(/^﻿/, "");
+  if (XMLValidator.validate(xml) !== true) throw new XlsxError(`XML inválido em ${path}.`);
   return parser.parse(xml) as XmlNode;
 }
 
-function serialToIsoDate(serial: number, date1904: boolean): string {
+function serialToIsoDate(serial: number, date1904: boolean): string | null {
   const epoch = date1904 ? Date.UTC(1904, 0, 1) : Date.UTC(1899, 11, 30);
-  return isoDateFromUtcParts(new Date(epoch + Math.round(serial * 86_400_000)));
+  const date = new Date(epoch + Math.round(serial * 86_400_000));
+  return Number.isFinite(date.getTime()) ? isoDateFromUtcParts(date) : null;
 }
 
-function columnOf(ref: string): string {
-  return ref.replace(/\d+/g, "");
+/** Índice (0-based) → letras de coluna: 0 → A, 25 → Z, 26 → AA. */
+function columnName(index: number): string {
+  let name = "";
+  for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
+  return name;
+}
+
+function columnIndex(letters: string): number {
+  let index = 0;
+  for (const ch of letters.toUpperCase()) index = index * 26 + (ch.charCodeAt(0) - 64);
+  return index - 1;
+}
+
+const clean = (text: string) => text.normalize("NFC").trim();
+
+interface Relation {
+  target: string;
+  type: string;
 }
 
 /**
@@ -74,30 +122,38 @@ function columnOf(ref: string): string {
  * vira "planilha vazia" (AR-16).
  */
 export async function extractXlsx(data: Uint8Array): Promise<SheetExtract> {
-  let zip: JSZip;
   try {
-    zip = await JSZip.loadAsync(data);
+    return await readWorkbook(data);
   } catch (error) {
-    throw new Error("Arquivo .xlsx inválido ou corrompido.", { cause: error });
+    if (error instanceof XlsxError) throw error;
+    throw new XlsxError("Arquivo .xlsx inválido ou corrompido.", { cause: error });
   }
+}
 
-  const workbookXml = await readXml(zip, "xl/workbook.xml");
-  const workbook = workbookXml?.workbook as XmlNode | undefined;
-  if (!workbook) throw new Error("Arquivo .xlsx sem workbook.xml legível.");
+async function readWorkbook(data: Uint8Array): Promise<SheetExtract> {
+  const zip = await JSZip.loadAsync(data);
+
+  const workbook = (await readXml(zip, "xl/workbook.xml"))?.workbook as XmlNode | undefined;
+  if (!workbook) throw new XlsxError("Arquivo .xlsx sem workbook.xml legível.");
 
   const date1904 = ["1", "true"].includes(String((workbook.workbookPr as XmlNode | undefined)?.["@_date1904"] ?? ""));
+  const sheetEntries = ((workbook.sheets as XmlNode | undefined)?.sheet as XmlNode[] | undefined) ?? [];
 
   const relsXml = await readXml(zip, "xl/_rels/workbook.xml.rels");
-  const relations = new Map<string, string>();
+  if (!relsXml && sheetEntries.length > 0) throw new XlsxError("Arquivo .xlsx sem relacionamentos das abas.");
+  const relations = new Map<string, Relation>();
   for (const rel of ((relsXml?.Relationships as XmlNode | undefined)?.Relationship as XmlNode[] | undefined) ?? []) {
-    relations.set(String(rel["@_Id"]), resolveTarget(String(rel["@_Target"])));
+    relations.set(String(rel["@_Id"]), { target: resolveTarget(String(rel["@_Target"])), type: String(rel["@_Type"] ?? "") });
   }
+  const partOf = (type: string, fallback: string) =>
+    [...relations.values()].find((r) => r.type.endsWith(type))?.target ?? fallback;
 
-  const sstXml = await readXml(zip, "xl/sharedStrings.xml");
-  const sharedStrings = (((sstXml?.sst as XmlNode | undefined)?.si as unknown[] | undefined) ?? []).map(asText);
+  const sstXml = await readXml(zip, partOf(REL_TYPE.sharedStrings, "xl/sharedStrings.xml"));
+  const sharedStrings = sstXml
+    ? (((sstXml.sst as XmlNode | undefined)?.si as unknown[] | undefined) ?? []).map((si) => clean(asText(si)))
+    : null;
 
-  const stylesXml = await readXml(zip, "xl/styles.xml");
-  const styleSheet = stylesXml?.styleSheet as XmlNode | undefined;
+  const styleSheet = (await readXml(zip, partOf(REL_TYPE.styles, "xl/styles.xml")))?.styleSheet as XmlNode | undefined;
   const customFormats = new Map<number, string>();
   for (const fmt of ((styleSheet?.numFmts as XmlNode | undefined)?.numFmt as XmlNode[] | undefined) ?? []) {
     customFormats.set(Number(fmt["@_numFmtId"]), String(fmt["@_formatCode"] ?? ""));
@@ -109,73 +165,104 @@ export async function extractXlsx(data: Uint8Array): Promise<SheetExtract> {
     if (BUILTIN_DATE_FORMATS.has(id) || (custom !== undefined && isDateFormatCode(custom))) dateStyles.add(index);
   });
 
-  const sheetEntries = ((workbook.sheets as XmlNode | undefined)?.sheet as XmlNode[] | undefined) ?? [];
+  const context: CellContext = { sharedStrings, dateStyles, date1904 };
   const sheets: Sheet[] = [];
-
   for (const entry of sheetEntries) {
     const name = String(entry["@_name"] ?? "");
-    const target = relations.get(String(entry["@_id"] ?? ""));
-    const sheetXml = target ? await readXml(zip, target) : null;
-    const sheetData = (sheetXml?.worksheet as XmlNode | undefined)?.sheetData as XmlNode | undefined;
-    const rowNodes = (sheetData?.row as XmlNode[] | undefined) ?? [];
-
-    let header: string[] | null = null;
-    const columns = new Map<string, string>();
-    const rows: SheetRow[] = [];
-
-    for (const rowNode of rowNodes) {
-      const rowNumber = Number(rowNode["@_r"]);
-      const cells: CellValue[] = [];
-      for (const c of (rowNode.c as XmlNode[] | undefined) ?? []) {
-        const value = readCell(c, sharedStrings, dateStyles, date1904);
-        if (value) cells.push(value);
-      }
-      if (cells.length === 0) continue;
-
-      if (header === null) {
-        header = cells.map((cell) => {
-          columns.set(columnOf(cell.address), cell.text);
-          return cell.text;
-        });
-        continue;
-      }
-      const record: Record<string, CellValue> = {};
-      for (const cell of cells) record[columns.get(columnOf(cell.address)) ?? columnOf(cell.address)] = cell;
-      rows.push({ rowNumber, cells: record });
-    }
-
-    sheets.push({ name, header: header ?? [], rows });
+    const relation = relations.get(String(entry["@_id"] ?? ""));
+    if (!relation) throw new XlsxError(`A aba "${name}" não tem relacionamento no pacote.`);
+    const worksheet = (await readXml(zip, relation.target))?.worksheet as XmlNode | undefined;
+    if (!worksheet) throw new XlsxError(`A aba "${name}" não foi encontrada no pacote.`);
+    sheets.push(readSheet(name, worksheet, context));
   }
-
   return { kind: "sheet", sheets };
 }
 
-function readCell(c: XmlNode, sharedStrings: string[], dateStyles: Set<number>, date1904: boolean): CellValue | null {
-  const address = String(c["@_r"] ?? "");
+interface CellContext {
+  sharedStrings: string[] | null;
+  dateStyles: Set<number>;
+  date1904: boolean;
+}
+
+function readSheet(name: string, worksheet: XmlNode, context: CellContext): Sheet {
+  const rowNodes = ((worksheet.sheetData as XmlNode | undefined)?.row as XmlNode[] | undefined) ?? [];
+  let header: string[] | null = null;
+  const columns = new Map<string, string>();
+  const rows: SheetRow[] = [];
+  let previousRow = 0;
+
+  for (const rowNode of rowNodes) {
+    const rowNumber = rowNode["@_r"] !== undefined ? Number(rowNode["@_r"]) : previousRow + 1;
+    previousRow = rowNumber;
+    const cells: CellValue[] = [];
+    let previousColumn = -1;
+    for (const c of (rowNode.c as XmlNode[] | undefined) ?? []) {
+      const ref = c["@_r"] !== undefined ? String(c["@_r"]) : `${columnName(previousColumn + 1)}${rowNumber}`;
+      previousColumn = columnIndex(ref.replace(/\d+/g, ""));
+      const value = readCell(c, ref, context);
+      if (value) cells.push(value);
+    }
+    if (cells.length === 0) continue;
+
+    if (header === null) {
+      const used = new Map<string, number>();
+      header = cells.map((cell) => {
+        const count = (used.get(cell.text) ?? 0) + 1;
+        used.set(cell.text, count);
+        const label = count === 1 ? cell.text : `${cell.text} (${count})`;
+        columns.set(cell.address.replace(/\d+/g, ""), label);
+        return label;
+      });
+      continue;
+    }
+    // Sem protótipo: um cabeçalho "__proto__" vira uma coluna comum.
+    const record = Object.create(null) as Record<string, CellValue>;
+    for (const cell of cells) {
+      const column = cell.address.replace(/\d+/g, "");
+      record[columns.get(column) ?? column] = cell;
+    }
+    rows.push({ rowNumber, cells: record });
+  }
+
+  return { name, header: header ?? [], rows };
+}
+
+function readCell(c: XmlNode, address: string, context: CellContext): CellValue | null {
   const type = String(c["@_t"] ?? "n");
   const style = Number(c["@_s"] ?? 0);
   const raw = asText(c.v);
 
   if (type === "s") {
-    const text = (sharedStrings[Number(raw)] ?? "").trim();
+    if (raw.trim() === "") return null;
+    const index = Number(raw);
+    const text = context.sharedStrings?.[index];
+    if (text === undefined || !Number.isInteger(index)) {
+      throw new XlsxError(`A célula ${address} aponta para um texto compartilhado que não existe.`);
+    }
     return text ? { address, text, raw: text } : null;
   }
   if (type === "inlineStr") {
-    const text = asText(c.is).trim();
+    const text = clean(asText(c.is));
     return text ? { address, text, raw: text } : null;
   }
   if (type === "str" || type === "e") {
-    const text = raw.trim();
+    const text = clean(raw);
     return text ? { address, text, raw: text } : null;
   }
   if (type === "b") return raw === "" ? null : { address, text: raw === "1" ? "VERDADEIRO" : "FALSO", raw: raw === "1" };
+  if (type === "d") {
+    const text = clean(raw);
+    if (!text) return null;
+    const date = /^\d{4}-\d{2}-\d{2}/.test(text) ? text.slice(0, 10) : undefined;
+    return { address, text: date ?? text, raw: text, ...(date ? { date } : {}) };
+  }
 
   if (raw.trim() === "") return null;
   const number = Number(raw);
-  if (Number.isNaN(number)) return { address, text: raw.trim(), raw: raw.trim() };
-  if (dateStyles.has(style)) {
-    const date = serialToIsoDate(number, date1904);
-    return { address, text: date, raw: number, date };
+  if (Number.isNaN(number)) return { address, text: clean(raw), raw: clean(raw) };
+  if (context.dateStyles.has(style)) {
+    const date = serialToIsoDate(number, context.date1904);
+    if (date) return { address, text: date, raw: number, date };
   }
   return { address, text: String(number), raw: number };
 }

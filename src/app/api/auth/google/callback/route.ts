@@ -1,13 +1,15 @@
+import type { Credentials } from "google-auth-library";
 import { after, NextResponse, type NextRequest } from "next/server";
 import {
   assertReadonlyScope,
   createOAuthClient,
   exchangeCode,
+  revokeGrant,
   statesMatch,
 } from "@/server/auth/google-oauth";
 import { OAUTH_COOKIE, OAUTH_COOKIE_PATH, decodeOAuthCookie } from "@/server/auth/oauth-cookie";
 import { saveTokens } from "@/server/auth/token-store";
-import { getEnv } from "@/server/config/env";
+import { getEnv, missingGoogleSettings } from "@/server/config/env";
 import { requestSync } from "@/server/container";
 import { getDb } from "@/server/db";
 import { SETTING, getSetting, setSetting } from "@/server/db/repos/settings-repo";
@@ -22,6 +24,8 @@ export const dynamic = "force-dynamic";
 /**
  * Retorno do Google: valida `state`, troca o código (com PKCE) no servidor, exige
  * escopo somente leitura, confere a pasta configurada e grava os tokens cifrados.
+ * Se a autorização for recusada depois da troca, ela é revogada no Google, para
+ * não sobrar concessão ativa sem uso (ARCHITECTURE §6.1).
  * Nenhum código, token ou URL de autorização é registrado em log ([GUIA §10]).
  */
 export async function GET(request: NextRequest) {
@@ -35,6 +39,7 @@ export async function GET(request: NextRequest) {
 
   const params = request.nextUrl.searchParams;
   if (params.get("error")) return finish("/sincronizacao?erro=acesso_negado");
+  if (missingGoogleSettings(env).length > 0) return finish("/sincronizacao?erro=config");
 
   const code = params.get("code");
   const state = params.get("state");
@@ -43,8 +48,15 @@ export async function GET(request: NextRequest) {
     return finish("/sincronizacao?erro=state_invalido");
   }
 
+  let tokens: Credentials | null = null;
+  let stored = false;
+  const reject = async (path: string) => {
+    if (tokens && !stored) await revokeGrant(env, tokens);
+    return finish(path);
+  };
+
   try {
-    const tokens = await exchangeCode(env, code, saved.codeVerifier);
+    tokens = await exchangeCode(env, code, saved.codeVerifier);
     assertReadonlyScope(tokens.scope);
 
     const client = createOAuthClient(env);
@@ -56,11 +68,11 @@ export async function GET(request: NextRequest) {
       folder = await gateway.getItem(env.DRIVE_TEST_FOLDER_ID!);
     } catch (error) {
       if (error instanceof DriveError && (error.kind === "not_found" || error.kind === "forbidden")) {
-        return finish("/sincronizacao?erro=pasta_inacessivel");
+        return await reject("/sincronizacao?erro=pasta_inacessivel");
       }
       throw error;
     }
-    if (folder.mimeType !== MIME.folder) return finish("/sincronizacao?erro=pasta_invalida");
+    if (folder.mimeType !== MIME.folder || folder.trashed) return await reject("/sincronizacao?erro=pasta_invalida");
 
     const account = await gateway.getAccount().catch(() => ({ displayName: null, email: null }));
     const db = getDb();
@@ -70,12 +82,13 @@ export async function GET(request: NextRequest) {
       accountLabel: account.email ?? account.displayName,
       newConnection: true,
     });
+    stored = true;
     setSetting(db, SETTING.rootFolder, { id: folder.id, name: folder.name, url: folder.webViewLink }, now);
     if (!getSetting(db, SETTING.firstLoadStartedAt)) setSetting(db, SETTING.firstLoadStartedAt, now, now);
     logger.info("oauth.connected");
   } catch (error) {
     logger.warn("oauth.callback_failed", { error });
-    return finish(`/sincronizacao?erro=${error instanceof AppError ? error.code : "troca_falhou"}`);
+    return await reject(`/sincronizacao?erro=${error instanceof AppError ? error.code : "troca_falhou"}`);
   }
 
   // Carga inicial logo após conectar, sem segurar a resposta.

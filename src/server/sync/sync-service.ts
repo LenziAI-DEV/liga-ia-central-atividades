@@ -5,6 +5,7 @@ import {
   deleteContent,
   getSource,
   hasContent,
+  listSources,
   listTrackedChildren,
   listTrackedSources,
   markGone,
@@ -103,13 +104,23 @@ export async function runSync(deps: SyncDeps, trigger: SyncTrigger): Promise<Syn
       }
 
       const current = getSource(db, item.id)!;
-      if (current.sync_status === "processed" && current.processed_drive_version === item.version) {
+      if (
+        current.sync_status === "processed" &&
+        item.version !== null &&
+        current.processed_drive_version === item.version
+      ) {
         counts.unchanged++;
         continue;
       }
       if (!item.canDownload) {
         counts.failed++;
         setStatus(db, item.id, "failed", "Sem permissão para baixar o conteúdo deste arquivo.");
+        continue;
+      }
+      // Recusa pelo tamanho informado na listagem, antes de baixar (ARCHITECTURE §6.9).
+      if (item.size !== null && item.size > maxBytes) {
+        counts.failed++;
+        setStatus(db, item.id, "failed", `Arquivo acima do limite de ${formatLimit(maxBytes)}; não foi baixado.`);
         continue;
       }
 
@@ -189,57 +200,79 @@ async function fetchRoot(gateway: DriveGateway, rootFolderId: string) {
   return root;
 }
 
+type GoneStatus = "unavailable" | "out_of_scope";
+
+const CASCADE_REASON: Record<GoneStatus, string> = {
+  unavailable: "A pasta que continha este arquivo ficou indisponível.",
+  out_of_scope: "A pasta que continha este arquivo foi movida para fora da pasta monitorada.",
+};
+
 /**
- * Fontes que não apareceram neste ciclo. Só conclui algo quando a pasta-pai foi
- * listada por completo; confirma com `files.get` (lixeira × sem acesso × fora da
- * árvore) e propaga para o conteúdo de pastas que sumiram (F3.4, F3.7).
+ * Fontes que não apareceram neste ciclo (F3.4, F3.7). Regras, em ordem:
+ * 1. Pai desconhecido (nem na árvore atual nem entre as fontes): a fonte veio de
+ *    outra pasta configurada → fora do escopo.
+ * 2. Só conclui algo quando a pasta-pai foi listada por completo; confirma com
+ *    `files.get` (lixeira × sem acesso × fora da árvore).
+ * 3. "Fora da árvore" só é concluído se nenhuma subpasta falhou na listagem: o
+ *    arquivo pode ter ido para dentro dela (AR-16, DEC-012.3).
+ * O estado de uma pasta que saiu é propagado para o que estava dentro dela.
  */
 async function reconcileMissing(deps: SyncDeps, walk: WalkResult, seen: Set<string>): Promise<number> {
   const { db, gateway, rootFolderId, clock } = deps;
   const treeFolders = new Set([rootFolderId, ...walk.items.filter((i) => i.mimeType === MIME.folder).map((i) => i.id)]);
+  const knownIds = new Set(listSources(db).map((s) => s.file_id));
+  const treeIncomplete = walk.failedFolders.size > 0;
   const now = () => clock.now().toISOString();
   let gone = 0;
-  let goneFolders: string[] = [];
+  let goneFolders: Array<{ id: string; status: GoneStatus }> = [];
 
   for (const source of listTrackedSources(db)) {
-    if (seen.has(source.file_id) || source.file_id === rootFolderId) continue;
-    if (!source.parent_id || !walk.listedFolders.has(source.parent_id)) continue;
+    if (seen.has(source.file_id) || source.file_id === rootFolderId || !source.parent_id) continue;
 
-    let status: "unavailable" | "out_of_scope" | null = null;
+    let status: GoneStatus | null = null;
     let reason = "";
-    try {
-      const item = await gateway.getItem(source.file_id);
-      if (item.trashed) {
-        status = "unavailable";
-        reason = "Arquivo na lixeira do Drive.";
-      } else if (!item.parents.some((p) => treeFolders.has(p))) {
-        status = "out_of_scope";
-        reason = "Arquivo movido para fora da pasta monitorada.";
-      }
-    } catch (error) {
-      if (error instanceof DriveError && error.kind === "auth") throw error;
-      if (error instanceof DriveError && (error.kind === "not_found" || error.kind === "forbidden")) {
-        status = "unavailable";
-        reason = "Arquivo removido do Drive ou sem acesso.";
-      } else {
-        continue; // falha temporária: não conclui nada sobre o arquivo
+    if (!treeFolders.has(source.parent_id) && !knownIds.has(source.parent_id)) {
+      if (treeIncomplete) continue;
+      status = "out_of_scope";
+      reason = "Não pertence à pasta monitorada atual (a pasta configurada mudou).";
+    } else if (!walk.listedFolders.has(source.parent_id)) {
+      continue;
+    } else {
+      try {
+        const item = await gateway.getItem(source.file_id);
+        if (item.trashed) {
+          status = "unavailable";
+          reason = "Arquivo na lixeira do Drive.";
+        } else if (!item.parents.some((p) => treeFolders.has(p))) {
+          if (treeIncomplete) continue; // pode estar sob uma subpasta que não foi listada
+          status = "out_of_scope";
+          reason = "Arquivo movido para fora da pasta monitorada.";
+        }
+      } catch (error) {
+        if (error instanceof DriveError && error.kind === "auth") throw error;
+        if (error instanceof DriveError && (error.kind === "not_found" || error.kind === "forbidden")) {
+          status = "unavailable";
+          reason = "Arquivo removido do Drive ou sem acesso.";
+        } else {
+          continue; // falha temporária: não conclui nada sobre o arquivo
+        }
       }
     }
     if (status) {
       markGone(db, source.file_id, status, reason, now());
       gone++;
-      if (source.kind === "folder") goneFolders.push(source.file_id);
+      if (source.kind === "folder") goneFolders.push({ id: source.file_id, status });
     }
   }
 
   while (goneFolders.length > 0) {
-    const next: string[] = [];
-    for (const folderId of goneFolders) {
-      for (const child of listTrackedChildren(db, folderId)) {
+    const next: typeof goneFolders = [];
+    for (const folder of goneFolders) {
+      for (const child of listTrackedChildren(db, folder.id)) {
         if (seen.has(child.file_id)) continue;
-        markGone(db, child.file_id, "unavailable", "A pasta que continha este arquivo ficou indisponível.", now());
+        markGone(db, child.file_id, folder.status, CASCADE_REASON[folder.status], now());
         gone++;
-        if (child.kind === "folder") next.push(child.file_id);
+        if (child.kind === "folder") next.push({ id: child.file_id, status: folder.status });
       }
     }
     goneFolders = next;
@@ -247,8 +280,12 @@ async function reconcileMissing(deps: SyncDeps, walk: WalkResult, seen: Set<stri
   return gone;
 }
 
+function formatLimit(bytes: number): string {
+  return bytes >= 1024 * 1024 ? `${Math.round(bytes / (1024 * 1024))} MB` : `${Math.round(bytes / 1024)} KB`;
+}
+
 function failureReason(error: unknown): string {
-  if (error instanceof DriveError) return error.safeMessage;
+  if (error instanceof DriveError || error instanceof AppError) return error.safeMessage;
   return "Não foi possível ler o conteúdo (arquivo inválido ou corrompido).";
 }
 

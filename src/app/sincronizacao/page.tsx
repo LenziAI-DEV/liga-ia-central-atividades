@@ -67,8 +67,12 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
   const sources = listSources(db).filter((s) => s.kind !== "folder");
   const count = (...statuses: string[]) => sources.filter((s) => statuses.includes(s.sync_status)).length;
 
+  // `Object.hasOwn`: `?erro=__proto__` não pode achar propriedades herdadas.
   const errorKey = one("erro");
+  const connectError = errorKey && Object.hasOwn(CONNECT_ERRORS, errorKey) ? CONNECT_ERRORS[errorKey] : undefined;
   const syncKey = one("sync");
+  const syncResult = syncKey && Object.hasOwn(SYNC_RESULTS, syncKey) ? SYNC_RESULTS[syncKey] : undefined;
+  const disconnected = one("desconectado");
 
   return (
     <>
@@ -76,11 +80,17 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
 
       <div className="space-y-3" aria-live="polite">
         {one("conectado") && <Notice tone="ok">Conta Google conectada. A carga inicial da pasta foi iniciada.</Notice>}
-        {one("desconectado") && (
-          <Notice tone="ok">Conta desconectada: o acesso foi revogado e os tokens locais foram apagados.</Notice>
+        {disconnected === "1" && (
+          <Notice tone="ok">Conta desconectada: o acesso foi revogado no Google e os tokens locais foram apagados.</Notice>
         )}
-        {errorKey && <Notice tone="danger">{CONNECT_ERRORS[errorKey] ?? "Não foi possível conectar a conta Google."}</Notice>}
-        {syncKey && SYNC_RESULTS[syncKey] && <Notice tone={SYNC_RESULTS[syncKey].tone}>{SYNC_RESULTS[syncKey].text}</Notice>}
+        {disconnected === "local" && (
+          <Notice tone="warn">
+            Os tokens locais foram apagados, mas não foi possível revogar o acesso no Google agora. Para concluir, remova o
+            acesso em Conta Google › Segurança › Suas conexões com apps e serviços de terceiros.
+          </Notice>
+        )}
+        {errorKey && <Notice tone="danger">{connectError ?? "Não foi possível conectar a conta Google."}</Notice>}
+        {syncResult && <Notice tone={syncResult.tone}>{syncResult.text}</Notice>}
       </div>
 
       <section aria-labelledby="conexao" className="mt-8">
@@ -254,7 +264,10 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
                       <td className="py-2 pr-4">
                         <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                       </td>
-                      <td className="py-2 pr-4">{source.status_reason ?? "—"}</td>
+                      <td className="py-2 pr-4">
+                        {source.status_reason ?? "—"}
+                        {source.removed_at && <> Desde {formatDateTimeBR(source.removed_at)}.</>}
+                      </td>
                       <td className="py-2">{source.modified_time ? formatDateTimeBR(source.modified_time) : "—"}</td>
                     </tr>
                   );
