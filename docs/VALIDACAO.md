@@ -171,3 +171,8 @@ Feita pelo usuário, com o app aberto e sem clicar em "Sincronizar agora". Todos
 - **CA-F4.4 (conflito):** `Ata_2026-10-06.md` propôs 09/10 para o prazo de ACT-101, já com 07/10 proposto pela ata de 03/10; a página da atividade mostra "Conflito — requer decisão: Prazo 07/10 (Ata_2026-10-03) × 09/10 (Ata_2026-10-06.md)" e o oficial segue 05/10.
 - **Custo real acumulado:** 6 chamadas ≈ US$ 0,07 (≈ US$ 0,012 cada).
 - **Limite do conector:** cria, renomeia, move e manda para a lixeira, mas não edita o conteúdo de um arquivo. Por isso dependem de edição manual do usuário: (a) editar o texto do Google Doc `Ata_2026-10-03` para ver "fonte alterada" e a substituição da sugestão (V-3 com IA); (b) editar uma célula do `Ata_registro.xlsx` no Drive para ver a diferença do registro com arquivo real.
+
+### Testes manuais do usuário depois da auditoria (2026-09-30)
+
+- **V-3 com IA (fonte editada):** o usuário editou o Google Doc da ata de 03/10 no Drive; a sugestão antiga foi substituída pela nova. Funcionou (a substituição levou alguns minutos: a análise espera a versão ficar estável por 2 min, DEC-020).
+- **Diferença do registro com arquivo real:** a primeira tentativa não gerou nada porque o Drive salvou o arquivo como `.xlsm`. Depois da correção (DEC-021) o app leu o arquivo e gerou a sugestão de origem "registro": **ACT-103, prazo 09/10 → 10/10**, com o valor oficial intacto.

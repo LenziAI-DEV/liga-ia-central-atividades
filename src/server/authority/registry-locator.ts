@@ -21,6 +21,11 @@ export type RegistryResolution =
   | { status: "ok"; index: SourceRow; source: SourceRow; sheet: Sheet }
   | { status: "pending"; problem: RegistryProblem; reason: string; index?: SourceRow };
 
+/** Nome sem a extensão, sem diferenciar caixa e acentos. */
+function baseName(name: string): string {
+  return nameKey(name.replace(/\.[A-Za-z0-9]{1,5}$/, ""));
+}
+
 const pending = (problem: RegistryProblem, reason: string, index?: SourceRow): RegistryResolution => ({
   status: "pending",
   problem,
@@ -61,7 +66,14 @@ export function resolveRegistry(db: Db, indexFileName: string): RegistryResoluti
   }
   const pointer = registry[0];
 
-  const files = tracked.filter((s) => s.kind === "xlsx" && s.name === pointer.fileName);
+  let files = tracked.filter((s) => s.kind === "xlsx" && s.name === pointer.fileName);
+  if (files.length === 0) {
+    // O arquivo apontado pode ter mudado só de extensão (ex.: .xlsx → .xlsm ao salvar pelo Planilhas Google).
+    // Só vale se for uma única planilha com o mesmo nome-base; mais de uma, ou nenhuma, segue como pendência.
+    const base = baseName(pointer.fileName);
+    const sameBase = tracked.filter((s) => s.kind === "xlsx" && baseName(s.name) === base);
+    if (sameBase.length === 1) files = sameBase;
+  }
   if (files.length === 0) {
     return pending("file_not_found", `O arquivo "${pointer.fileName}" citado no índice não está na pasta.`, index);
   }

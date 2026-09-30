@@ -8,6 +8,9 @@ export interface Classification {
   reason?: string;
 }
 
+/** Planilha com macros: é o mesmo pacote OOXML do .xlsx (o app lê só as células e nunca executa macros). */
+const XLSM_MIME = "application/vnd.ms-excel.sheet.macroenabled.12";
+
 const GENERIC_MIMES = new Set(["application/octet-stream", "text/plain", "text/x-markdown", ""]);
 
 function extension(name: string): string {
@@ -28,7 +31,9 @@ export function classifyFile(item: Pick<DriveItem, "name" | "mimeType">): Classi
     return { kind: "shortcut", reason: "Atalho não é seguido: o destino pode estar fora da pasta monitorada." };
   }
   if (mimeType === MIME.gdoc) return { kind: "gdoc" };
-  if (mimeType === MIME.xlsx || (ext === "xlsx" && GENERIC_MIMES.has(mimeType))) return { kind: "xlsx" };
+  if (mimeType === MIME.xlsx || mimeType === XLSM_MIME || ((ext === "xlsx" || ext === "xlsm") && GENERIC_MIMES.has(mimeType))) {
+    return { kind: "xlsx" };
+  }
   if (mimeType === MIME.markdown || mimeType === "text/x-markdown" || (ext === "md" && GENERIC_MIMES.has(mimeType))) {
     return { kind: "md" };
   }

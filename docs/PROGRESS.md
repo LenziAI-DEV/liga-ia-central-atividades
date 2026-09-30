@@ -13,9 +13,9 @@
 ## ▶ Como retomar (primeira coisa a fazer na próxima sessão)
 
 1. `git checkout main` e criar a branch da próxima fase (a `main` contém as Fases 1 a 4).
-2. `npm test` (esperado: **309 testes** + 7 de gravação pulados), `npm run typecheck`, `npm run lint`.
+2. `npm test` (esperado: **313 testes** + 7 de gravação pulados), `npm run typecheck`, `npm run lint`.
 3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes, sem santa-loop rotineiro).
-4. **Pendências de teste manual do usuário** (o conector do Drive não edita conteúdo): editar o Google Doc `Ata_2026-10-03` (fonte alterada, V-3 com IA) e uma célula do `Ata_registro.xlsx` (diferença do registro com arquivo real). Depois, **Fase 7** ("O que mudou para mim" e Novidades).
+4. As pendências de teste manual (V-3 com IA e diferença do registro) foram concluídas em 2026-09-30 (DEC-021). Próximo: **Fase 7** ("O que mudou para mim" e Novidades).
 
 **Como rodar:** `npm install` → `npm run setup` → preencher o `.env.local` → `npm run app` → http://localhost:3000.
 - O servidor escuta **só em 127.0.0.1** (DEC-013).
