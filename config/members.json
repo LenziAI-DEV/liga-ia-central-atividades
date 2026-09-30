@@ -1,0 +1,8 @@
+{
+  "members": [
+    { "id": "ana", "name": "Ana", "aliases": [], "front": "Growth", "role": "member", "canReview": false },
+    { "id": "bruno", "name": "Bruno", "aliases": [], "front": "Growth", "role": "leader", "canReview": true },
+    { "id": "carla", "name": "Carla", "aliases": [], "front": "Formação", "role": "member", "canReview": true },
+    { "id": "davi", "name": "Davi", "aliases": [], "front": "Operações", "role": "member", "canReview": false }
+  ]
+}

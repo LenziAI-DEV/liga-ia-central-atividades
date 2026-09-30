@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MainNav } from "@/components/main-nav";
+import { PersonaSwitcher } from "@/components/persona-switcher";
 import { SyncBanner } from "@/components/sync-banner";
 import "./globals.css";
 
@@ -26,6 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Central da Liga IA
               </Link>
               <p className="text-sm text-[var(--ink-muted)]">Protótipo local · dados fictícios</p>
+            </div>
+            <div className="mt-2">
+              <PersonaSwitcher />
             </div>
             <MainNav />
           </div>
