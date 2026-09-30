@@ -27,7 +27,7 @@ function columnLetters(index: number): string {
   return name;
 }
 
-function parseDueDate(cell: CellValue | undefined): { date: string | null; problem?: string } {
+export function parseDueDate(cell: CellValue | undefined): { date: string | null; problem?: string } {
   const text = cell?.text.trim() ?? "";
   if (!text || /^a definir$/i.test(text)) return { date: null };
   if (cell?.date) return { date: cell.date };
