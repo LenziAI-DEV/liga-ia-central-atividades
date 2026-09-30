@@ -366,3 +366,11 @@
 - **Marco (DN-10):** `persona_visits` (migração 005). A página lê o marco antes de gravar a visita. Recarregar dentro de 2 minutos conta como a mesma visita (não zera o resumo); `?desde=24h|7d|carga|AAAA-MM-DD` escolhe o período (dia em horário de São Paulo).
 - **Quem vê a mudança:** quem é responsável agora ou era antes do evento (mudança de responsáveis).
 - **Limites:** documentos "reclassificados" não entram (a classe é calculada na leitura e não há histórico dela); visibilidade: todas as fontes são visíveis a todas as personas (F9.6, README).
+
+## DEC-023 — "Comece aqui" só com trechos literais (Fase 8, 2026-09-30)
+
+- **Decisão:** `onboarding/onboarding-service.ts` monta a página sem modelo (DEC-008). **Propósito:** parágrafo de abertura (antes da primeira seção) de cada documento de direção. **Frentes:** as conhecidas (membros e atividades) com as frases literais que as citam nos documentos de direção; frase que lista várias frentes não conta. **Regras:** itens de lista só de documentos de direção **ativos**. **Históricos** à parte com "substituído por". **Fonte das atividades:** arquivo, aba, índice e data da importação. **Primeira ação:** atividade aberta de prazo mais próximo, ou "Você ainda não tem atividades atribuídas" com os passos do guia vigente.
+- **Provisório:** documento `status: parcial` leva o selo "Provisório / a confirmar" e o nome de `responsavel_por_confirmar`, se houver.
+- **Não feito:** o resumo de direção por IA (`direction_digest`) não foi implementado, o fallback literal do plano basta e custa zero. A tabela aceita o propósito se for preciso depois.
+- **Defeito achado no teste real:** `displayQuote` apagava sublinhados ("Ata_registro.xlsx" virava "Ataregistro.xlsx"); agora só tira ênfase de Markdown. Vale também para a evidência das sugestões.
+- **Limite:** as regras repetem os itens de "Frentes e pessoas" quando o guia os lista como itens; é fiel ao documento, só não deduplicado.

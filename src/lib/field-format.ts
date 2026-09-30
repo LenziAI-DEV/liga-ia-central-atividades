@@ -25,7 +25,12 @@ export function formatFieldValue(field: string, value: unknown, memberNames: Rea
   return String(value);
 }
 
-/** Trecho de evidência para exibir: sem as marcas de Markdown (`*`, `_`, crase). A conferência usa o texto literal. */
+/**
+ * Trecho de evidência para exibir: sem as marcas de Markdown (`*`, crase, `_ênfase_`). Sublinhados dentro
+ * de nomes de arquivo ("Ata_registro.xlsx") ficam, porque não são ênfase. A conferência usa o texto literal.
+ */
 export function displayQuote(quote: string): string {
-  return quote.replace(/[*_`]/g, "");
+  return quote
+    .replace(/[*`]/g, "")
+    .replace(/(^|\s)_+(\S(?:[^_]*\S)?)_+(?=\s|[.,;:!?]|$)/g, "$1$2");
 }

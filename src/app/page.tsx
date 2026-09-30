@@ -21,6 +21,13 @@ export default async function Home() {
         title="Central de contexto e atividades"
         description="Duas perguntas guiam esta central: o que preciso fazer agora? E o que mudou desde a última vez que acompanhei a Liga?"
       />
+      <p className="mb-8 rounded border-l-4 border-[var(--lia-blue)] bg-[var(--lia-cyan-soft)] px-4 py-3">
+        <strong>Primeiro acesso?</strong>{" "}
+        <Link href="/comece-aqui" className="text-[var(--lia-blue)] underline underline-offset-2">
+          Comece aqui
+        </Link>
+        : propósito, frentes, regras, fonte das atividades e a sua primeira ação, em quatro passos.
+      </p>
       <section aria-labelledby="proximas" className="mb-10">
         <h2 id="proximas" className="text-xl font-semibold">
           {persona ? `Próximas atividades de ${persona.name}` : "Suas próximas atividades"}
