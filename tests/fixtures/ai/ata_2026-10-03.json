@@ -1,0 +1,35 @@
+{
+  "label": "ata_2026-10-03",
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "usage": {
+    "inputTokens": 2936,
+    "outputTokens": 420,
+    "cacheReadTokens": 0
+  },
+  "costUsd": 0.010072,
+  "latencyMs": 7003,
+  "output": {
+    "document_summary": "A ata confirma que o carrossel sobre ferramentas (ACT-101) segue com Ana, mas o prazo de entrega da versão de aprovação muda de 2026-10-05 para 2026-10-07, e o próximo passo passa a ser fechar o roteiro e enviar para Bruno.",
+    "items": [
+      {
+        "kind": "update",
+        "target_activity_id": "ACT-101",
+        "title": null,
+        "owners": [
+          "Ana"
+        ],
+        "due_date": "2026-10-07",
+        "due_date_text": null,
+        "next_step": "Fechar o roteiro e enviar para Bruno (Bruno aprovará a versão final antes da publicação)",
+        "front": null,
+        "status": null,
+        "evidence": "O prazo para entregar a versão de aprovação mudou de 2026-10-05 para **2026-10-07**.",
+        "rationale": "A ata trata de ACT-101, que já existe. Traz nova data completa (2026-10-07) e novo próximo passo de Ana. Bruno apenas aprova, portanto não entra em owners. Título, frente e estado não foram alterados no texto.",
+        "uncertainties": [
+          "O prazo refere-se à versão de aprovação, não necessariamente à publicação final — confirmar se substitui o prazo da atividade."
+        ]
+      }
+    ]
+  }
+}

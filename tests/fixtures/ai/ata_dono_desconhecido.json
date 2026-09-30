@@ -1,0 +1,38 @@
+{
+  "label": "ata_dono_desconhecido",
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "usage": {
+    "inputTokens": 2798,
+    "outputTokens": 447,
+    "cacheReadTokens": 0
+  },
+  "costUsd": 0.010066,
+  "latencyMs": 4264,
+  "output": {
+    "document_summary": "A ata registra um novo compromisso: Marina, convidada externa, organizará o lanche da oficina e entregará a lista de compras até 12/10/2026. Nenhuma atividade existente é alterada.",
+    "items": [
+      {
+        "kind": "create",
+        "target_activity_id": null,
+        "title": "Organizar o lanche da oficina (lista de compras)",
+        "owners": [
+          "Marina"
+        ],
+        "due_date": "2026-10-12",
+        "due_date_text": "2026-10-12",
+        "next_step": "Confirmar o orçamento com Davi",
+        "front": null,
+        "status": null,
+        "evidence": "Marina, convidada externa, assumirá a organização do lanche da oficina e entregará a lista de compras até 2026-10-12.",
+        "rationale": "Compromisso novo com responsável e prazo completo explícitos. Não corresponde a nenhuma atividade oficial existente. Davi é citado apenas no próximo passo, não como responsável. Frente e estado não constam no texto e ficaram null.",
+        "uncertainties": [
+          "Marina não consta na lista de membros (convidada externa) — confirmar se pode ser registrada como responsável",
+          "Frente não informada no texto — confirmar",
+          "Possível relação com ACT-103 (Elaborar briefing de oficina) — confirmar se é atividade separada",
+          "Estado inicial não informado — confirmar"
+        ]
+      }
+    ]
+  }
+}

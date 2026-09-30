@@ -1,0 +1,57 @@
+{
+  "label": "ata_ate_sexta",
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "usage": {
+    "inputTokens": 2820,
+    "outputTokens": 712,
+    "cacheReadTokens": 0
+  },
+  "costUsd": 0.01276,
+  "latencyMs": 5541,
+  "output": {
+    "document_summary": "A ata atualiza a atividade ACT-102 (checklist de onboarding, Davi) com prazo relativo e novo próximo passo, e propõe uma nova atividade de divulgação da oficina sob responsabilidade de Ana, com prazo relativo.",
+    "items": [
+      {
+        "kind": "update",
+        "target_activity_id": "ACT-102",
+        "title": null,
+        "owners": [
+          "Davi"
+        ],
+        "due_date": null,
+        "due_date_text": "até sexta",
+        "next_step": "Validar as etapas com alguém de Operações",
+        "front": null,
+        "status": null,
+        "evidence": "Davi entrega o checklist de onboarding, `ACT-102`, até sexta. Próximo passo: validar as etapas com alguém de Operações.",
+        "rationale": "O texto cita explicitamente ACT-102, que já existe, e traz um prazo relativo e um novo próximo passo. O prazo oficial atual é 2026-10-06, mas 'até sexta' é relativo e não pode ser convertido.",
+        "uncertainties": [
+          "prazo relativo — confirmar",
+          "O prazo 'até sexta' pode divergir do prazo oficial atual (2026-10-06); confirmar se substitui o prazo existente"
+        ]
+      },
+      {
+        "kind": "create",
+        "target_activity_id": null,
+        "title": "Divulgação da oficina",
+        "owners": [
+          "Ana"
+        ],
+        "due_date": null,
+        "due_date_text": "semana que vem",
+        "next_step": "Mandar o material de divulgação",
+        "front": "Growth",
+        "status": "a_fazer",
+        "evidence": "Ana cuidará da divulgação da oficina e vai mandar o material na semana que vem.",
+        "rationale": "Compromisso novo com responsável explícito (Ana) e prazo relativo. Não corresponde claramente a nenhuma atividade existente, embora ACT-103 trate de briefing de oficina.",
+        "uncertainties": [
+          "prazo relativo — confirmar",
+          "frente inferida — confirmar",
+          "Possível relação com ACT-103 (Elaborar briefing de oficina, Carla); confirmar se é atividade distinta",
+          "Não está claro o que é o 'material' a ser enviado nem o destinatário"
+        ]
+      }
+    ]
+  }
+}

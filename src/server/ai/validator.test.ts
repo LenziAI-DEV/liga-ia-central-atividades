@@ -92,7 +92,22 @@ describe("validateExtraction — uma regra por teste (ARCHITECTURE §6.5)", () =
     );
     expect(r.suggestions).toEqual([]);
     expect(r.invalid).toHaveLength(4);
-    expect(r.invalid[0].reason).toMatch(/não menciona/);
+    expect(r.invalid[0].reason).toMatch(/instruções dirigidas à IA/);
+  });
+
+  it("4. a menção ao alvo pode estar no parágrafo da evidência, não só na frase (saída real do modelo)", () => {
+    const r = validateExtraction(
+      out(item({ evidence: "O prazo para entregar a versão de aprovação mudou de 2026-10-05 para **2026-10-07**.", due_date: "2026-10-07" })),
+      ata03(),
+    );
+    expect(r.suggestions).toHaveLength(1);
+    expect(r.suggestions[0].fields.dueDate).toBe("2026-10-07");
+    // Em outro parágrafo, sem citar o alvo nem o título, continua inválido.
+    const other = validateExtraction(
+      out(item({ target_activity_id: "ACT-103", evidence: "O prazo para entregar a versão de aprovação mudou de 2026-10-05 para **2026-10-07**." })),
+      ata03(),
+    );
+    expect(other.invalid[0].reason).toMatch(/mencionam a atividade/);
   });
 
   it("5. data relativa ou que não está no trecho fica vazia, com a incerteza (CA-F7.4, V-11)", () => {

@@ -1,0 +1,51 @@
+{
+  "label": "ata_2026-10-04",
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "usage": {
+    "inputTokens": 2886,
+    "outputTokens": 641,
+    "cacheReadTokens": 0
+  },
+  "costUsd": 0.012182,
+  "latencyMs": 5163,
+  "output": {
+    "document_summary": "A ata registra um novo compromisso de Carla: revisar a pauta da primeira oficina e entregar uma proposta de exercício prático até 10/10/2026. A ideia de série diária de notícias sobre IA não teve decisão e não muda o painel.",
+    "items": [
+      {
+        "kind": "create",
+        "target_activity_id": null,
+        "title": "Revisar pauta da primeira oficina e entregar proposta de exercício prático",
+        "owners": [
+          "Carla"
+        ],
+        "due_date": "2026-10-10",
+        "due_date_text": "2026-10-10",
+        "next_step": "Escolher um problema real simples para a atividade da turma",
+        "front": "Formação",
+        "status": null,
+        "evidence": "Carla revisará a pauta da primeira oficina e entregará uma proposta de exercício prático até 2026-10-10.",
+        "rationale": "Compromisso novo com responsável e prazo explícitos. Pode estar relacionado ao ACT-103 (briefing de oficina, da Carla), mas o texto não o cita e trata de pauta e exercício prático, então foi proposto como create.",
+        "uncertainties": [
+          "Possível relação com ACT-103 (Elaborar briefing de oficina, Carla) — confirmar se deve ser update dessa atividade em vez de nova",
+          "Frente inferida — confirmar (Carla é da Formação, mas o texto não cita a frente)",
+          "Status não informado no texto"
+        ]
+      },
+      {
+        "kind": "no_action",
+        "target_activity_id": null,
+        "title": "Série diária de notícias sobre IA",
+        "owners": [],
+        "due_date": null,
+        "due_date_text": null,
+        "next_step": null,
+        "front": null,
+        "status": null,
+        "evidence": "Talvez possamos publicar uma série diária de notícias sobre IA.",
+        "rationale": "Ideia sem responsável, sem prazo e sem decisão; o próprio texto diz que ninguém assumiu e que não entrou no plano de trabalho.",
+        "uncertainties": []
+      }
+    ]
+  }
+}

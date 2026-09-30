@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --coverage.include=src/server/** --coverage.include=src/lib/** --coverage.exclude=**/*.test.ts",
     "typecheck": "next typegen && tsc --noEmit",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ai:record": "node scripts/ai-record.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

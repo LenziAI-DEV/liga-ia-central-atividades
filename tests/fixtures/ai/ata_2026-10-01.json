@@ -1,0 +1,73 @@
+{
+  "label": "ata_2026-10-01",
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "usage": {
+    "inputTokens": 3090,
+    "outputTokens": 724,
+    "cacheReadTokens": 0
+  },
+  "costUsd": 0.01342,
+  "latencyMs": 5021,
+  "output": {
+    "document_summary": "A ata apenas repete as quatro atividades oficiais já registradas (ACT-101 a ACT-104), com os mesmos responsáveis, prazos e próximos passos. Não há mudanças para o painel.",
+    "items": [
+      {
+        "kind": "no_action",
+        "target_activity_id": "ACT-101",
+        "title": null,
+        "owners": [],
+        "due_date": null,
+        "due_date_text": null,
+        "next_step": null,
+        "front": null,
+        "status": null,
+        "evidence": "`ACT-101`: Ana seguirá com o carrossel sobre ferramentas.",
+        "rationale": "A ata apenas confirma o que a lista oficial já diz para ACT-101 (responsável, prazo 2026-10-05 e próximo passo).",
+        "uncertainties": []
+      },
+      {
+        "kind": "no_action",
+        "target_activity_id": "ACT-102",
+        "title": null,
+        "owners": [],
+        "due_date": null,
+        "due_date_text": null,
+        "next_step": null,
+        "front": null,
+        "status": null,
+        "evidence": "`ACT-102`: Davi montará o checklist inicial de onboarding até 2026-10-06.",
+        "rationale": "Repete o registro oficial de ACT-102 sem alterações.",
+        "uncertainties": []
+      },
+      {
+        "kind": "no_action",
+        "target_activity_id": "ACT-103",
+        "title": null,
+        "owners": [],
+        "due_date": null,
+        "due_date_text": null,
+        "next_step": null,
+        "front": null,
+        "status": null,
+        "evidence": "Está bloqueado até a confirmação da sala.",
+        "rationale": "O bloqueio e o próximo passo já constam em ACT-103 (estado bloqueada, prazo 2026-10-09); nada muda.",
+        "uncertainties": []
+      },
+      {
+        "kind": "no_action",
+        "target_activity_id": "ACT-104",
+        "title": null,
+        "owners": [],
+        "due_date": null,
+        "due_date_text": null,
+        "next_step": null,
+        "front": null,
+        "status": null,
+        "evidence": "`ACT-104`: Ana e Davi revisarão juntos o fluxo de solicitação de materiais até 2026-10-11.",
+        "rationale": "Coincide com o registro oficial de ACT-104 (responsáveis, prazo e próximo passo).",
+        "uncertainties": []
+      }
+    ]
+  }
+}

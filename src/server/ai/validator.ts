@@ -80,6 +80,9 @@ export const HYPOTHESIS_MARKERS = [
   "sem dono",
 ];
 
+/** Frases dirigidas a uma IA dentro do documento (defesa em profundidade contra injeção, F7.7, V-12). */
+export const INJECTION_MARKERS = ["ignore as regras", "ignore todas as", "ignore as instrucoes", "ignore previous", "desconsidere as regras", "voce agora e", "you are now", "marque todas as tarefas", "apague as demais", "apague todas"];
+
 const STOPWORDS = new Set(["para", "sobre", "com", "uma", "dos", "das", "que", "por", "como", "atividade", "tarefa", "este", "esta", "essa", "esse", "mais", "pela", "pelo", "seus", "suas"]);
 
 const MONTHS: Record<string, string> = {
@@ -143,6 +146,13 @@ function locate(evidence: string, ctx: ValidationContext): string {
   return "";
 }
 
+/** Parágrafo (bloco entre linhas em branco) que contém a evidência: a citação do ID pode estar na frase vizinha. */
+function enclosingBlock(evidence: string, ctx: ValidationContext): string {
+  const needle = normalizeForMatch(evidence);
+  const block = ctx.documentText.split(/\n[ \t]*\n/).find((b) => normalizeForMatch(b).includes(needle));
+  return block ?? evidence;
+}
+
 function mentionsOwner(evidencePlain: string, member: Member): boolean {
   return [member.name, ...member.aliases].some((label) => {
     const key = plain(label);
@@ -193,6 +203,11 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
     }
 
     const evidencePlain = plain(evidence);
+    const blockPlain = plain(enclosingBlock(evidence, ctx));
+    if (INJECTION_MARKERS.some((m) => blockPlain.includes(m))) {
+      invalid("o trecho contém instruções dirigidas à IA; ignorado");
+      continue;
+    }
     const uncertainties = item.uncertainties.map((u) => u.trim()).filter(Boolean);
     const uncertainFields: Array<keyof ProposedFields> = [];
     const fields: ProposedFields = {};
@@ -206,9 +221,10 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
         continue;
       }
       const titleTokens = tokens(target.title);
-      const mentionsId = evidencePlain.includes(target.id.toLowerCase());
-      if (!mentionsId && overlap(titleTokens, tokens(evidence)) < Math.min(2, Math.max(titleTokens.size, 1))) {
-        invalid("a evidência não menciona a atividade de destino");
+      const scope = `${evidencePlain} ${blockPlain}`;
+      const mentionsId = scope.includes(target.id.toLowerCase());
+      if (!mentionsId && overlap(titleTokens, tokens(scope)) < Math.min(2, Math.max(titleTokens.size, 1))) {
+        invalid("nem a evidência nem o parágrafo dela mencionam a atividade de destino");
         continue;
       }
     }
