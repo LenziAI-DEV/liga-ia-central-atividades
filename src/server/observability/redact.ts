@@ -34,11 +34,29 @@ export function redactString(value: string): string {
   return value.replace(SECRET_PATTERNS, REDACTED).replace(SENSITIVE_QUERY, `$1${REDACTED}`);
 }
 
+/** Campos de diagnóstico de erros do Google (gaxios) que podem ir para o log. */
+const ERROR_DIAGNOSTIC_FIELDS = ["status", "code"] as const;
+
+/**
+ * Erro → `{name, message, status?, cause?}`, com redação. Nunca serializa `config`,
+ * `response` nem cabeçalhos (podem conter o corpo da troca de token). A causa é
+ * seguida até o limite de profundidade, o que também corta ciclos.
+ */
+function redactError(error: Error, depth: number): Record<string, unknown> {
+  const out: Record<string, unknown> = { name: error.name, message: redactString(error.message) };
+  const fields = error as unknown as Record<string, unknown>;
+  for (const field of ERROR_DIAGNOSTIC_FIELDS) {
+    if (typeof fields[field] === "number" || typeof fields[field] === "string") out[field] = fields[field];
+  }
+  if (error.cause !== undefined) out.cause = redact(error.cause, depth + 1);
+  return out;
+}
+
 export function redact(value: unknown, depth = 0): unknown {
   if (depth > 6) return "[estrutura profunda omitida]";
   if (typeof value === "string") return redactString(value);
   if (Array.isArray(value)) return value.map((item) => redact(item, depth + 1));
-  if (value instanceof Error) return { name: value.name, message: redactString(value.message) };
+  if (value instanceof Error) return redactError(value, depth);
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [key, item] of Object.entries(value)) {

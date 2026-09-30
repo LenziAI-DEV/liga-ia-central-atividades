@@ -135,6 +135,145 @@
   7. **Encerrar processos pelo PID da porta**, nunca por nome de imagem.
 - **Consequências:** `DATABASE_PATH` é lido direto do `process.env` no `getDb()`, para um env inválido não derrubar o boot. As demais configurações passam por `getEnv()` (zod).
 
+## DEC-011 — Leitor de `.xlsx` próprio (substitui exceljs, ADR/DEC-009 do rascunho)
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Contexto:** o `Ata_registro.xlsx` da banca foi gerado pelo OpenXML SDK:
+  - elementos com prefixo de namespace (`<x:workbook>`, `<x:sheetData>`);
+  - `Target` absolutos nos `.rels` (`/xl/worksheets/sheet1.xml`);
+  - BOM nos XML;
+  - células `t="str"`.
+
+  O exceljs falha ao abrir esse arquivo (`parseWorkbook` devolve `undefined`). Como a banca usará "arquivos da mesma natureza", o formato precisa ser lido com robustez.
+- **Decisão:** leitor próprio em `src/server/extract/xlsx.ts`:
+  - **JSZip** abre o pacote;
+  - **fast-xml-parser** com `removeNSPrefix`;
+  - lê shared strings, inline strings e `t="str"`;
+  - detecta datas pelo `numFmt` (embutidos 14–17 e 22; formato personalizado com dia, mês ou ano — `m` de minuto e `AM/PM` não contam) e respeita `date1904`. **Emenda (DEC-013):** os embutidos 18–21 e 45–47 são só hora/duração e deixaram de virar data;
+  - datas viram `AAAA-MM-DD` pelos componentes UTC.
+- **Verificação:** testes com os dois arquivos da banca (prefixados) **e** com um `.xlsx` sintético no estilo do Excel (sem prefixo, shared strings, rich text, data nativa).
+- **Alternativa descartada:** SheetJS. A versão do npm (0.18.5) tem vulnerabilidade conhecida, e a versão corrigida só é distribuída fora do npm.
+
+## DEC-012 — Decisões técnicas da Fase 1
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Decisões:**
+  1. `@googleapis/drive` + `google-auth-library` 11.1.0 (a mesma versão usada internamente, deduplicada).
+  2. OAuth: `state` e `code_verifier` num cookie httpOnly de 10 min com path `/api/auth/google`. Host canônico: `/start` redireciona para `APP_BASE_URL`. O callback exige que o escopo concedido seja só leitura e que o ID configurado seja uma pasta acessível. A carga inicial é disparada com `after()` do Next.
+  3. O `runSync` lista a árvore inteira **antes** de gravar qualquer coisa: se o Drive falhar, nada muda (AR-16). O sumiço só é concluído sob pastas listadas por completo, confirmado por `files.get` (lixeira, sem acesso ou fora da árvore), com cascata para subpastas.
+  4. Arquivo que volta da lixeira com o mesmo conteúdo tem o cache recuperado (bug achado pelo teste).
+  5. "Sincronizar agora" é uma Server Action que espera o ciclo terminar (pasta pequena) e mostra o resultado. O polling de ciclos automáticos fica para a Fase 4.
+  6. No boot, execuções que estavam `running` viram `failed(interrupted)` (um processo por instalação).
+
+## DEC-013 — Endurecimento da Fase 1 após a auditoria (revisão, segurança e santa-loop)
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Contexto:** a auditoria antes do merge da Fase 1 incluiu:
+  - revisão de código (`.claude/reviews/fase-1-review.md`);
+  - varredura de segredos, dependências e cabeçalhos;
+  - dois revisores independentes em modo adversarial (santa-loop).
+
+  Nenhum achado foi CRITICAL. Os mais graves:
+  - um título de Markdown hostil travava o processo (ReDoS, backtracking cúbico: 4 mil espaços levavam 4,7 s);
+  - o servidor escutava em `0.0.0.0` sem checar `Host`, então alguém da rede local podia revogar a conexão durante a demo;
+  - fontes da pasta antiga continuavam "processadas" depois de trocar `DRIVE_TEST_FOLDER_ID`;
+  - `.xlsx` malformado virava planilha vazia.
+- **Decisões:**
+  1. **Superfície de rede:**
+     - os scripts `dev`, `start` e `app` escutam só em `127.0.0.1`;
+     - o `src/proxy.ts` recusa (403) qualquer `Host` diferente do de `APP_BASE_URL`, o que cobre IP da rede e DNS rebinding;
+     - as Server Actions repetem a checagem, como a documentação do Next recomenda.
+  2. **Host canônico:** o Next normaliza `127.0.0.1`, `[::1]` e `localhost` para o mesmo host (`server/web/next-url.js`) e reescreve o `Location` como relativo (`adapter.js`). Por isso o redirecionamento 30x antigo não funcionava. Agora o app responde com uma página HTML mínima com `meta refresh` para o host canônico, com o endereço escapado.
+  3. **Cabeçalhos:**
+     - `X-Frame-Options: DENY` e `frame-ancestors 'none'`;
+     - `nosniff`;
+     - `Referrer-Policy: same-origin`;
+     - `Permissions-Policy`;
+     - `poweredByHeader: false`.
+  4. **`import "server-only"`** em `env`, `auth/*`, `container` e `google-drive-gateway`. Os módulos do `instrumentation` ficam de fora (DEC-010.4).
+  5. **Conteúdo hostil:**
+     - o extrator de Markdown não usa regex com quantificadores sobrepostos;
+     - linhas com mais de 4 KB não viram título nem metadado;
+     - o espaço no fim da linha é removido por laço;
+     - `.md` que não é UTF-8 válido é lido como Windows-1252, em vez de trocar bytes por U+FFFD;
+     - **[rodada 2]** `.md` em UTF-16 com BOM é decodificado;
+     - **[rodada 2]** títulos e metadados dentro de blocos de código (```` ``` ````/`~~~`) não contam.
+  6. **`.xlsx` estrito:** lançam erro com motivo (nunca vira vazio):
+     - parte ausente;
+     - XML inválido (`XMLValidator`);
+     - aba sem relacionamento;
+     - shared string inexistente.
+
+     Também:
+     - `sharedStrings`/`styles` são resolvidos pelos `.rels`, sem diferenciar maiúsculas;
+     - cabeçalho repetido vira "Nome (2)", sem nunca colidir com um cabeçalho existente;
+     - formatos só de hora não viram data, nem os embutidos nem os personalizados (`hh:mm`, `mm:ss`, `h:mm AM/PM`);
+     - `t="d"` é lido;
+     - **[rodada 2]** pasta de trabalho sem abas lança erro;
+     - **[rodada 2]** abas de gráfico/diálogo são ignoradas;
+     - **[rodada 2]** datas impossíveis (mês 13, serial fora de 1–2.958.465) não viram data;
+     - **[rodada 3]** referência de célula validada (até `XFD1048576`): antes, uma coluna com centenas de letras virava `Infinity` e o processo morria por falta de memória;
+     - **[rodada 3]** código de formato lido em uma passada, sem regex, com limite de 255 caracteres e uma decisão por formato (não por estilo): um `.xlsx` de 1,5 KB travava o processo por 93 s;
+     - **[rodada 3]** desambiguação de cabeçalhos linear;
+     - **[rodada 3]** durações (`[h]:mm`, `[mm]:ss`) não viram data;
+     - **[rodada 3]** fórmula sem valor calculado lança erro com orientação, em vez de célula vazia;
+     - **[rodada 3]** coluna sem cabeçalho usa a chave `#E`;
+     - **[rodada 3]** entidades numéricas (`&#10;`) e escapes `_xHHHH_` são decodificados;
+     - **[rodada 3]** parte de estilos citada e ausente lança erro.
+  7. **Escopo:**
+     - fonte cujo pai não está na árvore atual nem entre as fontes conhecidas vem de outra pasta configurada, então vira `out_of_scope`;
+     - se alguma subpasta falhou na listagem, "fora da árvore" é inconclusivo (AR-16);
+     - a cascata herda o estado da pasta;
+     - **[rodada 2]** com a árvore incompleta, a cascata espera o próximo ciclo completo, e o filho herda o estado do pai que já tinha saído;
+     - **[rodada 2]** falha temporária ao confirmar um sumiço não conclui nada, mas conta como "a confirmar", vai para o log e deixa o ciclo "com avisos" (F3.6);
+     - **[rodada 3]** subpasta que falhou na listagem é nomeada no aviso, fica "falhou" e vai para o log;
+     - **[rodada 3]** item ausente de uma listagem completa que o Drive diz ainda estar na pasta conta como "a confirmar";
+     - **[rodada 3]** a cascata nunca marca a própria pasta raiz.
+  8. **Drive:**
+     - tamanho conferido pelo `size` antes de baixar;
+     - timeout de 30 s por chamada;
+     - motivo do erro lido também de corpo em texto ou bytes (export e download);
+     - cotas em 403 (`dailyLimitExceeded`, `quotaExceeded`…) ganham nova tentativa;
+     - **[rodada 2]** tempo esgotado (`AbortError`/`TimeoutError`) é falha temporária;
+     - **[rodada 2]** `retry: false` no cliente, para as tentativas não se multiplicarem com o `withRetry` (máximo de 4, §6.9);
+     - **[rodada 2]** `\` e `'` escapados na consulta `q`.
+  9. **OAuth:**
+     - o callback revoga o token quando recusa a autorização;
+     - pasta na lixeira é recusada;
+     - "Desconectar" informa quando a revogação no Google falhou;
+     - renovação de token e falha de um ciclo antigo não reativam uma conexão encerrada;
+     - a tag GCM precisa ter 16 bytes;
+     - **[rodada 2]** desconectar apaga também o e-mail e o escopo guardados;
+     - **[rodada 2]** falha passageira do Google no callback tem mensagem própria;
+     - **[rodada 2]** a consulta da conta e a falha de decifragem vão para o log;
+     - **[rodada 3]** o escopo concedido só pode ter `drive.readonly` e escopos de identidade: Documentos e Planilhas, que permitem escrever, são recusados.
+  10. **Testes:** `@vitest/coverage-v8` (dev) e `npm run test:coverage`. Cobertura de `src/server` + `src/lib`: 76,5% → 84% das linhas.
+  11. **Rodada 4 (corrigida sem 5ª rodada, DEC-014):** fórmula com resultado de texto vazio (`t="str"`, `<v></v>`) é célula vazia, não erro (fórmula sem `<v>` continua recusada); título Markdown com U+2028/U+2029 (`[sS]` no lugar de `.`, antes não era nem reconhecido); `findEntry` com índice minúsculo por pacote e limite de 256 abas. Cobertura por 5 testes novos (170 no total).
+- **Adiado de propósito:**
+  - política de novo download para arquivo com falha permanente (vem com o backoff do scheduler, Fase 4);
+  - histórico A→B→A em `source_versions` (Fase 4.3);
+  - limite de descompressão do `.xlsx` (só a pasta do operador é lida; limitação documentada);
+  - `DRIVE_MODE=local` (ADR-15 opcional);
+  - tabela a 375 px e confirmação em "Desconectar" (Fase 9);
+  - aviso "carga inicial iniciada" aparece mesmo se já havia um ciclo em curso, e "nova tentativa em seguida" (cota) só vale quando o scheduler existir (Fase 4);
+  - **[rodada 3]** corrida de reconexão (um ciclo antigo pode marcar a conexão nova como "reautorizar") e renovação do lease em ciclos longos entram com o scheduler (Fase 4);
+  - **[rodada 3]** também adiados: cancelar o ciclo em curso ao desconectar; o bug de ano bissexto de 1900 do Excel (só datas antes de 1900-03-01); registrar no log o fallback de codificação do `.md`;
+  - **[rodada 3]** a metodologia do santa-loop limita a 3 rodadas. A 3ª também reprovou, e os achados dela foram corrigidos sem uma 4ª revisão. A decisão sobre fazer mais uma rodada ficou com o usuário.
+
+## DEC-014 — Política permanente de execução de IA (modelos, effort, subagentes, revisão)
+- **Data:** 2026-09-30 · **Status:** aceita (instrução do usuário)
+- **Contexto:** as sessões de 29/09 esgotaram o limite de uso por causa de:
+  - agente principal em Opus o tempo todo;
+  - santa-loop com 4 rodadas de 2 revisores Opus, cada um com ~200–250 mil tokens;
+  - contexto da sessão acima de 700 mil tokens.
+- **Decisão:** vale `docs/AI_EXECUTION_POLICY.md`:
+  - **Sonnet + Medium** como padrão;
+  - MODEL ROUTING curto antes de tarefas relevantes;
+  - subagentes só com ganho claro;
+  - revisão proporcional ao risco;
+  - santa-loop só em milestone crítico ou pré-entrega;
+  - compactação nos limites entre fases.
+
+  O `CLAUDE.md` aponta para esse documento.
+- **Consequência imediata:** não haverá mais rodadas de santa-loop na Fase 1. Os achados verificados da 4ª rodada são corrigidos diretamente, com teste e `verification-loop`.
+
 ---
 
 ## Decisões técnicas pendentes

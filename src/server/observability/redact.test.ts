@@ -28,6 +28,23 @@ describe("redact", () => {
     expect(text).toBe(`GET /api/auth/google/callback?state=${REDACTED}&code=${REDACTED}&scope=x`);
   });
 
+  it("inclui a causa do erro (status e motivo do Google) com redação", () => {
+    const google = Object.assign(new Error("File not found: abc. token ya29.segredo"), { status: 404, code: 404 });
+    const out = redact(new Error("Arquivo não encontrado.", { cause: google })) as Record<string, unknown>;
+    expect(out).toMatchObject({
+      name: "Error",
+      message: "Arquivo não encontrado.",
+      cause: { name: "Error", message: `File not found: abc. token ${REDACTED}`, status: 404 },
+    });
+  });
+
+  it("cadeia de causas circular não entra em laço", () => {
+    const a = new Error("a");
+    const b = new Error("b", { cause: a });
+    (a as { cause?: unknown }).cause = b;
+    expect(() => JSON.stringify(redact(b))).not.toThrow();
+  });
+
   it("serializa erros sem vazar tokens na mensagem", () => {
     expect(redact(new Error("token ya29.segredo expirou"))).toEqual({
       name: "Error",
