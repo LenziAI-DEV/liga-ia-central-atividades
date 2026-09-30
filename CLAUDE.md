@@ -16,6 +16,12 @@ Central de contexto e atividades (lê uma pasta do Google Drive, painel de ativi
 Se o histórico de conversa divergir desses documentos, **valem os documentos**.
 Ao concluir um marco, atualize `PROGRESS.md` e os documentos afetados. As decisões técnicas vão para `DECISIONS.md`.
 
+## Política de execução de IA (obrigatória)
+
+- Leia `docs/AI_EXECUTION_POLICY.md` antes de tarefas relevantes. As regras de modelo, effort, subagentes, contexto e revisão são **obrigatórias**.
+- Nenhuma tarefa complexa começa sem um **MODEL ROUTING** curto (modelo, effort, motivo, subagentes). Padrão: **Sonnet + Medium**. Opus, High e subagentes só com justificativa. Se o modelo atual for excessivo ou insuficiente, avise antes de trabalhar.
+- Revisão proporcional ao risco. Santa-loop só em milestone crítico ou pré-entrega.
+
 ## Regras inegociáveis
 
 - Só dados fictícios. Nunca credenciais ou segredos no repositório.

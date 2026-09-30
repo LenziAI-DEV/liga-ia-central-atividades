@@ -256,6 +256,23 @@
   - **[rodada 3]** também adiados: cancelar o ciclo em curso ao desconectar; o bug de ano bissexto de 1900 do Excel (só datas antes de 1900-03-01); registrar no log o fallback de codificação do `.md`;
   - **[rodada 3]** a metodologia do santa-loop limita a 3 rodadas. A 3ª também reprovou, e os achados dela foram corrigidos sem uma 4ª revisão. A decisão sobre fazer mais uma rodada ficou com o usuário.
 
+## DEC-014 — Política permanente de execução de IA (modelos, effort, subagentes, revisão)
+- **Data:** 2026-09-30 · **Status:** aceita (instrução do usuário)
+- **Contexto:** as sessões de 29/09 esgotaram o limite de uso por causa de:
+  - agente principal em Opus o tempo todo;
+  - santa-loop com 4 rodadas de 2 revisores Opus, cada um com ~200–250 mil tokens;
+  - contexto da sessão acima de 700 mil tokens.
+- **Decisão:** vale `docs/AI_EXECUTION_POLICY.md`:
+  - **Sonnet + Medium** como padrão;
+  - MODEL ROUTING curto antes de tarefas relevantes;
+  - subagentes só com ganho claro;
+  - revisão proporcional ao risco;
+  - santa-loop só em milestone crítico ou pré-entrega;
+  - compactação nos limites entre fases.
+
+  O `CLAUDE.md` aponta para esse documento.
+- **Consequência imediata:** não haverá mais rodadas de santa-loop na Fase 1. Os achados verificados da 4ª rodada são corrigidos diretamente, com teste e `verification-loop`.
+
 ---
 
 ## Decisões técnicas pendentes

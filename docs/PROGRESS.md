@@ -14,7 +14,7 @@
 
 1. `git checkout fase-1-drive`. A branch tem commits **locais** ainda não enviados (desde `d15164f`), que só vão ao GitHub depois da decisão da P-3.
 2. `npm test` (esperado: **165 testes** passando), `npm run typecheck`, `npm run lint`.
-3. Resolver a **P-3** com o usuário: rodar ou não uma 4ª revisão adversarial antes do merge.
+3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes) e resolver a **P-3**: corrigir os 3 MEDIUM da 4ª rodada, rodar o `verification-loop` e fazer o merge, sem nova rodada de santa-loop.
 4. Push da `fase-1-drive`, merge na `main`, Marco 1 como `complete` no PRD §16, branch `fase-2-painel`.
 5. Seguir a Fase 2 do `docs/plans/IMPLEMENTATION_PLAN.md` (2.1 personas → 2.2 índice → 2.3 importação → 2.4 painéis).
 
@@ -52,7 +52,7 @@
 
 | # | Pendência | Responsável | Observação |
 |---|---|---|---|
-| **P-3** | **Decidir a 4ª revisão adversarial e fazer o merge** `fase-1-drive` → `main` | **Usuário decide** → assistente executa | O santa-loop tem limite de 3 rodadas, e a 3ª reprovou. Os achados dela (leitor `.xlsx` diante de conteúdo hostil, subpasta com falha sem nome) estão corrigidos e testados, mas sem nova revisão independente. Opções: (a) mais uma rodada (~20 min) e depois merge; (b) merge já |
+| **P-3** | **Corrigir os 3 MEDIUM da 4ª rodada e fazer o merge** `fase-1-drive` → `main` | Assistente (Sonnet Medium, DEC-014) | A 4ª rodada (escolhida pelo usuário) reprovou. **Não haverá 5ª rodada** (DEC-014): corrigir com teste e `verification-loop`, depois merge. Os MEDIUM a corrigir: **(1)** `xlsx.ts` ~l.331 recusa fórmula `t="str"` com `<v>` vazio (resultado `""` legítimo, ex. `=SE(...;"";...)`), o que bloquearia a importação da Fase 2; só recusar quando `<v>` estiver ausente, ou vazio sem `t` / com `t="n"`. **(2)** `markdown.ts` `HEADING` é quadrático com U+2028/U+2029 (o `.` não casa, e o `$` retrocede): usar a flag `s` ou fatiar à mão; teste com U+2028. **(3)** `xlsx.ts` `findEntry` é O(n) por busca (quadrático com nomes de partes em outra caixa): montar um `Map` minúsculo → entrada uma vez por zip e limitar a quantidade de abas. LOW baratos a considerar: `[m]`/`[mm]` virando data; colisão da chave `#E`; abas repetidas relidas; `ENETUNREACH` e outros códigos de rede sem retry; erro de rede no `exchangeCode` mostrando "confira o Client Secret"; texto "veja a tabela" no aviso de ciclo parcial; "Desconectar" também em `reauth_required`; UTF-8 com BOM caindo para Windows-1252; cerca de código mais curta fechando o bloco; `forceRefreshOnFailure`; comentário do exceljs em `lib/datetime.ts` |
 | **P-4** | **Fase 2** (painel pessoal): personas, índice e registro vigente, importação da planilha, "Minhas" e "Todas" | Assistente | Meta: quarta 09-30 |
 | P-6 | Conferir se a `LunkiBR` aceitou o convite de colaboradora | Usuário/assistente (`gh api repos/LenziAI-DEV/liga-ia-central-atividades/invitations`) | Pendente em 2026-09-29; o convite vence por volta de 06/10 |
 | P-7 | Anotar para o README (Fase 10) | Assistente | Node ≥ 22.13; npm 11 e `unrs-resolver`; tela "Google não verificou este app"; expiração da autorização em 7 dias; o servidor só escuta em `127.0.0.1` (abrir por `localhost`); `npm run test:coverage` |
