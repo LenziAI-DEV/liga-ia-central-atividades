@@ -53,6 +53,11 @@ export default async function Page(props: PageProps<"/atividades">) {
   return (
     <>
       <PageHeader title={area.label} description={area.description} />
+      <p className="mb-4">
+        <Link href="/atividades/nova" className="rounded bg-[var(--lia-blue)] px-4 py-2 text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]">
+          Nova atividade
+        </Link>
+      </p>
       <form method="get" className="mb-4 grid gap-3 rounded-md border border-[var(--line)] p-4 sm:grid-cols-2 lg:grid-cols-5">
         <Field label="Responsável" name="responsavel" value={wantsMine ? undefined : ownerId}>
           {members.map((m) => (

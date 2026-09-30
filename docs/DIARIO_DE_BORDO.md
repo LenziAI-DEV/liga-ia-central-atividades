@@ -89,3 +89,11 @@
 - **Cuidado com os dados:** a importação preserva o ID, casa responsáveis por nome ou apelido e, quando o nome não casa, marca "responsável a confirmar" em vez de inventar um membro. Estado ou prazo que não se reconhece fica "a confirmar" ou "a definir", com aviso.
 - **Erro meu, corrigido:** no começo do dia, os 3 achados MEDIUM da 4ª rodada de revisão (fórmula de texto vazio, título com U+2028, busca quadrática de partes do .xlsx) foram corrigidos com teste antes do merge da Fase 1.
 - **Verificado:** 203 testes, typecheck, lint e build limpos; importação conferida com o Drive real; demo da fase (Ana → Davi → filtro → Todas) executada no navegador.
+
+## Quarta, 2026-09-30 (tarde) — Revisão da Fase 2 e Fase 3: gestão com histórico
+
+- **Revisão formal da Fase 2:** um revisor independente achou um problema sério, que confirmei no código: se o índice dissesse "X foi substituída por Y, a nova fonte das atividades", o app tomaria X (o arquivo superado) como registro. Corrigi, e também mostrei na tela as linhas que a importação pulou, destravei o caso de importação vazia, fechei um redirecionamento aberto teórico e melhorei a estrutura de títulos para leitores de tela (DEC-015).
+- **Fase 3:** criar, editar, concluir e bloquear atividades, sempre com evento (antes → depois, autor, horário, motivo) gravado na mesma transação. Edição concorrente usa número de versão: quem abriu uma versão velha recebe um aviso em vez de sobrescrever o outro.
+- **Decisão:** responsáveis que vieram da planilha e não casaram com nenhum membro ("a confirmar") são preservados na edição, em vez de sumirem ao salvar.
+- **Cuidado na demonstração:** testei a criação e a edição num banco de cópia e apaguei em seguida, porque os eventos são imutáveis e não dá para limpar o histórico do banco real.
+- **Verificado:** 221 testes, typecheck e lint limpos, build; demo da fase executada no navegador com reinício do app.
