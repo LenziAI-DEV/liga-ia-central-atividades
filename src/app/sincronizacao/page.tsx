@@ -271,7 +271,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
                         ) : (
                           source.path
                         )}{" "}
-                        <a href={`/fontes/${encodeURIComponent(source.file_id)}`} className="text-sm text-[var(--lia-blue)] underline">
+                        <a href={`/fontes/${encodeURIComponent(source.file_id)}`} className="inline-block min-h-6 text-sm leading-6 text-[var(--lia-blue)] underline">
                           detalhes<span className="sr-only"> de {source.path}</span>
                         </a>
                       </td>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ConnectionStatus } from "@/components/connection-status";
 import { MainNav } from "@/components/main-nav";
 import { PersonaSwitcher } from "@/components/persona-switcher";
 import { SyncBanner } from "@/components/sync-banner";
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div aria-hidden="true" className="h-1 bg-[var(--lia-cyan)]" />
         </header>
         <main id="conteudo" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+          <ConnectionStatus />
           <div className="mb-6 empty:hidden">
             <SyncBanner />
           </div>

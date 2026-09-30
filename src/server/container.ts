@@ -8,7 +8,7 @@ import { getConnection, markReauthRequired } from "@/server/auth/token-store";
 import { getEnv, missingGoogleSettings } from "@/server/config/env";
 import { getDb } from "@/server/db";
 import { emptyCounts, type SyncTrigger } from "@/server/db/repos/sync-runs-repo";
-import { createInitialLoadDrive } from "@/server/drive/fake-seed";
+import { createInitialLoadDrive, seedFakeDriveFromDir } from "@/server/drive/fake-seed";
 import type { FakeDriveGateway } from "@/server/drive/fake-drive-gateway";
 import type { DriveGateway } from "@/server/drive/gateway";
 import { GoogleDriveGateway } from "@/server/drive/google-drive-gateway";
@@ -29,7 +29,13 @@ const globals = globalThis as unknown as {
 
 /** Drive falso de demonstração (`DRIVE_MODE=fake`), usado nos testes E2E. */
 export function getFakeDrive(): FakeDriveGateway {
-  globals.__liaFakeDrive ??= createInitialLoadDrive(join(process.cwd(), "dados_ficticios")).drive;
+  if (!globals.__liaFakeDrive) {
+    const { drive } = createInitialLoadDrive(join(process.cwd(), "dados_ficticios"));
+    // Só para testes E2E: arquivos extras (ex.: uma ata nova) presentes no Drive falso desde o início.
+    const extra = process.env.FAKE_DRIVE_EXTRA_DIR;
+    if (extra) seedFakeDriveFromDir(drive, join(/*turbopackIgnore: true*/ process.cwd(), extra));
+    globals.__liaFakeDrive = drive;
+  }
   return globals.__liaFakeDrive;
 }
 

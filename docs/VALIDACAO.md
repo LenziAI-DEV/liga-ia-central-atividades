@@ -17,6 +17,7 @@
 | V-11 | **Dado ausente** | Ata com "até sexta" / sem dono | Prazo e dono vazios, incerteza visível, nada inventado | — | — | ✅ Fase 6 (respostas reais gravadas) |
 | V-12 | Injeção via documento | Ata com instruções à IA | Nenhuma mudança; saída inválida descartada | — | — | ✅ Fase 6 (respostas reais gravadas) |
 | V-13 | Documento superado | `PLANO_EDITORIAL_ANTIGO.md` | "Histórico — substituído por GUIA_INICIAL.md"; não vira regra vigente | — | — | ✅ Fase 5 |
+| V-14 | Acessibilidade e celular | E2E com axe, teclado, 375 px, cinza, sem rede | Sem violações; tudo pelo teclado; sem rolagem lateral | 8 testes verdes; o axe achou 1 alvo pequeno (corrigido) | Link "detalhes" em Sincronização | ✅ automatizado (Fase 9); conferência manual de teclado e celular pendente |
 
 ## Verificações de fundação (Fase 0, 2026-09-29)
 

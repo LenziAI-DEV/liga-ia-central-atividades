@@ -41,3 +41,4 @@ Thumbs.db
 
 # Configuração local do Codex (gerada por ferramenta)
 .codex/
+.next-e2e/
