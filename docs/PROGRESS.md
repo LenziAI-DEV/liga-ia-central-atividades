@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 6 concluídas e auditadas; `fase-6-ia` mesclada; próxima: Fase 7 ("O que mudou para mim").**
+> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 7 concluídas (7 na branch `fase-7-novidades`, ainda sem auditoria); próxima: Fase 8 ("Comece aqui").**
 
 ## Prazo
 
@@ -15,7 +15,7 @@
 1. `git checkout main` e criar a branch da próxima fase (a `main` contém as Fases 1 a 4).
 2. `npm test` (esperado: **313 testes** + 7 de gravação pulados), `npm run typecheck`, `npm run lint`.
 3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes, sem santa-loop rotineiro).
-4. As pendências de teste manual (V-3 com IA e diferença do registro) foram concluídas em 2026-09-30 (DEC-021). Próximo: **Fase 7** ("O que mudou para mim" e Novidades).
+4. As pendências de teste manual (V-3 com IA e diferença do registro) foram concluídas em 2026-09-30 (DEC-021). Fase 7 entregue (DEC-022, 331 testes). Próximo: **Fase 8** ("Comece aqui"); auditoria das Fases 7+8 juntas.
 
 **Como rodar:** `npm install` → `npm run setup` → preencher o `.env.local` → `npm run app` → http://localhost:3000.
 - O servidor escuta **só em 127.0.0.1** (DEC-013).
