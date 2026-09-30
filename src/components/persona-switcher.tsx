@@ -1,7 +1,6 @@
 import { switchPersonaAction } from "@/app/persona/actions";
+import { ROLE_LABEL } from "@/lib/labels";
 import { getCurrentPersona, listMembers } from "@/server/persona/current-persona";
-
-const ROLE_LABEL = { leader: "líder", member: "membro" } as const;
 
 /** Persona ativa sempre em texto, com troca por formulário nativo (teclado, sem JS; CA-F11.1). */
 export async function PersonaSwitcher() {
