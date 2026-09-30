@@ -120,3 +120,15 @@ Achados e correções em DEC-013 e em `.claude/reviews/fase-1-review.md`. Cada c
 - **Navegador (CA-F6.1–F6.3):** salvar sem título mostra "Erro: Informe o título da atividade." ligado ao campo e nada é gravado; "Testar persistência" criada como Davi (ID, autor, horário, "Criada manualmente", prazo "a definir"); estado editado; app reiniciado; dados e histórico intactos; "Bloquear" com motivo grava o estado e o motivo. Feito num banco de cópia (`DATABASE_PATH`), removido depois, para não sujar o dado de demonstração.
 - **CA-F6.4:** o detalhe de ACT-101 mostra a planilha de origem com localizador e link e a ata histórica (conferido nos dados; a tela usa os mesmos dados de `/atividades`).
 - **Não coberto:** as Server Actions e o formulário só são exercitados no navegador (sem teste automatizado até o E2E da Fase 9).
+
+## Fase 4 — Sincronização automática (2026-09-30)
+
+- **Automático (233 testes):** agendador (primeiro ciclo em 5 s, intervalo, sem sobreposição, backoff até o teto, exceção, parar, `register()` duas vezes = um só agendador) e desatualização derivada. Os cenários V-2, V-3, V-8 e as falhas de rede e de revogação (CA-F3.1–F3.6) têm testes com o Drive falso desde a Fase 1.
+- **Com o Google real, sem clicar em nada:** o app iniciado sozinho rodou o 1º ciclo aos 5 s e o 2º aos 65 s, com "6 sem mudança" e `/api/health` mostrando o agendador ativo e a conexão. Feito num banco de cópia.
+- **4.4 — a fazer pelo usuário, cronometrando (app aberto, sem clicar em "Sincronizar agora"):**
+  1. Enviar `Ata_2026-10-04.md` à pasta → aparece como "Processado" em `/sincronizacao` (meta ≤ 5 min; esperado ~1 min). Anotar o horário do envio e o da primeira detecção em `/fontes/<id>`.
+  2. Subir `Ata_2026-10-03.docx`, convertê-la em Google Docs e remover o `.docx` → uma fonte só, sem duplicar.
+  3. Editar o texto do Doc → nova versão em "Versões processadas", mesma fonte.
+  4. Renomear um arquivo → mesmo item, nome novo, versões preservadas.
+  5. Mandar um arquivo para a lixeira → "Indisponível desde…", atividade continua com "Fonte indisponível".
+  6. Cortar a rede por 2 ciclos → faixa "Falha na sincronização… dados potencialmente desatualizados"; reconectar → some sozinha.

@@ -301,3 +301,14 @@
   9. Migração `003-owner-index`: o índice único de responsáveis misturava `member_id` e nome bruto na mesma expressão (colisão teórica).
 - **Verificado sem problema (pelo revisor):** cookie e persona, host e CSRF das actions, `searchParams`, SQL parametrizado, XSS e URLs, regex do índice, transação e idempotência, append-only, logs, datas.
 - **Não feito de propósito:** cobertura automática do cookie e das actions (só o E2E da Fase 9 cobre, pois dependem do runtime do Next).
+
+## DEC-016 — Sincronização automática in-process (Fase 4, 2026-09-30)
+
+- **Decisão:** o agendador (`sync/scheduler.ts`) é uma repetição de `setTimeout` sem sobreposição, ligada no `boot()` (via `instrumentation.ts`, só em `NEXT_RUNTIME=nodejs` e fora do build), com guarda em `globalThis` (ADR-05, RT-B). Primeiro ciclo ~5 s depois do boot; depois, a cada `SYNC_INTERVAL_SECONDS` (padrão 60 s, 30 a 600).
+- **Falha:** o intervalo dobra a cada falha seguida, com teto de 5 min (ou o intervalo, se maior), o que preserva os 15 min da banca (F3.1). Sucesso ou parcial volta ao normal. Exceção no ciclo conta como falha e não derruba o agendador.
+- **Sem conexão ou autorização perdida:** o ciclo devolve `not_connected` sem chamar o Google, e o estado aparece na tela.
+- **"Sincronizar agora"** usa o mesmo `requestSync`: se um ciclo está em curso, devolve "já em execução" em vez de abrir outro (a trava única continua no banco, com lease).
+- **Desatualização derivada** (`sync/freshness.ts`): último ciclo falhou, ou último sucesso há mais de 2× o intervalo. Aparece na faixa global e como "Potencialmente desatualizado" acima das listas de atividades. Fonte que sumiu aparece na referência da atividade como "Fonte indisponível desde …".
+- **Detalhe da fonte** (`/fontes/[fileId]`): estado, motivo, autoridade, versões processadas e datas (primeira detecção, modificação no Drive, processamento), para cronometrar M-3.
+- **Diagnóstico:** `/api/health` mostra banco, agendador (último ciclo e falhas seguidas) e estado da conexão, sem segredos.
+- **Pendente (4.4):** validação com o Drive real que exige ações do usuário (subir, editar, renomear, apagar arquivos). Roteiro no `VALIDACAO.md`. Os cenários equivalentes já têm teste com o Drive falso (CA-F3.1–F3.6).

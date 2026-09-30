@@ -169,3 +169,27 @@ export function markGone(db: Db, fileId: string, status: "unavailable" | "out_of
     deleteContent(db, fileId);
   });
 }
+
+export interface SourceVersionRow {
+  content_hash: string;
+  drive_version: string | null;
+  processed_at: string;
+}
+
+/** Versões do conteúdo já processadas, da mais recente para a mais antiga (F3.2). */
+export function listVersions(db: Db, fileId: string): SourceVersionRow[] {
+  return db.all<SourceVersionRow>(
+    "SELECT content_hash, drive_version, processed_at FROM source_versions WHERE file_id = ? ORDER BY processed_at DESC, rowid DESC",
+    fileId,
+  );
+}
+
+/** Atividades que citam esta fonte (por qualquer relação). */
+export function listActivitiesCiting(db: Db, fileId: string): Array<{ id: string; title: string; relation: string }> {
+  return db.all<{ id: string; title: string; relation: string }>(
+    `SELECT DISTINCT a.id, a.title, r.relation FROM activity_references r
+       JOIN activities a ON a.id = r.activity_id
+      WHERE r.file_id = ? AND a.archived_at IS NULL ORDER BY a.id`,
+    fileId,
+  );
+}

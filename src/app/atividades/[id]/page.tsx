@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { DueDate } from "@/components/due-date";
 import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/page-header";
+import { SourceRef } from "@/components/source-ref";
+import { StaleNote } from "@/components/stale-note";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateBR, formatDateTimeBR, isoDateInSaoPaulo } from "@/lib/datetime";
 import { ACTIVITY_STATUS } from "@/lib/labels";
@@ -87,6 +89,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
 
   return (
     <>
+      <StaleNote />
       <PageHeader title={`${activity.id} · ${activity.title}`}>
         <p className="mt-3 flex flex-wrap items-center gap-3">
           <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
@@ -204,13 +207,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
             {activity.sources.map((s, i) => (
               <li key={`${s.fileId}-${s.relation}-${i}`}>
                 {s.relation === "historical_origin" ? "Origem histórica" : "Registro importado"}:{" "}
-                {s.webUrl?.startsWith("https://") ? (
-                  <a href={s.webUrl} className="text-[var(--lia-blue)] underline underline-offset-2">
-                    {s.name}
-                  </a>
-                ) : (
-                  s.name
-                )}
+                <SourceRef source={s} />
                 {s.locator ? ` (${s.locator})` : ""}
               </li>
             ))}

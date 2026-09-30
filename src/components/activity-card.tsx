@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SourceRef } from "@/components/source-ref";
 import { DueDate } from "@/components/due-date";
 import { StatusBadge } from "@/components/status-badge";
 import { ACTIVITY_STATUS } from "@/lib/labels";
@@ -61,13 +62,7 @@ export function ActivityCard({ activity, today }: { activity: ActivityView; toda
                 <span key={`${s.fileId}-${s.relation}-${i}`}>
                   {i > 0 ? " · " : ""}
                   {RELATION_LABEL[s.relation] ?? s.relation}:{" "}
-                  {s.webUrl?.startsWith("https://") ? (
-                    <a href={s.webUrl} className="text-[var(--lia-blue)] underline underline-offset-2">
-                      {s.name}
-                    </a>
-                  ) : (
-                    s.name
-                  )}
+                  <SourceRef source={s} />
                 </span>
               ))}
         </dd>
