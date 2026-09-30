@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { AREAS, switchPersonaByKeyboard, syncAndWaitSuggestions } from "./helpers";
+import { AREAS, gotoReady, switchPersonaByKeyboard, syncAndWaitSuggestions } from "./helpers";
 import { startServer } from "./server";
 
 test.describe.configure({ mode: "serial" });
@@ -41,9 +41,29 @@ test("páginas principais não têm violações do axe (WCAG 2.x A/AA)", async (
   await page.goto("/");
   await switchPersonaByKeyboard(page, "Ana");
   for (const path of ["/", "/comece-aqui", "/minhas-atividades", "/atividades", "/atividades/nova", "/sugestoes", "/novidades", "/sincronizacao", "/como-decidimos"]) {
-    await page.goto(path);
+    await gotoReady(page, path);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
     expect(results.violations.map((v) => `${path}: ${v.id} (${v.nodes.length}) ${v.nodes[0]?.html.slice(0, 160)}`), path).toEqual([]);
+  }
+});
+
+test("sem rede, a tela avisa em texto e volta ao normal quando a conexão volta (CA-F12.5)", async ({ page, context }) => {
+  await page.goto("/");
+  await context.setOffline(true);
+  await expect(page.getByRole("status").filter({ hasText: "Sem conexão" })).toBeVisible();
+  await context.setOffline(false);
+  await expect(page.getByText("Sem conexão")).toBeHidden();
+});
+
+test("em escala de cinza, cada estado continua identificável por texto (CA-F12.4)", async ({ page }) => {
+  await gotoReady(page, "/atividades");
+  await page.addStyleTag({ content: "html { filter: grayscale(1); }" });
+  // todo selo de estado tem texto visível (não depende de cor)
+  const badges = page.locator("main span.inline-flex");
+  const count = await badges.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    expect(((await badges.nth(i).innerText()).replace(/[✓!✕↻•]/g, "")).trim().length, `selo ${i}`).toBeGreaterThan(0);
   }
 });
 
@@ -51,13 +71,18 @@ test.describe("celular (375 px)", () => {
   test.use({ viewport: { width: 375, height: 800 } });
   test("nenhuma tela rola na horizontal e a navegação segue utilizável", async ({ page }) => {
     for (const path of ["/", "/comece-aqui", "/minhas-atividades", "/atividades", "/atividades/nova", "/sugestoes", "/novidades", "/sincronizacao"]) {
-      await page.goto(path);
+      await gotoReady(page, path);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, `${path} estoura a largura`).toBeLessThanOrEqual(0);
     }
     await page.goto("/");
     await page.getByRole("navigation", { name: "Áreas principais" }).getByRole("link", { name: AREAS[2] }).click();
     await expect(page).toHaveURL(/\/atividades$/);
+    // dono, prazo e estado seguem visíveis na tela estreita
+    const card = page.locator("main li").filter({ hasText: "Responsável" }).first();
+    await expect(card.getByText("Responsável")).toBeVisible();
+    await expect(card.getByText("Prazo")).toBeVisible();
+    await expect(card.locator("span.inline-flex").first()).toBeVisible();
   });
 });
 

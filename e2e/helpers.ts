@@ -33,3 +33,9 @@ export async function syncAndWaitSuggestions(page: Page) {
     )
     .toMatch(/\(([1-9]\d*)\)/);
 }
+
+/** Abre a página e espera o conteúdo real (o título h1), não o aviso de carregamento. */
+export async function gotoReady(page: Page, path: string) {
+  await page.goto(path);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+}

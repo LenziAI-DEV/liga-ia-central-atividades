@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 8 concluídas e auditadas (DEC-024); próxima: Fase 9 (E2E, acessibilidade, 375 px).**
+> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 9 concluídas (Fase 9: DEC-025); próxima: Fase 10 (pacote de entrega).**
 
 ## Prazo
 
@@ -15,7 +15,7 @@
 1. `git checkout main` e criar a branch da próxima fase (a `main` contém as Fases 1 a 4).
 2. `npm test` (esperado: **313 testes** + 7 de gravação pulados), `npm run typecheck`, `npm run lint`.
 3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes, sem santa-loop rotineiro).
-4. As pendências de teste manual (V-3 com IA e diferença do registro) foram concluídas em 2026-09-30 (DEC-021). Fase 7 entregue (DEC-022, 331 testes). Fase 8 entregue (DEC-023, 340 testes). Fases 7+8 auditadas (DEC-024, 348 testes). Próximo: **Fase 9**.
+4. As pendências de teste manual (V-3 com IA e diferença do registro) foram concluídas em 2026-09-30 (DEC-021). Fase 7 entregue (DEC-022, 331 testes). Fase 8 entregue (DEC-023, 340 testes). Fases 7+8 auditadas (DEC-024, 348 testes). Fase 9 entregue (DEC-025, 352 testes + 8 E2E). Próximo: **Fase 10**.
 
 **Como rodar:** `npm install` → `npm run setup` → preencher o `.env.local` → `npm run app` → http://localhost:3000.
 - O servidor escuta **só em 127.0.0.1** (DEC-013).
