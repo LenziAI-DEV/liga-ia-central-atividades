@@ -1,6 +1,7 @@
 import "server-only";
 import { join } from "node:path";
 import { systemClock } from "@/lib/datetime";
+import { registryImportHook } from "@/server/activities/import-hook";
 import { authorizedClient } from "@/server/auth/google-oauth";
 import { getConnection, markReauthRequired } from "@/server/auth/token-store";
 import { getEnv, missingGoogleSettings } from "@/server/config/env";
@@ -67,6 +68,7 @@ export function requestSync(trigger: SyncTrigger): Promise<SyncOutcome> {
       gateway: context.gateway,
       rootFolderId: context.rootFolderId,
       clock: systemClock,
+      afterSync: [registryImportHook(getEnv().INDEX_FILE_NAME)],
       onAuthError: () => markReauthRequired(db, "invalid_grant", new Date().toISOString()),
     },
     trigger,
