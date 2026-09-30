@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 3 concluídas; Fase 4 (4.1–4.3) pronta e auditada, falta a validação 4.4 com o Drive real.**
+> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 4 concluídas e validadas com o Drive real (Marco 4 `complete`); próxima: Fase 5 (autoridade e conflitos).**
 
 ## Prazo
 
@@ -12,10 +12,10 @@
 
 ## ▶ Como retomar (primeira coisa a fazer na próxima sessão)
 
-1. `git checkout main` e criar a branch da próxima fase (a `main` contém as Fases 1 a 4, sem a validação 4.4).
+1. `git checkout main` e criar a branch da próxima fase (a `main` contém as Fases 1 a 4).
 2. `npm test` (esperado: **240 testes**), `npm run typecheck`, `npm run lint`.
 3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes, sem santa-loop rotineiro).
-4. **Validação 4.4 (usuário, no Drive real):** roteiro em `docs/VALIDACAO.md` (Fase 4). Depois seguir a **Fase 5** (autoridade e conflitos) do `docs/plans/IMPLEMENTATION_PLAN.md`. Antes, ler o MODEL ROUTING da política.
+4. Seguir a **Fase 5** (autoridade e conflitos) do `docs/plans/IMPLEMENTATION_PLAN.md`. Antes, ler o MODEL ROUTING da política.
 
 **Como rodar:** `npm install` → `npm run setup` → preencher o `.env.local` → `npm run app` → http://localhost:3000.
 - O servidor escuta **só em 127.0.0.1** (DEC-013).

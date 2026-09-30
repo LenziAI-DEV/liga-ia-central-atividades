@@ -5,13 +5,13 @@
 | # | Cenário | Entrada | Esperado | Observado | Correções | Status |
 |---|---|---|---|---|---|---|
 | V-1 | Visão pessoal | Personas Ana e Davi | Ana: ACT-101, ACT-104; Davi: ACT-102, ACT-104; troca não altera dados | Ana: 101 e 104; Davi: 102 e 104; ACT-104 conta uma vez; 4 eventos antes e depois das trocas | Com o Drive real, 2026-09-30 | ✅ Fase 2 |
-| V-2 | Upload novo | `Ata_2026-10-04.md` direto no Drive | Processada em ≤ 15 min sem UI (meta ≤ 1 min); sugestão pendente | — | — | pendente (Fases 4/6) |
-| V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | — | — | pendente (Fase 4) |
+| V-2 | Upload novo | `Ata_2026-10-04.md` direto no Drive | Processada em ≤ 15 min sem UI (meta ≤ 1 min); sugestão pendente | — | — | ✅ Fase 4 (Drive real) |
+| V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | — | — | ✅ Fase 4 (Drive real) |
 | V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | — | — | pendente (Fase 6) |
 | V-5 | **Conflito** (homônimo vazio) | `Ata - copia vazia.xlsx` | Atividades intactas; "sem autoridade / possível conflito" com motivos | — | — | pendente (Fase 5) |
 | V-6 | Atividade manual | Criar + reiniciar | Persiste com autor e histórico | LIA-0001 criada por Davi, editada (estado e próximo passo), app reiniciado: tudo e o histórico antes → depois continuaram | Navegador, banco de cópia, 2026-09-30 | ✅ Fase 3 |
 | V-7 | Ideia vaga | "Talvez…" | Não vira atividade | — | — | pendente (Fase 6) |
-| V-8 | Erro de fonte | Lixeira / acesso revogado / Drive fora | Aviso; estado confirmado marcado como potencialmente desatualizado | — | — | pendente (Fases 1/4) |
+| V-8 | Erro de fonte | Lixeira / acesso revogado / Drive fora | Aviso; estado confirmado marcado como potencialmente desatualizado | — | — | ✅ Fase 4 (Drive real) |
 | V-9 | Resumo pessoal | Ana × Davi após V-4 | Resumos diferentes, com fontes e estado de aprovação | — | — | pendente (Fase 7) |
 | V-10 | Primeiro acesso | Membro sem orientação | Acha propósito (provisório), frentes, fonte e primeira ação | — | — | pendente (Fase 8) |
 | V-11 | **Dado ausente** | Ata com "até sexta" / sem dono | Prazo e dono vazios, incerteza visível, nada inventado | — | — | pendente (Fase 6) |
@@ -132,3 +132,18 @@ Achados e correções em DEC-013 e em `.claude/reviews/fase-1-review.md`. Cada c
   4. Renomear um arquivo → mesmo item, nome novo, versões preservadas.
   5. Mandar um arquivo para a lixeira → "Indisponível desde…", atividade continua com "Fonte indisponível".
   6. Cortar a rede por 2 ciclos → faixa "Falha na sincronização… dados potencialmente desatualizados"; reconectar → some sozinha.
+
+### Resultado da validação 4.4 com o Drive real (2026-09-30)
+
+Feita pelo usuário, com o app aberto e sem clicar em "Sincronizar agora". Todos passaram limpos, cada um em **menos de 1 minuto** (meta: até 5 min):
+1. Arquivo novo (`Ata_2026-10-04.md`) apareceu como "Processado" sozinho.
+2. `Ata_2026-10-03.docx` convertido em Google Doc e movido para `Atas`; depois de conferir o Doc no app, o `.docx` foi removido: uma fonte ativa só. (Dica para o README: o Doc convertido precisa estar dentro da pasta monitorada; atalhos são ignorados.)
+3. Edição do Doc gerou nova versão na mesma fonte.
+4. Renomear manteve o mesmo item com o nome novo.
+5. Lixeira virou "Indisponível desde …".
+
+**6. Rede cortada (feito pelo assistente, por simulação):** subi uma cópia do app com um proxy morto (`HTTPS_PROXY` inalcançável) e `SYNC_INTERVAL_SECONDS=30`, num banco de cópia.
+- 1º ciclo: `failed` (`drive_unreachable`); intervalo dobrou para 60 s; 2º ciclo falhou; intervalo 120 s.
+- Durante a falha: faixa "Falha na sincronização em 14:04. Os dados exibidos são de 14:03 e podem estar desatualizados desde então"; "Potencialmente desatualizado" nas listas; as 4 atividades e as 9 fontes intactas; `/api/health` com `lastStatus: failed`.
+- Ao voltar a conexão: o ciclo seguinte teve sucesso (`8 sem mudança`), a faixa e o aviso sumiram sozinhos e as falhas seguidas voltaram a 0.
+- Limite: simulei a queda com proxy, não cortando o Wi-Fi da máquina.
