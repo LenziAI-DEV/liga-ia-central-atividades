@@ -37,7 +37,7 @@ export default async function Page(props: PageProps<"/atividades/[id]/editar">) 
             description: activity.description ?? "",
             nextStep: activity.nextStep ?? "",
             front: activity.front ?? "",
-            status: activity.status ?? "a_fazer",
+            status: activity.status ?? "",
             dueDate: activity.dueDate ?? "",
             priority: activity.priority ?? "",
             notes: activity.notes ?? "",

@@ -301,3 +301,24 @@
   9. Migração `003-owner-index`: o índice único de responsáveis misturava `member_id` e nome bruto na mesma expressão (colisão teórica).
 - **Verificado sem problema (pelo revisor):** cookie e persona, host e CSRF das actions, `searchParams`, SQL parametrizado, XSS e URLs, regex do índice, transação e idempotência, append-only, logs, datas.
 - **Não feito de propósito:** cobertura automática do cookie e das actions (só o E2E da Fase 9 cobre, pois dependem do runtime do Next).
+
+## DEC-016 — Sincronização automática in-process (Fase 4, 2026-09-30)
+
+- **Decisão:** o agendador (`sync/scheduler.ts`) é uma repetição de `setTimeout` sem sobreposição, ligada no `boot()` (via `instrumentation.ts`, só em `NEXT_RUNTIME=nodejs` e fora do build), com guarda em `globalThis` (ADR-05, RT-B). Primeiro ciclo ~5 s depois do boot; depois, a cada `SYNC_INTERVAL_SECONDS` (padrão 60 s, 30 a 600).
+- **Falha:** o intervalo dobra a cada falha seguida, com teto de 5 min (ou o intervalo, se maior), o que preserva os 15 min da banca (F3.1). Sucesso ou parcial volta ao normal. Exceção no ciclo conta como falha e não derruba o agendador.
+- **Sem conexão ou autorização perdida:** o ciclo devolve `not_connected` sem chamar o Google, e o estado aparece na tela.
+- **"Sincronizar agora"** usa o mesmo `requestSync`: se um ciclo está em curso, devolve "já em execução" em vez de abrir outro (a trava única continua no banco, com lease).
+- **Desatualização derivada** (`sync/freshness.ts`): último ciclo falhou, ou último sucesso há mais de 2× o intervalo. Aparece na faixa global e como "Potencialmente desatualizado" acima das listas de atividades. Fonte que sumiu aparece na referência da atividade como "Fonte indisponível desde …".
+- **Detalhe da fonte** (`/fontes/[fileId]`): estado, motivo, autoridade, versões processadas e datas (primeira detecção, modificação no Drive, processamento), para cronometrar M-3.
+- **Diagnóstico:** `/api/health` mostra banco, agendador (último ciclo e falhas seguidas) e estado da conexão, sem segredos.
+- **Pendente (4.4):** validação com o Drive real que exige ações do usuário (subir, editar, renomear, apagar arquivos). Roteiro no `VALIDACAO.md`. Os cenários equivalentes já têm teste com o Drive falso (CA-F3.1–F3.6).
+
+## DEC-017 — Auditoria das Fases 3 e 4 (2026-09-30)
+
+- **Contexto:** revisão de código e segurança de `349243e..4433724` por um único revisor independente (Sonnet, DEC-014), mais `npm audit` (0 vulnerabilidades), varredura de segredos e cobertura (85%). Veredito do revisor: aprovado, sem CRITICAL nem HIGH.
+- **MEDIUM corrigidos (com teste):**
+  1. Editar uma atividade com estado "a confirmar" mudava o estado para "a fazer" em silêncio. Agora o formulário oferece "Estado a confirmar", o campo presente e vazio significa `null`, e só uma escolha da pessoa muda o estado.
+  2. `boot()` podia derrubar o servidor com banco inválido e marcava "iniciado" antes de dar certo. Agora todo o `boot()` está protegido, a marca só vale no sucesso (a próxima chamada tenta de novo) e `/api/health` informa `start_failed`.
+  3. Linha do registro com ID igual ao de uma atividade criada pela interface antes da importação já era listada em "linhas com problema"; a mensagem agora explica a causa. Mantive `LIA-` (DN-15) em vez de trocar o prefixo.
+- **LOW corrigidos:** limite de tamanho não bloqueia mais a edição de campo importado que já vinha maior (só vale se o valor mudar); link do resumo de erros e `aria-describedby` do grupo de responsáveis; motivo do bloqueio avisa que vira as notas, e os campos de motivo têm `maxLength`; detalhe e edição consultam só a atividade pedida; `/api/health` registra falha no log e informa o motivo quando o agendador não subiu; contador de geração no agendador evita duas cadeias em `stop()` seguido de `start()`.
+- **Não feito de propósito:** teste automatizado das Server Actions (dependem do runtime do Next; cobertas no navegador e pelo E2E da Fase 9); `raw_name` dos membros é regravado com o nome atual ao trocar responsáveis (o valor cru importado continua no histórico do evento de importação).

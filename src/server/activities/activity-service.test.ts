@@ -165,3 +165,42 @@ describe("ActivityService", () => {
     }
   });
 });
+
+describe("estado 'a confirmar' e campos importados (auditoria Fases 3–4)", () => {
+  it("editar outro campo de uma atividade com estado a confirmar não decide o estado", () => {
+    const db = testDb();
+    seedImported(db);
+    db.run("UPDATE activities SET status = NULL WHERE id = 'ACT-102'");
+    const parsed = parseActivityForm(
+      { title: "Título corrigido", status: "", front: "Operações", nextStep: "Revisar material", dueDate: "2026-10-06" },
+      members,
+      ["davi"],
+    );
+    if (!parsed.ok) throw new Error("esperado ok");
+    expect(parsed.value.status).toBeNull();
+    updateActivity(db, "ACT-102", parsed.value, 1, "davi", members, clock);
+    expect(getActivityView(db, members, "ACT-102")?.status).toBeNull();
+    const [event] = listEvents(db, "ACT-102", members);
+    expect(event.changes.map((c) => c.field)).toEqual(["title"]);
+  });
+
+  it("escolher um estado para uma atividade 'a confirmar' é uma mudança registrada", () => {
+    const db = testDb();
+    seedImported(db);
+    db.run("UPDATE activities SET status = NULL WHERE id = 'ACT-102'");
+    updateActivity(db, "ACT-102", { status: "em_andamento" }, 1, "davi", members, clock);
+    expect(listEvents(db, "ACT-102", members)[0].changes).toEqual([{ field: "status", before: null, after: "em_andamento" }]);
+  });
+
+  it("campo importado acima do limite continua editável se não for alterado", () => {
+    const long = "x".repeat(300);
+    expect(parseActivityForm({ title: long }, members, []).ok).toBe(false);
+    expect(parseActivityForm({ title: long }, members, [], { title: long }).ok).toBe(true);
+    expect(parseActivityForm({ title: long + "y" }, members, [], { title: long }).ok).toBe(false);
+  });
+
+  it("status ausente na criação vale 'a fazer'", () => {
+    const parsed = parseActivityForm({ title: "x" }, members, []);
+    expect(parsed).toMatchObject({ ok: true, value: { status: "a_fazer" } });
+  });
+});

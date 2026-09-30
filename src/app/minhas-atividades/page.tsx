@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ActivityList } from "@/components/activity-list";
+import { StaleNote } from "@/components/stale-note";
 import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/page-header";
 import { getArea } from "@/lib/areas";
@@ -55,6 +56,7 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
           {descending ? "Ordenar pelo prazo mais próximo" : "Ordenar pelo prazo mais distante"}
         </Link>
       </p>
+      <StaleNote />
       <ActivityList
         heading="Suas atividades abertas"
         activities={ordered}

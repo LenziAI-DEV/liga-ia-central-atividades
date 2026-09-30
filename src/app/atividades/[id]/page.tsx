@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { DueDate } from "@/components/due-date";
 import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/page-header";
+import { SourceRef } from "@/components/source-ref";
+import { StaleNote } from "@/components/stale-note";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateBR, formatDateTimeBR, isoDateInSaoPaulo } from "@/lib/datetime";
 import { ACTIVITY_STATUS } from "@/lib/labels";
@@ -51,6 +53,7 @@ const NOTICES: Record<string, { tone: "ok" | "warn" | "danger" | "info"; text: s
 };
 
 function show(field: string, value: unknown, memberNames: Map<string, string>): string {
+  if (field === "status" && (value === null || value === "")) return ACTIVITY_STATUS.a_confirmar.label;
   if (value === null || value === undefined || value === "") return "(vazio)";
   if (field === "status" && typeof value === "string") {
     return ACTIVITY_STATUS[value as keyof typeof ACTIVITY_STATUS]?.label ?? value;
@@ -87,6 +90,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
 
   return (
     <>
+      <StaleNote />
       <PageHeader title={`${activity.id} · ${activity.title}`}>
         <p className="mt-3 flex flex-wrap items-center gap-3">
           <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
@@ -182,7 +186,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
               {hidden}
               <input type="hidden" name="status" value="bloqueada" />
               <label className="grid gap-1 text-sm">
-                Motivo do bloqueio (opcional)
+                Motivo do bloqueio (opcional; vira as notas)
                 <input name="reason" maxLength={2000} className="rounded border border-[var(--line)] px-3 py-2" />
               </label>
               <button type="submit" className="rounded border border-[var(--danger-ink)] px-4 py-2 text-[var(--danger-ink)]">
@@ -204,13 +208,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
             {activity.sources.map((s, i) => (
               <li key={`${s.fileId}-${s.relation}-${i}`}>
                 {s.relation === "historical_origin" ? "Origem histórica" : "Registro importado"}:{" "}
-                {s.webUrl?.startsWith("https://") ? (
-                  <a href={s.webUrl} className="text-[var(--lia-blue)] underline underline-offset-2">
-                    {s.name}
-                  </a>
-                ) : (
-                  s.name
-                )}
+                <SourceRef source={s} />
                 {s.locator ? ` (${s.locator})` : ""}
               </li>
             ))}

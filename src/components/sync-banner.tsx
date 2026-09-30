@@ -5,6 +5,7 @@ import { getEnv, missingGoogleSettings } from "@/server/config/env";
 import { getDb } from "@/server/db";
 import { lastFinishedRun, lastSuccessfulRun } from "@/server/db/repos/sync-runs-repo";
 import { logger } from "@/server/observability/logger";
+import { syncFreshness } from "@/server/sync/freshness";
 import { Notice } from "./notice";
 
 /**
@@ -32,12 +33,17 @@ export function SyncBanner() {
   let state;
   try {
     const db = getDb();
-    state = { connection: getConnection(db), last: lastFinishedRun(db), ok: lastSuccessfulRun(db) };
+    state = {
+      connection: getConnection(db),
+      last: lastFinishedRun(db),
+      ok: lastSuccessfulRun(db),
+      fresh: syncFreshness(db, env.SYNC_INTERVAL_SECONDS, new Date()),
+    };
   } catch (error) {
     logger.error("banner.db_failed", { error });
     return <Notice tone="danger">Não foi possível ler o banco de dados local. Detalhes no log do servidor.</Notice>;
   }
-  const { connection, last, ok } = state;
+  const { connection, last, ok, fresh } = state;
   const since = ok
     ? `Os dados exibidos são de ${formatDateTimeBR(ok.finishedAt ?? ok.startedAt)} e podem estar desatualizados desde então.`
     : "Ainda não há sincronização concluída.";
@@ -60,6 +66,13 @@ export function SyncBanner() {
     return (
       <Notice tone="warn">
         Falha na sincronização em {formatDateTimeBR(last.finishedAt ?? last.startedAt)}. {since} {link}
+      </Notice>
+    );
+  }
+  if (fresh.stale) {
+    return (
+      <Notice tone="warn">
+        Dados potencialmente desatualizados: a última sincronização foi em {formatDateTimeBR(fresh.lastOkAt!)}, mais de duas vezes o intervalo configurado. {link}
       </Notice>
     );
   }

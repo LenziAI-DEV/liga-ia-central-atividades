@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ActivityList } from "@/components/activity-list";
+import { StaleNote } from "@/components/stale-note";
 import { PageHeader } from "@/components/page-header";
 import { getArea } from "@/lib/areas";
 import { isoDateInSaoPaulo } from "@/lib/datetime";
@@ -111,6 +112,7 @@ export default async function Page(props: PageProps<"/atividades">) {
         {filtered ? `${shown.length} de ${all.length} atividade(s)` : `${all.length} atividade(s) no total`}
         {" "}(uma atividade com vários responsáveis conta uma vez).
       </p>
+      <StaleNote />
       <ActivityList
         heading="Atividades da Liga"
         activities={shown}
