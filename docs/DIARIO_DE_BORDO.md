@@ -97,3 +97,11 @@
 - **Decisão:** responsáveis que vieram da planilha e não casaram com nenhum membro ("a confirmar") são preservados na edição, em vez de sumirem ao salvar.
 - **Cuidado na demonstração:** testei a criação e a edição num banco de cópia e apaguei em seguida, porque os eventos são imutáveis e não dá para limpar o histórico do banco real.
 - **Verificado:** 221 testes, typecheck e lint limpos, build; demo da fase executada no navegador com reinício do app.
+
+## Quinta, 2026-10-01 (madrugada de quarta para quinta) — Fase 5: autoridade e conflitos
+
+- **O que entrou:** cada arquivo da pasta passa a ter uma classe de autoridade visível (direção, registro vigente, ata, histórico, sem autoridade), com os motivos escritos, e a página "Como o app decide o valor oficial" com a regra de precedência.
+- **Decisão de projeto:** a classificação é calculada na hora de mostrar, a partir do índice e do que está escrito em cada documento, em vez de gravada. Assim ela nunca fica diferente do que está no banco, e nenhuma IA participa.
+- **Descoberta nos dados:** as atas também são citadas no índice e também dizem "status: ativo"; pela ordem da arquitetura elas virariam "documento de direção". Mudei a ordem (ata antes de direção) e registrei o motivo na DEC-018.
+- **O caso da planilha homônima vazia:** um teste de integração prova que, quando ela chega depois da carga, nada nas atividades, nos responsáveis e nos eventos muda (comparação do banco inteiro antes e depois). A planilha aparece como "sem autoridade / possível conflito", com o motivo.
+- **Verificado:** 251 testes, typecheck, lint e build; classificação conferida nos dados reais.

@@ -8,6 +8,8 @@ import { acquireRun, lastFinishedRun } from "@/server/db/repos/sync-runs-repo";
 import { createInitialLoadDrive } from "@/server/drive/fake-seed";
 import { MIME } from "@/server/drive/gateway";
 import { registryImportHook } from "@/server/activities/import-hook";
+import { classifySources } from "@/server/authority/classifier";
+import { fixtureBytes } from "../../../tests/helpers/fixtures";
 import { runSync } from "./sync-service";
 
 const DATA_DIR = join(process.cwd(), "dados_ficticios");
@@ -337,5 +339,34 @@ describe("runSync + importação do registro (CA-F2.4)", () => {
     await run();
     expect(db.get<{ n: number }>("SELECT COUNT(*) AS n FROM activities")?.n).toBe(4);
     expect(db.get<{ n: number }>("SELECT COUNT(*) AS n FROM activity_events")?.n).toBe(4);
+  });
+});
+
+describe("V-5 e V-13 — autoridade depois da carga (CA-F4.1, CA-F4.2)", () => {
+  it("planilha homônima vazia chega e nada muda: snapshot das atividades idêntico, fonte sinalizada", async () => {
+    const { db, drive, ids } = setup();
+    const clock = steppingClock();
+    const run = () =>
+      runSync({ db, gateway: drive, rootFolderId: drive.rootId, clock, afterSync: [registryImportHook("INDEX.md")] }, "scheduled");
+    await run();
+    const snapshot = () => JSON.stringify([
+      db.all("SELECT * FROM activities ORDER BY id"),
+      db.all("SELECT * FROM activity_owners ORDER BY activity_id, rowid"),
+      db.all("SELECT * FROM activity_events ORDER BY id"),
+    ]);
+    const before = snapshot();
+
+    const copy = drive.addFile({
+      name: "Ata - copia vazia.xlsx",
+      content: fixtureBytes("03_CONFLITO/Ata - copia vazia.xlsx"),
+      mimeType: MIME.xlsx,
+    });
+    await run();
+    expect(snapshot()).toBe(before);
+
+    const classes = classifySources(db, "INDEX.md");
+    expect(classes.get(copy)).toMatchObject({ class: "sem_autoridade", possibleConflict: true });
+    expect(classes.get(ids["Ata_registro.xlsx"])?.class).toBe("registro_vigente");
+    expect(classes.get(ids["PLANO_EDITORIAL_ANTIGO.md"])).toMatchObject({ class: "historico", supersededBy: "GUIA_INICIAL.md em 2026-10-01" });
   });
 });

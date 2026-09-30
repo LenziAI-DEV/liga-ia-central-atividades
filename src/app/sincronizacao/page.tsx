@@ -14,6 +14,8 @@ import { getEnv, missingGoogleSettings, type AppEnv } from "@/server/config/env"
 import { getDb } from "@/server/db";
 import { SETTING, getSetting, type RootFolder } from "@/server/db/repos/settings-repo";
 import { listSources } from "@/server/db/repos/sources-repo";
+import { AuthorityBadge } from "@/components/authority-badge";
+import { classifySources } from "@/server/authority/classifier";
 import { currentRun, lastFinishedRun, lastSuccessfulRun, recentRuns } from "@/server/db/repos/sync-runs-repo";
 import { toSafeMessage } from "@/server/errors";
 import { disconnectAction, syncNowAction } from "./actions";
@@ -70,6 +72,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
   const lastOk = lastSuccessfulRun(db);
   const runs = recentRuns(db, 5);
   const sources = listSources(db).filter((s) => s.kind !== "folder");
+  const classes = classifySources(db, env.INDEX_FILE_NAME);
   const count = (...statuses: string[]) => sources.filter((s) => statuses.includes(s.sync_status)).length;
 
   // `Object.hasOwn`: `?erro=__proto__` não pode achar propriedades herdadas.
@@ -249,6 +252,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
                   <th scope="col" className="py-2 pr-4">Arquivo</th>
                   <th scope="col" className="py-2 pr-4">Tipo</th>
                   <th scope="col" className="py-2 pr-4">Estado</th>
+                  <th scope="col" className="py-2 pr-4">Autoridade</th>
                   <th scope="col" className="py-2 pr-4">Detalhe</th>
                   <th scope="col" className="py-2">Modificado no Drive</th>
                 </tr>
@@ -274,6 +278,9 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
                       <td className="py-2 pr-4">{SOURCE_KIND[source.kind]}</td>
                       <td className="py-2 pr-4">
                         <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <AuthorityBadge classification={classes.get(source.file_id)} />
                       </td>
                       <td className="py-2 pr-4">
                         {source.status_reason ?? "—"}

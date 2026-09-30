@@ -5,19 +5,13 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateTimeBR } from "@/lib/datetime";
 import { SOURCE_KIND, SOURCE_STATUS } from "@/lib/labels";
+import { AuthorityBadge } from "@/components/authority-badge";
+import { classifySources } from "@/server/authority/classifier";
+import { getEnv } from "@/server/config/env";
 import { getDb } from "@/server/db";
 import { getSource, listActivitiesCiting, listVersions } from "@/server/db/repos/sources-repo";
 
 export const metadata: Metadata = { title: "Fonte" };
-
-const AUTHORITY: Record<string, string> = {
-  direcao_ativo: "direção — ativo",
-  direcao_parcial: "direção — parcial",
-  registro_vigente: "registro de atividades vigente",
-  ata: "ata",
-  historico: "histórico/superado",
-  sem_autoridade: "sem autoridade definida",
-};
 
 const RELATION: Record<string, string> = {
   imported_from: "importada daqui",
@@ -36,6 +30,7 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
   const status = SOURCE_STATUS[source.sync_status];
   const versions = listVersions(db, source.file_id);
   const citing = listActivitiesCiting(db, source.file_id);
+  const classification = classifySources(db, getEnv().INDEX_FILE_NAME).get(source.file_id);
 
   return (
     <>
@@ -60,8 +55,7 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
           <dd>{source.status_reason ?? "—"}</dd>
           <dt className="text-[var(--ink-muted)]">Autoridade</dt>
           <dd>
-            {source.authority_class ? AUTHORITY[source.authority_class] ?? source.authority_class : "ainda não classificada"}
-            {source.authority_reason ? ` (${source.authority_reason})` : ""}
+            <AuthorityBadge classification={classification} />
           </dd>
           <dt className="text-[var(--ink-muted)]">Primeira detecção</dt>
           <dd>{dateOrDash(source.first_seen_at)}</dd>
