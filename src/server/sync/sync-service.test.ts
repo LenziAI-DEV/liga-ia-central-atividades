@@ -286,6 +286,36 @@ describe("runSync — escopo da pasta monitorada (F3.7, AR-16)", () => {
     expect(getSource(db, inside)).toMatchObject({ sync_status: "unavailable", status_reason: expect.stringMatching(/pasta/) });
   });
 
+  it("subpasta que falhou na listagem é nomeada no aviso e marcada como falha (R3-5)", async () => {
+    const { db, drive, ids, sync } = setup();
+    await sync("initial");
+    drive.failNext("listChildren", ids.Atas, "transient");
+    await sync();
+    expect(lastFinishedRun(db)?.errorMessage).toMatch(/"Atas"/);
+    expect(getSource(db, ids.Atas)).toMatchObject({ sync_status: "failed", status_reason: expect.stringMatching(/listar/) });
+    await sync();
+    expect(getSource(db, ids.Atas)?.sync_status).toBe("processed");
+  });
+
+  it("item que some da listagem completa mas ainda existe na pasta conta como 'a confirmar'", async () => {
+    const { db, drive, ids, sync } = setup();
+    await sync("initial");
+    drive.hideFromListing(ids["GUIA_INICIAL.md"]);
+    const outcome = await sync();
+    expect(outcome).toMatchObject({ status: "partial", counts: { inconclusive: 1 } });
+    expect(getSource(db, ids["GUIA_INICIAL.md"])?.sync_status).toBe("processed");
+  });
+
+  it("nova pasta configurada que era subpasta da antiga não é marcada como fora da pasta", async () => {
+    const { db, drive, ids, sync } = setup();
+    const inner = drive.addFolder("Interna", ids.Atas);
+    drive.addFile({ name: "nota.md", content: "# Nota", parentId: inner });
+    await sync("initial");
+    await runSync({ db, gateway: drive, rootFolderId: inner, clock: steppingClock("2026-09-30T12:00:00.000Z") }, "manual");
+    expect(getSource(db, ids.Atas)?.sync_status).toBe("out_of_scope");
+    expect(getSource(db, inner)?.sync_status).not.toBe("out_of_scope");
+  });
+
   it("arquivo acima do limite não é baixado e falha com motivo", async () => {
     const { db, drive } = setup();
     const big = drive.addFile({ name: "grande.md", content: "x".repeat(64 * 1024) });

@@ -50,7 +50,8 @@ export function extractMarkdown(raw: string): TextExtract {
   const text = normalizeText(raw);
   const lines = text.split("\n");
   const sections: Section[] = [];
-  const metadata: Record<string, string> = {};
+  // Sem protótipo: chaves como `constructor` ou `toString` são metadados comuns.
+  const metadata = Object.create(null) as Record<string, string>;
   let title: string | null = null;
   let metadataOpen = true;
   /** Caractere da cerca aberta (`` ` `` ou `~`); dentro dela nada é título nem metadado. */

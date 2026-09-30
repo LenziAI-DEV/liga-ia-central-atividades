@@ -49,6 +49,17 @@ describe("walkTree", () => {
     expect(result.items.map((i) => i.name)).toContain("INDEX.md");
   });
 
+  it("pasta com dois pais (pasta repetida) aparece e é percorrida uma vez só", async () => {
+    const drive = new FakeDriveGateway();
+    const a = drive.addFolder("A");
+    const b = drive.addFolder("B");
+    drive.addFile({ name: "x.md", content: "x", parentId: b });
+    drive.addParent(b, a);
+    const result = await walkTree(drive, drive.rootId);
+    expect(result.items.filter((i) => i.id === b)).toHaveLength(1);
+    expect(result.items.filter((i) => i.name === "x.md")).toHaveLength(1);
+  });
+
   it("interrompe em erro de autenticação", async () => {
     const drive = new FakeDriveGateway();
     drive.revokeAll();

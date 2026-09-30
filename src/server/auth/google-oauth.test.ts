@@ -14,6 +14,12 @@ describe("assertReadonlyScope (CA-F13.2)", () => {
     expect(() => assertReadonlyScope("openid email")).toThrow(/leitura do Drive/);
   });
 
+  it("recusa escopos de outros produtos que permitem escrever em arquivos", () => {
+    for (const extra of ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/spreadsheets"]) {
+      expect(() => assertReadonlyScope(`${DRIVE_READONLY_SCOPE} ${extra}`), extra).toThrow(/somente leitura/);
+    }
+  });
+
   it("recusa qualquer escopo de escrita no Drive junto com a leitura", () => {
     for (const write of ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/drive.file"]) {
       expect(() => assertReadonlyScope(`${DRIVE_READONLY_SCOPE} ${write}`), write).toThrow(/somente leitura/);

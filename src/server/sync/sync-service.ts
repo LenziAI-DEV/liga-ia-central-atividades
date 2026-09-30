@@ -93,7 +93,13 @@ export async function runSync(deps: SyncDeps, trigger: SyncTrigger): Promise<Syn
 
       if (kind === "folder") {
         counts.folders++;
-        setStatus(db, item.id, "processed", null);
+        const listingError = walk.failedFolders.get(item.id);
+        if (listingError) {
+          setStatus(db, item.id, "failed", `Não foi possível listar esta pasta neste ciclo (${listingError.safeMessage}); o conteúdo dela foi mantido como antes.`);
+          logger.warn("sync.walk.folder_failed", { run_id: runId, folder_id: item.id, kind: listingError.kind, error: listingError });
+        } else {
+          setStatus(db, item.id, "processed", null);
+        }
         continue;
       }
       if (kind === "unsupported" || kind === "shortcut") {
@@ -158,7 +164,10 @@ export async function runSync(deps: SyncDeps, trigger: SyncTrigger): Promise<Syn
     const partial = counts.failed > 0 || walk.failedFolders.size > 0 || counts.inconclusive > 0;
     const notes: string[] = [];
     if (walk.failedFolders.size > 0) {
-      notes.push(`Não foi possível listar ${walk.failedFolders.size} subpasta(s); o que estava nelas foi mantido como antes.`);
+      const paths = walk.items.filter((i) => walk.failedFolders.has(i.id)).map((i) => `"${i.path}"`);
+      notes.push(
+        `Não foi possível listar ${walk.failedFolders.size} subpasta(s) (${paths.join(", ")}); o que estava nelas foi mantido como antes.`,
+      );
     }
     if (counts.inconclusive > 0) {
       notes.push(
@@ -265,6 +274,12 @@ async function reconcileMissing(
           if (treeIncomplete) continue; // pode estar sob uma subpasta que não foi listada
           status = "out_of_scope";
           reason = "Arquivo movido para fora da pasta monitorada.";
+        } else {
+          // Ausente de uma listagem completa, mas o Drive diz que continua na pasta:
+          // inconsistência da API. Nada é concluído, e isso fica visível.
+          inconclusive++;
+          logger.warn("sync.reconcile.inconclusive", { run_id: runId, file_id: source.file_id, reason: "listed_parent_but_missing" });
+          continue;
         }
       } catch (error) {
         if (error instanceof DriveError && error.kind === "auth") throw error;
@@ -293,7 +308,8 @@ async function reconcileMissing(
     const next: typeof goneFolders = [];
     for (const folder of goneFolders) {
       for (const child of listTrackedChildren(db, folder.id)) {
-        if (seen.has(child.file_id)) continue;
+        // A nova pasta raiz pode ter sido subpasta de uma pasta que saiu do escopo.
+        if (seen.has(child.file_id) || child.file_id === rootFolderId) continue;
         markGone(db, child.file_id, folder.status, CASCADE_REASON[folder.status], now());
         gone++;
         if (child.kind === "folder") next.push({ id: child.file_id, status: folder.status });

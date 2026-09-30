@@ -49,17 +49,28 @@ export async function exchangeCode(env: AppEnv, code: string, codeVerifier: stri
   return tokens;
 }
 
-/** Aceita só leitura do Drive: recusa autorização sem `drive.readonly` ou com escopo de escrita. */
+/** Escopos de identidade que podem vir junto sem dar acesso a arquivos. */
+const IDENTITY_SCOPES = new Set([
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+]);
+
+/**
+ * Aceita só leitura do Drive (ADR-07): exige `drive.readonly` e recusa qualquer
+ * outro escopo além dos de identidade — inclusive Documentos/Planilhas, que
+ * permitem escrever em arquivos.
+ */
 export function assertReadonlyScope(scope: string | null | undefined) {
   const granted = (scope ?? "").split(/\s+/).filter(Boolean);
   if (!granted.includes(DRIVE_READONLY_SCOPE)) {
     throw new AppError("escopo_invalido", "A autorização não incluiu a leitura do Drive. Conecte de novo e aceite o acesso solicitado.");
   }
-  const broad = granted.filter(
-    (s) => s.startsWith("https://www.googleapis.com/auth/drive") && !s.endsWith(".readonly"),
-  );
-  if (broad.length > 0) {
-    throw new AppError("escopo_invalido", "A autorização concedeu acesso de escrita ao Drive; este app aceita somente leitura.");
+  const extra = granted.filter((s) => s !== DRIVE_READONLY_SCOPE && !IDENTITY_SCOPES.has(s));
+  if (extra.length > 0) {
+    throw new AppError("escopo_invalido", "A autorização concedeu mais do que leitura do Drive; este app aceita somente leitura.");
   }
 }
 

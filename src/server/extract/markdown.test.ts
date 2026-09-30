@@ -44,6 +44,11 @@ describe("extractMarkdown", () => {
     expect(doc.sections.map((s) => s.heading)).toEqual(["Ata final", "Seção", "C#", "Só#"]);
   });
 
+  it("metadados com nome de propriedade do JavaScript não se perdem", () => {
+    const doc = extractMarkdown("# T\n\nconstructor: x\ntoString: y\nstatus: ativo");
+    expect(doc.metadata).toEqual({ constructor: "x", tostring: "y", status: "ativo" });
+  });
+
   it("título e metadados dentro de bloco de código não contam", () => {
     const doc = extractMarkdown(
       "# Título\n\n```\n# não é título\n## nem seção\nchave: valor\n```\n\n~~~md\n## também não\n~~~\n\nstatus: ativo\n\n## Seção real",

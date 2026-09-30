@@ -208,13 +208,24 @@
      - `t="d"` é lido;
      - **[rodada 2]** pasta de trabalho sem abas lança erro;
      - **[rodada 2]** abas de gráfico/diálogo são ignoradas;
-     - **[rodada 2]** datas impossíveis (mês 13, serial fora de 1–2.958.465) não viram data.
+     - **[rodada 2]** datas impossíveis (mês 13, serial fora de 1–2.958.465) não viram data;
+     - **[rodada 3]** referência de célula validada (até `XFD1048576`): antes, uma coluna com centenas de letras virava `Infinity` e o processo morria por falta de memória;
+     - **[rodada 3]** código de formato lido em uma passada, sem regex, com limite de 255 caracteres e uma decisão por formato (não por estilo): um `.xlsx` de 1,5 KB travava o processo por 93 s;
+     - **[rodada 3]** desambiguação de cabeçalhos linear;
+     - **[rodada 3]** durações (`[h]:mm`, `[mm]:ss`) não viram data;
+     - **[rodada 3]** fórmula sem valor calculado lança erro com orientação, em vez de célula vazia;
+     - **[rodada 3]** coluna sem cabeçalho usa a chave `#E`;
+     - **[rodada 3]** entidades numéricas (`&#10;`) e escapes `_xHHHH_` são decodificados;
+     - **[rodada 3]** parte de estilos citada e ausente lança erro.
   7. **Escopo:**
      - fonte cujo pai não está na árvore atual nem entre as fontes conhecidas vem de outra pasta configurada, então vira `out_of_scope`;
      - se alguma subpasta falhou na listagem, "fora da árvore" é inconclusivo (AR-16);
      - a cascata herda o estado da pasta;
      - **[rodada 2]** com a árvore incompleta, a cascata espera o próximo ciclo completo, e o filho herda o estado do pai que já tinha saído;
-     - **[rodada 2]** falha temporária ao confirmar um sumiço não conclui nada, mas conta como "a confirmar", vai para o log e deixa o ciclo "com avisos" (F3.6).
+     - **[rodada 2]** falha temporária ao confirmar um sumiço não conclui nada, mas conta como "a confirmar", vai para o log e deixa o ciclo "com avisos" (F3.6);
+     - **[rodada 3]** subpasta que falhou na listagem é nomeada no aviso, fica "falhou" e vai para o log;
+     - **[rodada 3]** item ausente de uma listagem completa que o Drive diz ainda estar na pasta conta como "a confirmar";
+     - **[rodada 3]** a cascata nunca marca a própria pasta raiz.
   8. **Drive:**
      - tamanho conferido pelo `size` antes de baixar;
      - timeout de 30 s por chamada;
@@ -231,7 +242,8 @@
      - a tag GCM precisa ter 16 bytes;
      - **[rodada 2]** desconectar apaga também o e-mail e o escopo guardados;
      - **[rodada 2]** falha passageira do Google no callback tem mensagem própria;
-     - **[rodada 2]** a consulta da conta e a falha de decifragem vão para o log.
+     - **[rodada 2]** a consulta da conta e a falha de decifragem vão para o log;
+     - **[rodada 3]** o escopo concedido só pode ter `drive.readonly` e escopos de identidade: Documentos e Planilhas, que permitem escrever, são recusados.
   10. **Testes:** `@vitest/coverage-v8` (dev) e `npm run test:coverage`. Cobertura de `src/server` + `src/lib`: 76,5% → 84% das linhas.
 - **Adiado de propósito:**
   - política de novo download para arquivo com falha permanente (vem com o backoff do scheduler, Fase 4);
@@ -239,7 +251,10 @@
   - limite de descompressão do `.xlsx` (só a pasta do operador é lida; limitação documentada);
   - `DRIVE_MODE=local` (ADR-15 opcional);
   - tabela a 375 px e confirmação em "Desconectar" (Fase 9);
-  - aviso "carga inicial iniciada" aparece mesmo se já havia um ciclo em curso, e "nova tentativa em seguida" (cota) só vale quando o scheduler existir (Fase 4).
+  - aviso "carga inicial iniciada" aparece mesmo se já havia um ciclo em curso, e "nova tentativa em seguida" (cota) só vale quando o scheduler existir (Fase 4);
+  - **[rodada 3]** corrida de reconexão (um ciclo antigo pode marcar a conexão nova como "reautorizar") e renovação do lease em ciclos longos entram com o scheduler (Fase 4);
+  - **[rodada 3]** também adiados: cancelar o ciclo em curso ao desconectar; o bug de ano bissexto de 1900 do Excel (só datas antes de 1900-03-01); registrar no log o fallback de codificação do `.md`;
+  - **[rodada 3]** a metodologia do santa-loop limita a 3 rodadas. A 3ª também reprovou, e os achados dela foram corrigidos sem uma 4ª revisão. A decisão sobre fazer mais uma rodada ficou com o usuário.
 
 ---
 

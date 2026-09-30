@@ -7,6 +7,7 @@ interface FakeEntry {
   item: DriveItem;
   content?: Uint8Array;
   accessRevoked?: boolean;
+  hidden?: boolean;
 }
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -100,6 +101,16 @@ export class FakeDriveGateway implements DriveGateway {
     this.bump(entry.item);
   }
 
+  /** Item com mais de um pai (Drive legado): a mesma pasta aparece em dois lugares. */
+  addParent(id: string, parentId: string) {
+    this.require(id).item.parents.push(parentId);
+  }
+
+  /** Some da listagem, mas `files.get` ainda o encontra (inconsistência da API). */
+  hideFromListing(id: string) {
+    this.require(id).hidden = true;
+  }
+
   /** Próxima chamada `operation` sobre `id` falha com `kind` (uma vez). */
   failNext(operation: Operation, id: string, kind: DriveErrorKind) {
     this.failures.set(`${operation}:${id}`, kind);
@@ -129,7 +140,7 @@ export class FakeDriveGateway implements DriveGateway {
   async listChildren(folderId: string, pageToken?: string) {
     this.check("listChildren", folderId);
     const children = [...this.entries.values()]
-      .filter((e) => e.item.parents.includes(folderId) && !e.item.trashed && !e.accessRevoked)
+      .filter((e) => e.item.parents.includes(folderId) && !e.item.trashed && !e.accessRevoked && !e.hidden)
       .map((e) => ({ ...e.item, parents: [...e.item.parents] }))
       .sort((a, b) => a.name.localeCompare(b.name));
     const start = pageToken ? Number(pageToken) : 0;

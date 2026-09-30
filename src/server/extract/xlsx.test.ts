@@ -2,7 +2,14 @@ import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import { fixtureBytes } from "../../../tests/helpers/fixtures";
 import { contentHash } from "./normalize";
-import { extractXlsx } from "./xlsx";
+import { extractXlsx, isDateFormatCode } from "./xlsx";
+
+/** Índice (0-based) → letras de coluna, para montar planilhas largas nos testes. */
+function colName(index: number): string {
+  let name = "";
+  for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
+  return name;
+}
 
 describe("extractXlsx", () => {
   it("lê a aba Atividades do registro inicial com datas puras", async () => {
@@ -193,6 +200,73 @@ describe("extractXlsx — robustez (F2.8: falha de leitura nunca vira vazio)", (
     const [sheet] = (await extractXlsx(data)).sheets;
     expect(new Set(sheet.header).size).toBe(3);
     expect(Object.values(sheet.rows[0].cells).map((c) => c.text).sort()).toEqual(["a", "b", "c"]);
+  });
+
+  it("referência de célula absurda falha com erro, sem laço infinito (R3-1)", async () => {
+    const hostile = `<row r="1"><c r="${"Z".repeat(220)}1" t="inlineStr"><is><t>a</t></is></c><c t="inlineStr"><is><t>b</t></is></c></row>`;
+    const start = performance.now();
+    await expect(extractXlsx(await buildXlsx(hostile))).rejects.toThrow(/refer[eê]ncia/i);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it("código de formato hostil compartilhado por muitos estilos não trava (R3-2)", async () => {
+    const xfs = Array.from({ length: 200 }, () => '<xf numFmtId="164"/>').join("");
+    const styles =
+      `<?xml version="1.0"?><styleSheet ${NS}><numFmts count="1"><numFmt numFmtId="164" formatCode="${"[".repeat(30_000)}"/></numFmts>` +
+      `<cellXfs count="201"><xf numFmtId="0"/>${xfs}</cellXfs></styleSheet>`;
+    const start = performance.now();
+    await extractXlsx(await buildXlsx(`<row r="1">${inline("A1", "ID")}</row>`, { "xl/styles.xml": styles }));
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it("milhares de cabeçalhos iguais são desambiguados em tempo linear (R3-2)", async () => {
+    const cells = Array.from({ length: 10_000 }, (_, i) => `<c r="${colName(i)}1" t="inlineStr"><is><t>X</t></is></c>`).join("");
+    const start = performance.now();
+    const [sheet] = (await extractXlsx(await buildXlsx(`<row r="1">${cells}</row>`))).sheets;
+    expect(performance.now() - start).toBeLessThan(1500);
+    expect(new Set(sheet.header).size).toBe(10_000);
+  });
+
+  it("fórmula sem valor calculado falha com motivo, em vez de virar célula vazia (R3-3)", async () => {
+    const data = await buildXlsx(
+      `<row r="1">${inline("A1", "Prazo")}</row><row r="2"><c r="A2" s="1"><f>DATE(2026,10,5)</f></c></row>`,
+    );
+    await expect(extractXlsx(data)).rejects.toThrow(/fórmula/);
+  });
+
+  it("formatos de duração ([h]:mm, [mm]:ss) não viram data (R3-4)", () => {
+    for (const code of ["[h]:mm", "[hh]:mm:ss", "[mm]:ss", "[ss]", "[Red][h]:mm"]) {
+      expect(isDateFormatCode(code), code).toBe(false);
+    }
+    for (const code of ["dd/mm/yyyy", "mmm-yy", "[$-416]d mmmm yyyy", "mmmm"]) {
+      expect(isDateFormatCode(code), code).toBe(true);
+    }
+  });
+
+  it("coluna sem cabeçalho não colide com um cabeçalho de mesmo nome", async () => {
+    const data = await buildXlsx(
+      `<row r="1">${inline("C1", "E")}</row><row r="2">${inline("C2", "valor-C")}${inline("E2", "nota-E")}</row>`,
+    );
+    const cells = (await extractXlsx(data)).sheets[0].rows[0].cells;
+    expect(cells.E.text).toBe("valor-C");
+    expect(cells["#E"].text).toBe("nota-E");
+  });
+
+  it("decodifica referências numéricas e escapes _xHHHH_ do Excel", async () => {
+    const data = await buildXlsx(`<row r="1">${inline("A1", "Nota")}</row><row r="2">${inline("A2", "linha&#10;dois &#x41; fim_x0021_")}</row>`);
+    expect((await extractXlsx(data)).sheets[0].rows[0].cells.Nota.text).toBe("linha\ndois A fim!");
+  });
+
+  it("parte de estilos citada nos relacionamentos, mas ausente, lança erro", async () => {
+    const rels = RELS.replace(
+      "</Relationships>",
+      '<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
+    );
+    const data = await buildXlsx(`<row r="1">${inline("A1", "ID")}</row>`, {
+      "xl/_rels/workbook.xml.rels": rels,
+      "xl/styles.xml": null,
+    });
+    await expect(extractXlsx(data)).rejects.toThrow(/estilos/);
   });
 
   it("formatos só de hora não viram data; t=\"d\" e célula s sem valor são tratados", async () => {

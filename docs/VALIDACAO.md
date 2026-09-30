@@ -83,7 +83,7 @@ Fonte: log `data/logs/app.jsonl`, tabelas `sync_runs`/`sources`/`oauth_connectio
 
 ### Auditoria antes do merge (2026-09-29): revisão, segurança e santa-loop
 
-Achados e correções em DEC-013 e em `.claude/reviews/fase-1-review.md`. Cada correção tem teste automatizado. **Testes: 100 → 151. Cobertura de `src/server` + `src/lib`: 85% das linhas.** Depois das correções, uma sincronização real (execução 5, 21:16) terminou em `success`, com 6 sem mudança e 0 a confirmar, em 1,5 s.
+Achados e correções em DEC-013 e em `.claude/reviews/fase-1-review.md`. Cada correção tem teste automatizado. **Testes: 100 → 165. Cobertura de `src/server` + `src/lib`: 85% das linhas.** Depois das correções, sincronizações reais (execuções 5 e 6, 21:16 e 22:14) terminaram em `success`, com 6 sem mudança e 0 a confirmar.
 
 | Caso | Entrada | Esperado | Observado depois da correção |
 |---|---|---|---|
@@ -91,7 +91,11 @@ Achados e correções em DEC-013 e em `.claude/reviews/fase-1-review.md`. Cada c
 | Pasta configurada trocada | Sync com outra `DRIVE_TEST_FOLDER_ID` | O que era da pasta antiga fica "fora da pasta" e o cache é apagado | ✅ |
 | Subpasta com falha de listagem | Arquivo movido para dentro dela no mesmo ciclo | Nada concluído ("fora da pasta" inconclusivo) | ✅ continua processado, com cache |
 | Sumiço sem confirmação | Arquivo removido; `files.get` falha temporariamente | Nada concluído, mas registrado: ciclo "com avisos" e "a confirmar" | ✅ concluído como indisponível no ciclo seguinte |
-| `.xlsx` com coluna de hora | Formatos `hh:mm`, `mm:ss`, `h:mm AM/PM` | Hora não vira data inventada (1899-12-30) | ✅ |
+| `.xlsx` com coluna de hora | Formatos `hh:mm`, `mm:ss`, `h:mm AM/PM`, `[h]:mm` | Hora/duração não vira data inventada (1899-12-30) | ✅ |
+| `.xlsx` hostil: referência de célula | Coluna com 220 letras + célula sem referência | Falha com motivo | ✅ em < 1 s (antes: laço infinito, e o processo morria por falta de memória) |
+| `.xlsx` hostil: formato e cabeçalhos | Código de formato com 30 mil `[` em 200 estilos; 10 mil cabeçalhos iguais | Leitura em < 1 s | ✅ (antes: 93 s e 33 s com o processo travado) |
+| `.xlsx` com fórmula sem valor | `<f>` sem `<v>` | Falha com orientação; nunca "célula vazia" | ✅ |
+| Subpasta que falhou na listagem | Falha temporária em `Atas` | Aviso cita a pasta, que fica "falhou"; registro no log | ✅ volta a "processado" no ciclo seguinte |
 | `.xlsx` malformado com zip válido | Rels ausentes, aba ausente, XML truncado, shared string inexistente | Falha com motivo; nunca planilha vazia | ✅ |
 | `.xlsx` com XML indentado | Shared/inline strings com indentação | Textos lidos | ✅ (antes: células sumiam em silêncio) |
 | Arquivo > limite | `size` acima do limite | Falha com motivo, **sem baixar** | ✅ |

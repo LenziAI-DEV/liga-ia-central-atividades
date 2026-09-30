@@ -23,8 +23,16 @@ const parser = new XMLParser({
   parseTagValue: false,
   parseAttributeValue: false,
   trimValues: false,
+  // Referências numéricas (`&#10;`, `&#x41;`), comuns em arquivos do openpyxl/lxml.
+  htmlEntities: true,
   isArray: (name) => ["sheet", "Relationship", "si", "r", "row", "c", "numFmt", "xf"].includes(name),
 });
+
+/** Limites do formato (Excel): colunas até XFD, linhas até 1.048.576, código de formato até 255. */
+const MAX_COLUMN_INDEX = 16_383;
+const MAX_ROW = 1_048_576;
+const MAX_FORMAT_CODE = 255;
+const CELL_REF = /^([A-Za-z]{1,3})([0-9]{1,7})$/;
 
 type XmlNode = Record<string, unknown>;
 
@@ -61,22 +69,46 @@ function asText(node: unknown): string {
 /**
  * Formato personalizado de data? Só se houver dia, ano ou mês. `m` é minuto quando
  * vem depois de hora (`h:mm`) ou antes de segundo (`mm:ss`); `AM/PM` não é mês.
- * Formatos só de hora (`hh:mm`, `[$-F400]h:mm:ss AM/PM`) não viram data.
+ * Formatos só de hora (`hh:mm`, `[$-F400]h:mm:ss AM/PM`) e de duração (`[h]:mm`,
+ * `[mm]:ss`) não viram data.
+ * Varredura em uma passada, sem regex com retrocesso: o código vem do arquivo
+ * (não confiável) e códigos acima do limite do Excel (255) não são formatos reais.
  */
 export function isDateFormatCode(code: string): boolean {
-  const section = code.split(";")[0] ?? "";
-  const cleaned = section
-    .replace(/"[^"]*"|\[[^\]]*\]|\\.|_.|\*./g, "") // literais, [cor]/[$-…], escapes, espaçamento
-    .replace(/A\/P|AM\/PM/gi, "")
-    .toLowerCase();
-  if (/[dy]/.test(cleaned)) return true;
-  const tokens = cleaned.match(/[hms]+/g) ?? [];
-  return tokens.some((token, i) => {
-    if (token[0] !== "m") return false;
-    const afterHour = tokens[i - 1]?.[0] === "h";
-    const beforeSecond = tokens[i + 1]?.[0] === "s";
-    return !afterHour && !beforeSecond;
-  });
+  if (code.length > MAX_FORMAT_CODE) return false;
+  const tokens: string[] = [];
+  for (let i = 0; i < code.length; ) {
+    const ch = code[i];
+    if (ch === ";") break; // só a primeira seção (números positivos)
+    if (ch === '"') {
+      const end = code.indexOf('"', i + 1);
+      if (end < 0) break;
+      i = end + 1;
+    } else if (ch === "\\" || ch === "_" || ch === "*") {
+      i += 2; // escape, espaçamento e preenchimento ocupam o caractere seguinte
+    } else if (ch === "[") {
+      const end = code.indexOf("]", i + 1);
+      if (end < 0) break;
+      const inner = code.slice(i + 1, end).toLowerCase();
+      // [h], [mm], [ss]: duração; [Red], [$-416]: cor e localidade, ignorados.
+      if (/^(?:h+|m+|s+)$/.test(inner)) tokens.push(inner[0]);
+      i = end + 1;
+    } else if (code.startsWith("AM/PM", i) || code.startsWith("am/pm", i)) {
+      i += 5;
+    } else if (code.startsWith("A/P", i) || code.startsWith("a/p", i)) {
+      i += 3;
+    } else {
+      const lower = ch.toLowerCase();
+      if (lower === "d" || lower === "y") return true;
+      if (lower === "h" || lower === "m" || lower === "s") {
+        tokens.push(lower);
+        while (i < code.length && code[i].toLowerCase() === lower) i++;
+      } else {
+        i++;
+      }
+    }
+  }
+  return tokens.some((token, i) => token === "m" && tokens[i - 1] !== "h" && tokens[i + 1] !== "s");
 }
 
 function resolveTarget(target: string): string {
@@ -115,20 +147,35 @@ function serialToIsoDate(serial: number, date1904: boolean): string | null {
   return isoDateFromUtcParts(new Date(epoch + Math.round(serial * 86_400_000)));
 }
 
-/** Índice (0-based) → letras de coluna: 0 → A, 25 → Z, 26 → AA. */
+/** Índice (0-based) → letras de coluna: 0 → A, 25 → Z, 26 → AA. Só dentro dos limites do Excel. */
 function columnName(index: number): string {
+  if (!Number.isInteger(index) || index < 0 || index > MAX_COLUMN_INDEX) {
+    throw new XlsxError("A planilha tem mais colunas do que o formato permite.");
+  }
   let name = "";
   for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
   return name;
 }
 
-function columnIndex(letters: string): number {
-  let index = 0;
-  for (const ch of letters.toUpperCase()) index = index * 26 + (ch.charCodeAt(0) - 64);
-  return index - 1;
+/**
+ * Valida e decompõe a referência de uma célula (`D2`). Referência absurda vinda do
+ * arquivo lança erro — antes, uma coluna com centenas de letras virava `Infinity` e
+ * travava o processo num laço sem fim.
+ */
+function parseCellRef(ref: string): { column: number; row: number } {
+  const match = CELL_REF.exec(ref);
+  if (match) {
+    let column = -1;
+    for (const ch of match[1].toUpperCase()) column = (column + 1) * 26 + (ch.charCodeAt(0) - 65);
+    const row = Number(match[2]);
+    if (column <= MAX_COLUMN_INDEX && row >= 1 && row <= MAX_ROW) return { column, row };
+  }
+  throw new XlsxError(`Referência de célula inválida: "${ref.slice(0, 20)}".`);
 }
 
-const clean = (text: string) => text.normalize("NFC").trim();
+/** Texto de célula: `_xHHHH_` (escape do Excel para caracteres de controle), NFC, sem espaços nas pontas. */
+const clean = (text: string) =>
+  text.replace(/_x([0-9A-Fa-f]{4})_/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16))).normalize("NFC").trim();
 
 interface Relation {
   target: string;
@@ -174,16 +221,20 @@ async function readWorkbook(data: Uint8Array): Promise<SheetExtract> {
     ? (((sstXml.sst as XmlNode | undefined)?.si as unknown[] | undefined) ?? []).map((si) => clean(asText(si)))
     : null;
 
-  const styleSheet = (await readXml(zip, partOf(REL_TYPE.styles, "xl/styles.xml")))?.styleSheet as XmlNode | undefined;
-  const customFormats = new Map<number, string>();
+  const stylesDeclared = [...relations.values()].some((r) => r.type.endsWith(REL_TYPE.styles));
+  const stylesXml = await readXml(zip, partOf(REL_TYPE.styles, "xl/styles.xml"));
+  // Sem os estilos, datas virariam números em silêncio.
+  if (stylesDeclared && !stylesXml) throw new XlsxError("A parte de estilos citada no pacote não foi encontrada.");
+  const styleSheet = stylesXml?.styleSheet as XmlNode | undefined;
+  // Decide "é data?" uma vez por formato, e não uma vez por estilo que o usa.
+  const dateFormats = new Map<number, boolean>();
   for (const fmt of ((styleSheet?.numFmts as XmlNode | undefined)?.numFmt as XmlNode[] | undefined) ?? []) {
-    customFormats.set(Number(fmt["@_numFmtId"]), String(fmt["@_formatCode"] ?? ""));
+    dateFormats.set(Number(fmt["@_numFmtId"]), isDateFormatCode(String(fmt["@_formatCode"] ?? "")));
   }
   const dateStyles = new Set<number>();
   (((styleSheet?.cellXfs as XmlNode | undefined)?.xf as XmlNode[] | undefined) ?? []).forEach((xf, index) => {
     const id = Number(xf["@_numFmtId"] ?? 0);
-    const custom = customFormats.get(id);
-    if (BUILTIN_DATE_FORMATS.has(id) || (custom !== undefined && isDateFormatCode(custom))) dateStyles.add(index);
+    if (BUILTIN_DATE_FORMATS.has(id) || dateFormats.get(id) === true) dateStyles.add(index);
   });
 
   const context: CellContext = { sharedStrings, dateStyles, date1904 };
@@ -216,33 +267,31 @@ function readSheet(name: string, worksheet: XmlNode, context: CellContext): Shee
 
   for (const rowNode of rowNodes) {
     const rowNumber = rowNode["@_r"] !== undefined ? Number(rowNode["@_r"]) : previousRow + 1;
+    if (!Number.isInteger(rowNumber) || rowNumber < 1 || rowNumber > MAX_ROW) {
+      throw new XlsxError(`Número de linha inválido na aba "${name}".`);
+    }
     previousRow = rowNumber;
     const cells: CellValue[] = [];
     let previousColumn = -1;
     for (const c of (rowNode.c as XmlNode[] | undefined) ?? []) {
       const ref = c["@_r"] !== undefined ? String(c["@_r"]) : `${columnName(previousColumn + 1)}${rowNumber}`;
-      previousColumn = columnIndex(ref.replace(/\d+/g, ""));
-      const value = readCell(c, ref, context);
+      previousColumn = parseCellRef(ref).column;
+      const value = readCell(c, ref.toUpperCase(), context);
       if (value) cells.push(value);
     }
     if (cells.length === 0) continue;
 
     if (header === null) {
-      const used = new Set<string>();
-      header = cells.map((cell) => {
-        let label = cell.text;
-        for (let n = 2; used.has(label); n++) label = `${cell.text} (${n})`;
-        used.add(label);
-        columns.set(cell.address.replace(/\d+/g, ""), label);
-        return label;
-      });
+      header = uniqueLabels(cells.map((cell) => cell.text));
+      cells.forEach((cell, i) => columns.set(columnOf(cell.address), header![i]));
       continue;
     }
     // Sem protótipo: um cabeçalho "__proto__" vira uma coluna comum.
     const record = Object.create(null) as Record<string, CellValue>;
     for (const cell of cells) {
-      const column = cell.address.replace(/\d+/g, "");
-      record[columns.get(column) ?? column] = cell;
+      const column = columnOf(cell.address);
+      // Coluna sem cabeçalho: `#E`, para não colidir com um cabeçalho de texto "E".
+      record[columns.get(column) ?? `#${column}`] = cell;
     }
     rows.push({ rowNumber, cells: record });
   }
@@ -250,10 +299,40 @@ function readSheet(name: string, worksheet: XmlNode, context: CellContext): Shee
   return { name, header: header ?? [], rows };
 }
 
+const columnOf = (address: string) => address.replace(/\d+/g, "");
+
+/**
+ * Cabeçalhos únicos: repetidos viram "Nome (2)", "Nome (3)"… sem colidir com um
+ * cabeçalho existente. Linear: o próximo sufixo de cada nome é lembrado.
+ */
+function uniqueLabels(texts: string[]): string[] {
+  const used = new Set<string>();
+  const nextSuffix = new Map<string, number>();
+  return texts.map((text) => {
+    let label = text;
+    if (used.has(label)) {
+      let n = nextSuffix.get(text) ?? 2;
+      while (used.has(`${text} (${n})`)) n++;
+      label = `${text} (${n})`;
+      nextSuffix.set(text, n + 1);
+    }
+    used.add(label);
+    return label;
+  });
+}
+
 function readCell(c: XmlNode, address: string, context: CellContext): CellValue | null {
   const type = String(c["@_t"] ?? "n");
   const style = Number(c["@_s"] ?? 0);
   const raw = asText(c.v);
+
+  // Fórmula sem valor calculado (arquivo salvo sem recalcular): o valor é
+  // desconhecido, não vazio (F2.8).
+  if ("f" in c && raw.trim() === "" && type !== "inlineStr") {
+    throw new XlsxError(
+      `A célula ${address} tem uma fórmula sem valor calculado. Abra e salve a planilha no Excel ou no Google Planilhas.`,
+    );
+  }
 
   if (type === "s") {
     if (raw.trim() === "") return null;
