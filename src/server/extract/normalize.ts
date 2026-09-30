@@ -11,10 +11,16 @@ export function trimLineEnd(line: string): string {
   return end === line.length ? line : line.slice(0, end);
 }
 
+/** Marca de ordem de bytes (BOM, U+FEFF), escrita sem caractere invisível no código. */
+export const BOM = String.fromCharCode(0xfeff);
+
+export function stripBom(text: string): string {
+  return text.startsWith(BOM) ? text.slice(1) : text;
+}
+
 /** Normaliza texto de documento: BOM, NFC, finais de linha, espaços de fim de linha. */
 export function normalizeText(raw: string): string {
-  return raw
-    .replace(/^﻿/, "")
+  return stripBom(raw)
     .normalize("NFC")
     .replace(/\r\n?/g, "\n")
     .split("\n")

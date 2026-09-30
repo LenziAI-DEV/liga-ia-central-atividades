@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { toDriveError } from "./google-drive-gateway";
+import { childrenQuery, toDriveError } from "./google-drive-gateway";
+
+describe("childrenQuery", () => {
+  it("escapa barra invertida e aspas do ID da pasta", () => {
+    expect(childrenQuery("abc")).toBe("'abc' in parents and trashed = false");
+    expect(childrenQuery("a\\'b")).toBe("'a\\\\\\'b' in parents and trashed = false");
+  });
+});
+
+describe("toDriveError — tempo esgotado", () => {
+  it("timeout e abort viram falha temporária (com nova tentativa), não 'erro inesperado'", () => {
+    const abort = Object.assign(new Error("The operation was aborted."), { name: "AbortError" });
+    expect(toDriveError(abort).kind).toBe("transient");
+    expect(toDriveError(Object.assign(new Error("timeout"), { name: "TimeoutError" })).kind).toBe("transient");
+    expect(toDriveError(new Error("request failed", { cause: abort })).kind).toBe("transient");
+  });
+});
 
 /** Forma dos erros do gaxios: `response.status` e `response.data` (objeto, texto ou bytes). */
 const apiError = (status: number, data: unknown, message = "") => ({ message, response: { status, data } });

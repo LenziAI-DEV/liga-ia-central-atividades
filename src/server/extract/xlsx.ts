@@ -1,7 +1,8 @@
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 import JSZip from "jszip";
-import { isoDateFromUtcParts } from "@/lib/datetime";
+import { isValidIsoDate, isoDateFromUtcParts } from "@/lib/datetime";
 import { AppError } from "@/server/errors";
+import { stripBom } from "./normalize";
 import type { CellValue, Sheet, SheetExtract, SheetRow } from "./types";
 
 /**
@@ -57,9 +58,25 @@ function asText(node: unknown): string {
   return "";
 }
 
-function isDateFormatCode(code: string): boolean {
-  const cleaned = code.replace(/"[^"]*"|\[[^\]]*\]|\\./g, "");
-  return /[dy]/i.test(cleaned) || /(^|[^h:])m{1,4}(?![:s])/i.test(cleaned);
+/**
+ * Formato personalizado de data? Só se houver dia, ano ou mês. `m` é minuto quando
+ * vem depois de hora (`h:mm`) ou antes de segundo (`mm:ss`); `AM/PM` não é mês.
+ * Formatos só de hora (`hh:mm`, `[$-F400]h:mm:ss AM/PM`) não viram data.
+ */
+export function isDateFormatCode(code: string): boolean {
+  const section = code.split(";")[0] ?? "";
+  const cleaned = section
+    .replace(/"[^"]*"|\[[^\]]*\]|\\.|_.|\*./g, "") // literais, [cor]/[$-…], escapes, espaçamento
+    .replace(/A\/P|AM\/PM/gi, "")
+    .toLowerCase();
+  if (/[dy]/.test(cleaned)) return true;
+  const tokens = cleaned.match(/[hms]+/g) ?? [];
+  return tokens.some((token, i) => {
+    if (token[0] !== "m") return false;
+    const afterHour = tokens[i - 1]?.[0] === "h";
+    const beforeSecond = tokens[i + 1]?.[0] === "s";
+    return !afterHour && !beforeSecond;
+  });
 }
 
 function resolveTarget(target: string): string {
@@ -84,15 +101,18 @@ function findEntry(zip: JSZip, path: string): JSZip.JSZipObject | null {
 async function readXml(zip: JSZip, path: string): Promise<XmlNode | null> {
   const file = findEntry(zip, path);
   if (!file) return null;
-  const xml = (await file.async("string")).replace(/^﻿/, "");
+  const xml = stripBom(await file.async("string"));
   if (XMLValidator.validate(xml) !== true) throw new XlsxError(`XML inválido em ${path}.`);
   return parser.parse(xml) as XmlNode;
 }
 
+/** Último serial válido do Excel: 9999-12-31. */
+const MAX_DATE_SERIAL = 2_958_465;
+
 function serialToIsoDate(serial: number, date1904: boolean): string | null {
+  if (!(serial >= 1 && serial <= MAX_DATE_SERIAL)) return null;
   const epoch = date1904 ? Date.UTC(1904, 0, 1) : Date.UTC(1899, 11, 30);
-  const date = new Date(epoch + Math.round(serial * 86_400_000));
-  return Number.isFinite(date.getTime()) ? isoDateFromUtcParts(date) : null;
+  return isoDateFromUtcParts(new Date(epoch + Math.round(serial * 86_400_000)));
 }
 
 /** Índice (0-based) → letras de coluna: 0 → A, 25 → Z, 26 → AA. */
@@ -138,6 +158,7 @@ async function readWorkbook(data: Uint8Array): Promise<SheetExtract> {
 
   const date1904 = ["1", "true"].includes(String((workbook.workbookPr as XmlNode | undefined)?.["@_date1904"] ?? ""));
   const sheetEntries = ((workbook.sheets as XmlNode | undefined)?.sheet as XmlNode[] | undefined) ?? [];
+  if (sheetEntries.length === 0) throw new XlsxError("Arquivo .xlsx sem nenhuma aba.");
 
   const relsXml = await readXml(zip, "xl/_rels/workbook.xml.rels");
   if (!relsXml && sheetEntries.length > 0) throw new XlsxError("Arquivo .xlsx sem relacionamentos das abas.");
@@ -171,6 +192,8 @@ async function readWorkbook(data: Uint8Array): Promise<SheetExtract> {
     const name = String(entry["@_name"] ?? "");
     const relation = relations.get(String(entry["@_id"] ?? ""));
     if (!relation) throw new XlsxError(`A aba "${name}" não tem relacionamento no pacote.`);
+    // Abas de gráfico/diálogo não têm células: ficam de fora.
+    if (/(chartsheet|dialogsheet)$/i.test(relation.type)) continue;
     const worksheet = (await readXml(zip, relation.target))?.worksheet as XmlNode | undefined;
     if (!worksheet) throw new XlsxError(`A aba "${name}" não foi encontrada no pacote.`);
     sheets.push(readSheet(name, worksheet, context));
@@ -205,11 +228,11 @@ function readSheet(name: string, worksheet: XmlNode, context: CellContext): Shee
     if (cells.length === 0) continue;
 
     if (header === null) {
-      const used = new Map<string, number>();
+      const used = new Set<string>();
       header = cells.map((cell) => {
-        const count = (used.get(cell.text) ?? 0) + 1;
-        used.set(cell.text, count);
-        const label = count === 1 ? cell.text : `${cell.text} (${count})`;
+        let label = cell.text;
+        for (let n = 2; used.has(label); n++) label = `${cell.text} (${n})`;
+        used.add(label);
         columns.set(cell.address.replace(/\d+/g, ""), label);
         return label;
       });
@@ -253,7 +276,7 @@ function readCell(c: XmlNode, address: string, context: CellContext): CellValue 
   if (type === "d") {
     const text = clean(raw);
     if (!text) return null;
-    const date = /^\d{4}-\d{2}-\d{2}/.test(text) ? text.slice(0, 10) : undefined;
+    const date = /^\d{4}-\d{2}-\d{2}/.test(text) && isValidIsoDate(text.slice(0, 10)) ? text.slice(0, 10) : undefined;
     return { address, text: date ?? text, raw: text, ...(date ? { date } : {}) };
   }
 

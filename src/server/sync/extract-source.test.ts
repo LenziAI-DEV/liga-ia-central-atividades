@@ -27,6 +27,17 @@ describe("extractSource", () => {
     expect(doc.kind === "text" && doc.text).not.toContain("�");
   });
 
+  it("Markdown em UTF-16 com BOM (\"Unicode\" do Bloco de Notas) é decodificado", async () => {
+    const drive = new FakeDriveGateway();
+    const le = new Uint8Array([0xff, 0xfe, ...[..."# Reunião"].flatMap((ch) => [ch.charCodeAt(0), 0])]);
+    const be = new Uint8Array([0xfe, 0xff, ...[..."# Reunião"].flatMap((ch) => [0, ch.charCodeAt(0)])]);
+    for (const bytes of [le, be]) {
+      const id = drive.addFile({ name: "ata.md", content: bytes });
+      const doc = await extractSource(drive, await item(drive, id), "md", MAX);
+      expect(doc.kind === "text" && doc.title).toBe("Reunião");
+    }
+  });
+
   it("Google Doc: se o export em Markdown falha de forma não fatal, usa texto simples", async () => {
     const drive = new FakeDriveGateway();
     const id = drive.addFile({ name: "Ata", mimeType: MIME.gdoc, content: "# Ata\n\ntexto" });

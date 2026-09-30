@@ -134,6 +134,67 @@ describe("extractXlsx — robustez (F2.8: falha de leitura nunca vira vazio)", (
     expect(Object.keys(sheet.rows[0].cells)).toContain("__proto__");
   });
 
+  it("formatos personalizados: só hora não vira data; dia, mês e ano viram", async () => {
+    const styles =
+      `<?xml version="1.0"?><styleSheet ${NS}><numFmts count="6">` +
+      '<numFmt numFmtId="164" formatCode="hh:mm"/><numFmt numFmtId="165" formatCode="mm:ss"/>' +
+      '<numFmt numFmtId="166" formatCode="h:mm AM/PM"/><numFmt numFmtId="167" formatCode="[$-F400]h:mm:ss AM/PM"/>' +
+      '<numFmt numFmtId="168" formatCode="dd/mm/yyyy"/><numFmt numFmtId="169" formatCode="mmm-yy"/></numFmts>' +
+      '<cellXfs count="7"><xf numFmtId="0"/><xf numFmtId="164"/><xf numFmtId="165"/><xf numFmtId="166"/>' +
+      '<xf numFmtId="167"/><xf numFmtId="168"/><xf numFmtId="169"/></cellXfs></styleSheet>';
+    const heads = ["A", "B", "C", "D", "E", "F"];
+    const data = await buildXlsx(
+      `<row r="1">${heads.map((h, i) => inline(`${h}1`, `c${i + 1}`)).join("")}</row>` +
+        `<row r="2">${heads.map((h, i) => `<c r="${h}2" s="${i + 1}"><v>46300.375</v></c>`).join("")}</row>`,
+      { "xl/styles.xml": styles },
+    );
+    const cells = (await extractXlsx(data)).sheets[0].rows[0].cells;
+    expect([cells.c1.date, cells.c2.date, cells.c3.date, cells.c4.date]).toEqual([undefined, undefined, undefined, undefined]);
+    expect(cells.c5.date).toBe("2026-10-05");
+    expect(cells.c6.date).toBe("2026-10-05");
+  });
+
+  it("pasta de trabalho sem nenhuma aba é inválida", async () => {
+    const empty = WORKBOOK.replace(/<sheets>.*<\/sheets>/, "<sheets></sheets>");
+    await expect(extractXlsx(await buildXlsx("", { "xl/workbook.xml": empty }))).rejects.toThrow();
+  });
+
+  it("aba de gráfico é ignorada sem derrubar a leitura das planilhas", async () => {
+    const workbook = WORKBOOK.replace(
+      "</sheets>",
+      '<sheet name="Gráfico" sheetId="2" r:id="rId2"/></sheets>',
+    );
+    const rels = RELS.replace(
+      "</Relationships>",
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet" Target="chartsheets/sheet1.xml"/></Relationships>',
+    );
+    const data = await buildXlsx(`<row r="1">${inline("A1", "ID")}</row>`, {
+      "xl/workbook.xml": workbook,
+      "xl/_rels/workbook.xml.rels": rels,
+    });
+    expect((await extractXlsx(data)).sheets.map((s) => s.name)).toEqual(["Tarefas"]);
+  });
+
+  it("datas impossíveis não viram data (t=\"d\" inválido, serial fora do calendário)", async () => {
+    const data = await buildXlsx(
+      `<row r="1">${inline("A1", "ISO")}${inline("B1", "Serial")}</row>` +
+        '<row r="2"><c r="A2" t="d"><v>2026-13-45T00:00:00</v></c><c r="B2" s="1"><v>99999999</v></c></row>',
+    );
+    const cells = (await extractXlsx(data)).sheets[0].rows[0].cells;
+    expect(cells.ISO.date).toBeUndefined();
+    expect(cells.Serial.date).toBeUndefined();
+  });
+
+  it("desambiguação de cabeçalhos nunca colide", async () => {
+    const data = await buildXlsx(
+      `<row r="1">${inline("A1", "Nome")}${inline("B1", "Nome")}${inline("C1", "Nome (2)")}</row>` +
+        `<row r="2">${inline("A2", "a")}${inline("B2", "b")}${inline("C2", "c")}</row>`,
+    );
+    const [sheet] = (await extractXlsx(data)).sheets;
+    expect(new Set(sheet.header).size).toBe(3);
+    expect(Object.values(sheet.rows[0].cells).map((c) => c.text).sort()).toEqual(["a", "b", "c"]);
+  });
+
   it("formatos só de hora não viram data; t=\"d\" e célula s sem valor são tratados", async () => {
     const data = await buildXlsx(
       `<row r="1">${inline("A1", "Data")}${inline("B1", "Hora")}${inline("C1", "Duração")}${inline("D1", "ISO")}${inline("E1", "Vazia")}</row>` +

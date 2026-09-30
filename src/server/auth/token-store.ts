@@ -1,5 +1,6 @@
 import "server-only";
 import type { Db } from "@/server/db/client";
+import { logger } from "@/server/observability/logger";
 import { decryptJson, encryptJson } from "./crypto";
 
 /** Credenciais OAuth do Google (formato do google-auth-library). */
@@ -64,7 +65,8 @@ export function loadTokens(db: Db, key: string, now: string): StoredTokens | nul
       { ciphertext: row.token_ciphertext, iv: row.token_iv, tag: row.token_tag },
       key,
     );
-  } catch {
+  } catch (error) {
+    logger.warn("oauth.decrypt_failed", { error });
     markReauthRequired(db, "decrypt_failed", now);
     return null;
   }
@@ -143,11 +145,14 @@ export function markReauthRequired(db: Db, errorCode: string, now: string) {
   );
 }
 
-/** Desconecta: apaga os tokens do banco (a revogação no Google é feita antes, se possível). */
+/**
+ * Desconecta: apaga os tokens, o e-mail e o escopo do banco (dados mínimos, F13.4).
+ * A revogação no Google é feita antes, se possível.
+ */
 export function markDisconnected(db: Db, now: string) {
   db.run(
     `UPDATE oauth_connection SET status = 'disconnected', token_ciphertext = NULL, token_iv = NULL,
-       token_tag = NULL, last_error_code = NULL, updated_at = ? WHERE id = 1`,
+       token_tag = NULL, account_label = NULL, scope = NULL, last_error_code = NULL, updated_at = ? WHERE id = 1`,
     now,
   );
 }

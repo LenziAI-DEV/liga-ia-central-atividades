@@ -25,7 +25,9 @@ export class GoogleDriveGateway implements DriveGateway {
   private readonly api: drive_v3.Drive;
 
   constructor(auth: OAuth2Client) {
-    this.api = drive({ version: "v3", auth, timeout: REQUEST_TIMEOUT_MS });
+    // `retry: false`: as novas tentativas ficam só no `withRetry` (no máximo 4 por
+    // chamada, ARCHITECTURE §6.9); o retry padrão do gaxios as multiplicaria.
+    this.api = drive({ version: "v3", auth, timeout: REQUEST_TIMEOUT_MS, retry: false });
   }
 
   async getItem(fileId: string): Promise<DriveItem> {
@@ -38,7 +40,7 @@ export class GoogleDriveGateway implements DriveGateway {
   async listChildren(folderId: string, pageToken?: string) {
     const res = await call(() =>
       this.api.files.list({
-        q: `'${folderId.replace(/'/g, "\\'")}' in parents and trashed = false`,
+        q: childrenQuery(folderId),
         spaces: "drive",
         pageSize: 1000,
         pageToken,
@@ -70,6 +72,11 @@ export class GoogleDriveGateway implements DriveGateway {
   }
 }
 
+/** Consulta dos filhos diretos de uma pasta; escapa `\` e `'` do ID (sintaxe de `q` do Drive). */
+export function childrenQuery(folderId: string): string {
+  return `'${folderId.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' in parents and trashed = false`;
+}
+
 function toItem(file: drive_v3.Schema$File): DriveItem {
   return {
     id: file.id ?? "",
@@ -97,6 +104,7 @@ function call<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 interface GaxiosLikeError {
+  name?: string;
   status?: number;
   code?: string | number;
   message?: string;
@@ -157,6 +165,13 @@ export function toDriveError(error: unknown): DriveError {
   return new DriveError("unknown", "Erro inesperado ao ler o Google Drive.", { cause: error });
 }
 
-function isNetworkError(e: GaxiosLikeError): boolean {
-  return typeof e.code === "string" && ["ECONNRESET", "ENOTFOUND", "ETIMEDOUT", "ECONNREFUSED", "EAI_AGAIN"].includes(e.code);
+const NETWORK_CODES = new Set(["ECONNRESET", "ENOTFOUND", "ETIMEDOUT", "ECONNREFUSED", "EAI_AGAIN"]);
+/** Tempo esgotado (`timeout` do cliente) chega como AbortError/TimeoutError, sem `code`. */
+const TIMEOUT_NAMES = new Set(["AbortError", "TimeoutError"]);
+
+function isNetworkError(e: GaxiosLikeError, depth = 0): boolean {
+  if (typeof e.code === "string" && NETWORK_CODES.has(e.code)) return true;
+  if (typeof e.name === "string" && TIMEOUT_NAMES.has(e.name)) return true;
+  const cause = (e as { cause?: unknown }).cause;
+  return depth < 3 && typeof cause === "object" && cause !== null && isNetworkError(cause as GaxiosLikeError, depth + 1);
 }

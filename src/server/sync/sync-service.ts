@@ -151,16 +151,21 @@ export async function runSync(deps: SyncDeps, trigger: SyncTrigger): Promise<Syn
       }
     }
 
-    counts.unavailable += await reconcileMissing(deps, walk, seen);
+    const reconciled = await reconcileMissing(deps, walk, seen, runId);
+    counts.unavailable += reconciled.gone;
+    counts.inconclusive += reconciled.inconclusive;
 
-    const partial = counts.failed > 0 || walk.failedFolders.size > 0;
-    const partialNote =
-      walk.failedFolders.size > 0
-        ? {
-            code: "partial_listing",
-            message: `Não foi possível listar ${walk.failedFolders.size} subpasta(s); o que estava nelas foi mantido como antes.`,
-          }
-        : undefined;
+    const partial = counts.failed > 0 || walk.failedFolders.size > 0 || counts.inconclusive > 0;
+    const notes: string[] = [];
+    if (walk.failedFolders.size > 0) {
+      notes.push(`Não foi possível listar ${walk.failedFolders.size} subpasta(s); o que estava nelas foi mantido como antes.`);
+    }
+    if (counts.inconclusive > 0) {
+      notes.push(
+        `Não foi possível confirmar se ${counts.inconclusive} arquivo(s) ainda existe(m) no Drive; ficaram como estavam e serão verificados no próximo ciclo.`,
+      );
+    }
+    const partialNote = notes.length > 0 ? { code: "partial_check", message: notes.join(" ") } : undefined;
     finishRun(db, runId, partial ? "partial" : "success", counts, clock.now(), partialNote);
     logger.info("sync.run.finish", { run_id: runId, status: partial ? "partial" : "success", ...counts });
 
@@ -211,30 +216,43 @@ const CASCADE_REASON: Record<GoneStatus, string> = {
  * Fontes que não apareceram neste ciclo (F3.4, F3.7). Regras, em ordem:
  * 1. Pai desconhecido (nem na árvore atual nem entre as fontes): a fonte veio de
  *    outra pasta configurada → fora do escopo.
- * 2. Só conclui algo quando a pasta-pai foi listada por completo; confirma com
- *    `files.get` (lixeira × sem acesso × fora da árvore).
- * 3. "Fora da árvore" só é concluído se nenhuma subpasta falhou na listagem: o
- *    arquivo pode ter ido para dentro dela (AR-16, DEC-012.3).
- * O estado de uma pasta que saiu é propagado para o que estava dentro dela.
+ * 2. Pai que já saiu (indisponível ou fora da pasta) em ciclo anterior: herda o
+ *    estado dele (cascata adiada, ver abaixo).
+ * 3. Só conclui algo quando a pasta-pai foi listada por completo; confirma com
+ *    `files.get` (lixeira × sem acesso × fora da árvore). Falha temporária nessa
+ *    confirmação não conclui nada, mas é contada e registrada (F3.6).
+ * 4. Com alguma subpasta sem listagem, nada que dependa da árvore é concluído:
+ *    "fora da árvore" e a cascata esperam o próximo ciclo completo (AR-16).
  */
-async function reconcileMissing(deps: SyncDeps, walk: WalkResult, seen: Set<string>): Promise<number> {
+async function reconcileMissing(
+  deps: SyncDeps,
+  walk: WalkResult,
+  seen: Set<string>,
+  runId: number,
+): Promise<{ gone: number; inconclusive: number }> {
   const { db, gateway, rootFolderId, clock } = deps;
   const treeFolders = new Set([rootFolderId, ...walk.items.filter((i) => i.mimeType === MIME.folder).map((i) => i.id)]);
-  const knownIds = new Set(listSources(db).map((s) => s.file_id));
+  const known = new Map(listSources(db).map((s) => [s.file_id, s]));
   const treeIncomplete = walk.failedFolders.size > 0;
   const now = () => clock.now().toISOString();
   let gone = 0;
+  let inconclusive = 0;
   let goneFolders: Array<{ id: string; status: GoneStatus }> = [];
 
   for (const source of listTrackedSources(db)) {
     if (seen.has(source.file_id) || source.file_id === rootFolderId || !source.parent_id) continue;
 
+    const parent = known.get(source.parent_id);
     let status: GoneStatus | null = null;
     let reason = "";
-    if (!treeFolders.has(source.parent_id) && !knownIds.has(source.parent_id)) {
+    if (!treeFolders.has(source.parent_id) && !parent) {
       if (treeIncomplete) continue;
       status = "out_of_scope";
       reason = "Não pertence à pasta monitorada atual (a pasta configurada mudou).";
+    } else if (!treeFolders.has(source.parent_id) && parent && isGone(parent.sync_status)) {
+      if (treeIncomplete) continue;
+      status = parent.sync_status;
+      reason = CASCADE_REASON[parent.sync_status];
     } else if (!walk.listedFolders.has(source.parent_id)) {
       continue;
     } else {
@@ -254,7 +272,10 @@ async function reconcileMissing(deps: SyncDeps, walk: WalkResult, seen: Set<stri
           status = "unavailable";
           reason = "Arquivo removido do Drive ou sem acesso.";
         } else {
-          continue; // falha temporária: não conclui nada sobre o arquivo
+          // Falha temporária: não conclui nada sobre o arquivo, mas não é silenciosa.
+          inconclusive++;
+          logger.warn("sync.reconcile.inconclusive", { run_id: runId, file_id: source.file_id, error });
+          continue;
         }
       }
     }
@@ -265,6 +286,9 @@ async function reconcileMissing(deps: SyncDeps, walk: WalkResult, seen: Set<stri
     }
   }
 
+  // A cascata usa o `parent_id` gravado; com a árvore incompleta, um filho pode ter
+  // sido movido para uma subpasta não listada. Nesse caso, a regra 2 conclui depois.
+  if (treeIncomplete) goneFolders = [];
   while (goneFolders.length > 0) {
     const next: typeof goneFolders = [];
     for (const folder of goneFolders) {
@@ -277,7 +301,11 @@ async function reconcileMissing(deps: SyncDeps, walk: WalkResult, seen: Set<stri
     }
     goneFolders = next;
   }
-  return gone;
+  return { gone, inconclusive };
+}
+
+function isGone(status: string): status is GoneStatus {
+  return status === "unavailable" || status === "out_of_scope";
 }
 
 function formatLimit(bytes: number): string {

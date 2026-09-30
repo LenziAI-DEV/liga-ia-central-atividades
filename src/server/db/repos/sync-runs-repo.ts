@@ -11,6 +11,8 @@ export interface SyncCounts {
   failed: number;
   unavailable: number;
   folders: number;
+  /** Fontes que sumiram da listagem, mas cuja verificação falhou (nada foi concluído). */
+  inconclusive: number;
 }
 
 export const emptyCounts = (): SyncCounts => ({
@@ -21,6 +23,7 @@ export const emptyCounts = (): SyncCounts => ({
   failed: 0,
   unavailable: 0,
   folders: 0,
+  inconclusive: 0,
 });
 
 export interface SyncRun {

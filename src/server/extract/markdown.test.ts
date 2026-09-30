@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fixtureText } from "../../../tests/helpers/fixtures";
 import { extractMarkdown } from "./markdown";
-import { contentHash } from "./normalize";
+import { BOM, contentHash } from "./normalize";
 
 describe("extractMarkdown", () => {
   it("lê título, seções e metadados do INDEX.md", () => {
@@ -44,6 +44,15 @@ describe("extractMarkdown", () => {
     expect(doc.sections.map((s) => s.heading)).toEqual(["Ata final", "Seção", "C#", "Só#"]);
   });
 
+  it("título e metadados dentro de bloco de código não contam", () => {
+    const doc = extractMarkdown(
+      "# Título\n\n```\n# não é título\n## nem seção\nchave: valor\n```\n\n~~~md\n## também não\n~~~\n\nstatus: ativo\n\n## Seção real",
+    );
+    expect(doc.title).toBe("Título");
+    expect(doc.sections.map((s) => s.heading)).toEqual(["Título", "Seção real"]);
+    expect(doc.metadata).toEqual({ status: "ativo" });
+  });
+
   it("linhas hostis não travam o processo (sem backtracking catastrófico)", () => {
     const spaces = " ".repeat(50_000);
     const hostile = [
@@ -65,7 +74,7 @@ describe("extractMarkdown", () => {
 
   it("o hash não muda com CRLF, BOM ou espaços no fim da linha", () => {
     const a = extractMarkdown("# T\n\nstatus: ativo\n\ntexto");
-    const b = extractMarkdown("﻿# T  \r\n\r\nstatus: ativo \r\n\r\ntexto\r\n");
+    const b = extractMarkdown(`${BOM}# T  \r\n\r\nstatus: ativo \r\n\r\ntexto\r\n`);
     expect(contentHash(a)).toBe(contentHash(b));
   });
 });

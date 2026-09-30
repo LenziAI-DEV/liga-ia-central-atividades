@@ -256,6 +256,36 @@ describe("runSync — escopo da pasta monitorada (F3.7, AR-16)", () => {
     expect(getContent(db, ids["INDEX.md"])).toBeDefined();
   });
 
+  it("falha temporária ao confirmar um sumiço é registrada e o ciclo sai com avisos (F3.6)", async () => {
+    const { db, drive, ids, sync } = setup();
+    await sync("initial");
+    drive.remove(ids["INDEX.md"]);
+    drive.failNext("getItem", ids["INDEX.md"], "transient");
+    const outcome = await sync();
+    expect(outcome.status).toBe("partial");
+    expect(outcome.counts.inconclusive).toBe(1);
+    expect(getSource(db, ids["INDEX.md"])?.sync_status).toBe("processed");
+    expect(getContent(db, ids["INDEX.md"])).toBeDefined();
+    expect(lastFinishedRun(db)?.errorMessage).toMatch(/confirmar/);
+    // No ciclo seguinte, sem a falha, o sumiço é concluído.
+    await sync();
+    expect(getSource(db, ids["INDEX.md"])?.sync_status).toBe("unavailable");
+  });
+
+  it("com a árvore incompleta, a cascata espera o próximo ciclo completo", async () => {
+    const { db, drive, ids, sync } = setup();
+    const sub = drive.addFolder("Sub");
+    const inside = drive.addFile({ name: "dentro.md", content: "# Dentro", parentId: sub });
+    await sync("initial");
+    drive.trash(sub);
+    drive.failNext("listChildren", ids.Atas, "transient");
+    await sync();
+    expect(getSource(db, sub)?.sync_status).toBe("unavailable");
+    expect(getSource(db, inside)?.sync_status).toBe("processed");
+    await sync();
+    expect(getSource(db, inside)).toMatchObject({ sync_status: "unavailable", status_reason: expect.stringMatching(/pasta/) });
+  });
+
   it("arquivo acima do limite não é baixado e falha com motivo", async () => {
     const { db, drive } = setup();
     const big = drive.addFile({ name: "grande.md", content: "x".repeat(64 * 1024) });

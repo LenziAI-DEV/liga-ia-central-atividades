@@ -26,7 +26,9 @@ const CONNECT_ERRORS: Record<string, string> = {
     "Não foi possível validar a resposta do Google (sessão expirada ou endereço diferente). Abra o app por http://localhost:3000 e tente de novo.",
   escopo_invalido: "A autorização não corresponde a somente leitura do Drive. Conecte de novo e aceite o acesso pedido.",
   pasta_inacessivel: "A pasta de DRIVE_TEST_FOLDER_ID não foi encontrada ou esta conta Google não tem acesso a ela.",
-  pasta_invalida: "O ID em DRIVE_TEST_FOLDER_ID não é de uma pasta do Drive.",
+  pasta_invalida: "O ID em DRIVE_TEST_FOLDER_ID não é de uma pasta ativa do Drive (confira se ela não está na lixeira).",
+  google_indisponivel:
+    "O Google não respondeu a tempo ao conferir a pasta. Nada foi gravado; tente conectar de novo em instantes.",
   troca_falhou:
     "Não foi possível concluir a autorização. Confira o Client Secret e se o URI de redirecionamento cadastrado é exatamente http://localhost:3000/api/auth/google/callback.",
 };
@@ -215,6 +217,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
                   {formatDateTimeBR(run.startedAt)} · {RUN_TRIGGER[run.trigger]} · {RUN_STATUS[run.status].label} ·{" "}
                   {run.counts.processed} processado(s), {run.counts.unchanged} sem mudança, {run.counts.failed} com falha,{" "}
                   {run.counts.unavailable} indisponível(is)
+                  {run.counts.inconclusive > 0 && <>, {run.counts.inconclusive} a confirmar</>}
                 </li>
               ))}
             </ul>

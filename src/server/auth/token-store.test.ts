@@ -66,13 +66,13 @@ describe("token-store", () => {
     expect(getConnection(db)?.status).toBe("disconnected");
   });
 
-  it("reautorização e desconexão", () => {
+  it("reautorização e desconexão (sem guardar e-mail nem escopo depois)", () => {
     const db = testDb();
-    saveTokens(db, key, { refresh_token: "1//r" }, { now, newConnection: true });
+    saveTokens(db, key, { refresh_token: "1//r", scope: "s" }, { now, accountLabel: "ana@example.com", newConnection: true });
     markReauthRequired(db, "invalid_grant", now);
     expect(getConnection(db)?.status).toBe("reauth_required");
     markDisconnected(db, now);
-    expect(getConnection(db)).toMatchObject({ status: "disconnected", hasTokens: false });
+    expect(getConnection(db)).toMatchObject({ status: "disconnected", hasTokens: false, accountLabel: null, scope: null });
     expect(loadTokens(db, key, now)).toBeNull();
   });
 });

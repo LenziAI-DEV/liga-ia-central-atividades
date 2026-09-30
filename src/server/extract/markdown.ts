@@ -10,6 +10,8 @@ const HEADING = /^(#{1,6})[ \t]+(.*)$/;
 /** `chave: valor` com chave de uma palavra (ex.: `status`, `data_da_reuniao`). */
 const METADATA = /^[ \t]*([\p{L}_][\p{L}\p{N}_]*)[ \t]*:(.*)$/u;
 const METADATA_SCAN_LINES = 20;
+/** Abertura/fechamento de bloco de código cercado (``` ou ~~~). */
+const FENCE = /^[ \t]{0,3}(`{3,}|~{3,})/;
 /** Linhas maiores que isso não são títulos nem metadados (continuam no texto). */
 const MAX_STRUCTURE_LINE = 4096;
 
@@ -51,9 +53,20 @@ export function extractMarkdown(raw: string): TextExtract {
   const metadata: Record<string, string> = {};
   let title: string | null = null;
   let metadataOpen = true;
+  /** Caractere da cerca aberta (`` ` `` ou `~`); dentro dela nada é título nem metadado. */
+  let fence: string | null = null;
 
   lines.forEach((line, index) => {
     if (line.length > MAX_STRUCTURE_LINE) return;
+    const fenceMatch = FENCE.exec(line);
+    if (fence !== null) {
+      if (fenceMatch && fenceMatch[1][0] === fence) fence = null;
+      return;
+    }
+    if (fenceMatch) {
+      fence = fenceMatch[1][0];
+      return;
+    }
     const heading = HEADING.exec(line);
     if (heading) {
       const headingText = stripEmphasis(unescapeMarkdown(stripClosingHashes(heading[2])));

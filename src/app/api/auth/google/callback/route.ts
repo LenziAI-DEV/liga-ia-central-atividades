@@ -74,7 +74,10 @@ export async function GET(request: NextRequest) {
     }
     if (folder.mimeType !== MIME.folder || folder.trashed) return await reject("/sincronizacao?erro=pasta_invalida");
 
-    const account = await gateway.getAccount().catch(() => ({ displayName: null, email: null }));
+    const account = await gateway.getAccount().catch((error: unknown) => {
+      logger.warn("oauth.account_lookup_failed", { error });
+      return { displayName: null, email: null };
+    });
     const db = getDb();
     const now = new Date().toISOString();
     saveTokens(db, env.APP_ENCRYPTION_KEY!, tokens, {
@@ -88,7 +91,7 @@ export async function GET(request: NextRequest) {
     logger.info("oauth.connected");
   } catch (error) {
     logger.warn("oauth.callback_failed", { error });
-    return await reject(`/sincronizacao?erro=${error instanceof AppError ? error.code : "troca_falhou"}`);
+    return await reject(`/sincronizacao?erro=${callbackErrorCode(error)}`);
   }
 
   // Carga inicial logo após conectar, sem segurar a resposta.
@@ -96,4 +99,13 @@ export async function GET(request: NextRequest) {
     await requestSync("initial");
   });
   return finish("/sincronizacao?conectado=1");
+}
+
+/** Código da mensagem exibida: falha passageira do Google não é "confira o Client Secret". */
+function callbackErrorCode(error: unknown): string {
+  if (error instanceof AppError) return error.code;
+  if (error instanceof DriveError && ["transient", "rate_limited", "unknown"].includes(error.kind)) {
+    return "google_indisponivel";
+  }
+  return "troca_falhou";
 }
