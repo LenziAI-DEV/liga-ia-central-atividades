@@ -172,3 +172,34 @@ export function pendingByActivity(db: Db, activityId?: string): Map<string, numb
   );
   return new Map(rows.map((r) => [r.target_activity_id, r.n]));
 }
+
+export interface PendingChangeView {
+  suggestionId: number;
+  field: string;
+  value: unknown;
+  sourceFileId: string;
+  sourceName: string;
+  sourceUrl: string | null;
+}
+
+/** Propostas pendentes (campo a campo) de uma atividade, com a fonte de cada uma. Base do conflito derivado (ADR-12). */
+export function pendingChangesFor(db: Db, activityId: string): PendingChangeView[] {
+  return db
+    .all<{ id: number; field: string; proposed_value_json: string; source_file_id: string; name: string | null; web_url: string | null }>(
+      `SELECT s.id, f.field, f.proposed_value_json, s.source_file_id, src.name, src.web_url
+         FROM suggestions s
+         JOIN suggestion_fields f ON f.suggestion_id = s.id
+         LEFT JOIN sources src ON src.file_id = s.source_file_id
+        WHERE s.review_status = 'pendente' AND s.stale_since IS NULL AND s.target_activity_id = ?
+        ORDER BY s.id, f.rowid`,
+      activityId,
+    )
+    .map((r) => ({
+      suggestionId: r.id,
+      field: r.field,
+      value: JSON.parse(r.proposed_value_json) as unknown,
+      sourceFileId: r.source_file_id,
+      sourceName: r.name ?? "(arquivo removido)",
+      sourceUrl: r.web_url,
+    }));
+}

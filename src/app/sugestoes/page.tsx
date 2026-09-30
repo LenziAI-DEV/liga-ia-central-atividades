@@ -20,6 +20,7 @@ const NOTICES: Record<string, { tone: "ok" | "info"; text: string }> = {
   ajustada: { tone: "ok", text: "Sugestão ajustada e aplicada à atividade." },
   rejeitada: { tone: "info", text: "Sugestão rejeitada. Nenhuma atividade foi alterada." },
   reanalise: { tone: "info", text: "A análise voltou para a fila e será tentada no próximo ciclo (até 1 minuto)." },
+  semPermissao: { tone: "info", text: "Só revisores podem pedir uma nova análise." },
 };
 
 const ANALYSIS_STATUS: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "info" | "neutral" }> = {
@@ -40,7 +41,7 @@ export default async function Page(props: PageProps<"/sugestoes">) {
   const pending = listSuggestions(db, members, "pendente");
   const decided = listSuggestions(db, members, "decididas");
   const analyses = listAnalyses(db);
-  const notice = typeof query.aviso === "string" ? NOTICES[query.aviso] : undefined;
+  const notice = typeof query.aviso === "string" && Object.hasOwn(NOTICES, query.aviso) ? NOTICES[query.aviso] : undefined;
   const canReview = persona?.canReview === true;
 
   return (

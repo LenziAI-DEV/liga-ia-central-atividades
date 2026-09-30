@@ -160,12 +160,35 @@ function mentionsOwner(evidencePlain: string, member: Member): boolean {
   });
 }
 
-function dedupeKey(kind: string, target: string | null, fields: ProposedFields): string {
-  const entries = Object.entries(fields)
-    .map(([k, v]) => [k, Array.isArray(v) ? [...v].sort().join(",") : plain(String(v))] as const)
-    .sort(([a], [b]) => a.localeCompare(b));
-  return createHash("sha256").update(JSON.stringify([kind, target, entries])).digest("hex");
+/**
+ * Chave de dedupe (DN-12). Título e próximo passo são redigidos de novo pelo modelo a cada chamada,
+ * então não servem de chave: criação usa a evidência literal; atualização usa o alvo e os campos
+ * estruturados (prazo, estado, frente, responsáveis), e o próximo passo só se não houver outro.
+ */
+function dedupeKey(kind: string, target: string | null, fields: ProposedFields, evidencePlain: string): string {
+  const structured = (["dueDate", "front", "ownerIds", "status"] as const)
+    .filter((k) => fields[k] !== undefined)
+    .map((k) => [k, Array.isArray(fields[k]) ? [...(fields[k] as string[])].sort().join(",") : plain(String(fields[k]))] as const);
+  const basis =
+    kind === "create" ? [evidencePlain] : structured.length > 0 ? structured : [plain(fields.nextStep ?? fields.title ?? "")];
+  return createHash("sha256").update(JSON.stringify([kind, target, basis])).digest("hex");
 }
+
+/** O ID do alvo precisa aparecer como palavra inteira ("A1" não casa dentro de "A10"). */
+function mentionsId(scopePlain: string, id: string): boolean {
+  const key = id.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${key}([^a-z0-9]|$)`).test(scopePlain);
+}
+
+const STATUS_MARKERS: Record<string, RegExp> = {
+  concluida: /conclu|finaliz|entreg|pront|terminou|feit/,
+  bloqueada: /bloque|impedi|aguard|depende|parad/,
+  em_andamento: /andamento|inici|comec|seguir|trabalh/,
+  a_fazer: /a fazer|pendente|planej|ainda nao/,
+};
+
+/** Evidência curta demais (ex.: só o ID) não sustenta proposta alguma. */
+const MIN_EVIDENCE_CHARS = 25;
 
 const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
@@ -191,6 +214,10 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
       invalid("o trecho de evidência não existe literalmente no documento");
       continue;
     }
+    if (item.kind !== "no_action" && evidenceNorm.length < MIN_EVIDENCE_CHARS) {
+      invalid("o trecho de evidência é curto demais para sustentar a proposta");
+      continue;
+    }
 
     if (item.kind === "no_action") {
       result.noAction.push({
@@ -211,6 +238,7 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
     const uncertainties = item.uncertainties.map((u) => u.trim()).filter(Boolean);
     const uncertainFields: Array<keyof ProposedFields> = [];
     const fields: ProposedFields = {};
+    const ownUncertainties = uncertainties.length;
 
     // 4. Alvo do update existe e é mencionado na evidência.
     let target: ValidatorActivity | undefined;
@@ -222,8 +250,8 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
       }
       const titleTokens = tokens(target.title);
       const scope = `${evidencePlain} ${blockPlain}`;
-      const mentionsId = scope.includes(target.id.toLowerCase());
-      if (!mentionsId && overlap(titleTokens, tokens(scope)) < Math.min(2, Math.max(titleTokens.size, 1))) {
+      const named = mentionsId(scope, target.id);
+      if (!named && overlap(titleTokens, tokens(scope)) < Math.min(2, Math.max(titleTokens.size, 1))) {
         invalid("nem a evidência nem o parágrafo dela mencionam a atividade de destino");
         continue;
       }
@@ -263,7 +291,14 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
     }
 
     if (item.next_step?.trim()) fields.nextStep = item.next_step.trim().slice(0, 1000);
-    if (item.status) fields.status = item.status;
+    if (item.status) {
+      fields.status = item.status;
+      // O estado precisa ter um marcador no trecho; sem ele, vai como incerto para a pessoa conferir.
+      if (!STATUS_MARKERS[item.status]?.test(evidencePlain)) {
+        uncertainFields.push("status");
+        uncertainties.push("estado inferido, não afirmado no trecho — confirmar");
+      }
+    }
 
     // 7. Frente.
     if (item.front?.trim()) {
@@ -291,12 +326,23 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
         if (at >= 0) uncertainFields.splice(at, 1);
       }
       if (Object.keys(fields).length === 0) {
-        result.noAction.push({
-          reason: "confirma o registro oficial",
-          rationale: item.rationale.trim(),
-          evidence,
-          relatedActivityId: target.id,
-        });
+        if (uncertainties.length > ownUncertainties) {
+          // Houve pedido de mudança que a validação não pôde aceitar (prazo relativo, dono desconhecido...):
+          // não é "confirma o oficial". Fica visível, sem ligar a ata à atividade.
+          result.noAction.push({
+            reason: `requer atenção: ${uncertainties.slice(ownUncertainties).join("; ")}`,
+            rationale: item.rationale.trim(),
+            evidence,
+            relatedActivityId: null,
+          });
+        } else {
+          result.noAction.push({
+            reason: "confirma o registro oficial",
+            rationale: item.rationale.trim(),
+            evidence,
+            relatedActivityId: target.id,
+          });
+        }
         continue;
       }
       // 6 (DN-14). Mudança de responsável nunca passa sem aviso.
@@ -334,7 +380,7 @@ export function validateExtraction(output: ExtractionOutput, ctx: ValidationCont
       locator: locate(evidence, ctx),
       rationale: item.rationale.trim(),
       uncertainties: [...new Set(uncertainties)],
-      dedupeKey: dedupeKey(item.kind, target?.id ?? null, fields),
+      dedupeKey: dedupeKey(item.kind, target?.id ?? null, fields, evidencePlain),
     });
   }
   return result;

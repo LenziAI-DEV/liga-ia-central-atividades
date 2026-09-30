@@ -53,7 +53,10 @@ export function parseIndex(text: string): IndexPointers {
     for (const name of names) cited.add(name);
     const plain = strip(line);
     const isSuperseded = SUPERSEDED.test(line);
+    // "X foi substituído por Y": X é o superado. "X substitui Y" (voz ativa): Y é o superado.
+    const replacesOthers = !isSuperseded && /\bsubstitui\b/i.test(line);
     if (isSuperseded) superseded.push(names[0]);
+    else if (replacesOthers) superseded.push(...names.slice(1));
     if (/\bfontes?\b/.test(plain) && /\batividades\b/.test(plain)) {
       // Numa linha de substituição ("X foi substituída por Y, a nova fonte"), o primeiro
       // nome é o superado; o registro é o outro nome, se houver.

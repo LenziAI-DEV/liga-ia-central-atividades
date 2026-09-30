@@ -28,12 +28,18 @@ export const AUTHORITY_LABEL: Record<AuthorityClass, string> = {
   sem_autoridade: "sem autoridade definida",
 };
 
+/** O nome precisa aparecer inteiro ("guia.md" não casa dentro de "novo_guia.md"). */
+function mentionsName(text: string, name: string): boolean {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, (ch) => `\\${ch}`);
+  return new RegExp(`(?<![\\w.-])${escaped}(?![\\w-])`).test(text);
+}
+
 const SUPERSEDED_STATUS = new Set(["deprecated", "superado", "superada", "obsoleto", "obsoleta", "historico"]);
 
 const tokens = (name: string) =>
   nameKey(name.replace(/\.[A-Za-z0-9]{1,5}$/, ""))
     .split(/[^a-z0-9]+/)
-    .filter((t) => t.length >= 3);
+    .filter((t) => t.length >= 3 && !/^[0-9]+$/.test(t));
 
 function textMeta(extracted: Extracted | undefined): Record<string, string> {
   return extracted?.kind === "text" ? extracted.metadata : {};
@@ -93,7 +99,7 @@ export function classifySources(db: Db, indexFileName: string): Map<string, Clas
     const meta = textMeta(contentOf(s.file_id));
     const replaces = meta.substitui ?? "";
     for (const other of tracked) {
-      if (other.file_id !== s.file_id && replaces.includes(other.name)) replacedBy.set(other.file_id, s.name);
+      if (other.file_id !== s.file_id && mentionsName(replaces, other.name)) replacedBy.set(other.file_id, s.name);
     }
   }
 

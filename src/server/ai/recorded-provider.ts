@@ -32,6 +32,7 @@ export const FIXTURE_DIR = join(process.cwd(), "tests", "fixtures", "ai");
 
 /** Lê uma saída gravada de `tests/fixtures/ai/<label>.json` (formato escrito por `ai:record`). */
 export function loadFixture(label: string): ExtractionOutput {
+  if (!/^[a-z0-9_.-]+$/i.test(label) || label.includes("..")) throw new Error("rótulo de fixture inválido");
   const raw = JSON.parse(readFileSync(join(FIXTURE_DIR, `${label}.json`), "utf8")) as { output: unknown };
   return ExtractionSchema.parse(raw.output);
 }

@@ -19,6 +19,10 @@ export interface AnalysisDeps {
   indexFileName: string;
   maxInputChars: number;
   effortLabel?: string;
+  /** Só analisa quando a versão ficou estável por este tempo (evita custo a cada edição). 0 = sem espera. */
+  debounceMs?: number;
+  /** Teto de chamadas ao modelo nas últimas 24 h. Indefinido = sem teto. */
+  dailyCallLimit?: number;
 }
 
 export interface QueueSummary {
@@ -57,9 +61,11 @@ export function enqueueAnalyses(db: Db, indexFileName: string, clock: Clock): nu
   const now = clock.now().toISOString();
   const classes = classifySources(db, indexFileName);
   let queued = 0;
+  const ataIds = new Set<string>();
   for (const source of listTrackedSources(db)) {
     if ((source.kind !== "md" && source.kind !== "gdoc") || source.sync_status !== "processed" || !source.processed_hash) continue;
     if (classes.get(source.file_id)?.class !== "ata") continue;
+    ataIds.add(source.file_id);
     const result = db.run(
       `INSERT OR IGNORE INTO document_analyses (file_id, content_hash, analyzer_version, purpose, status, created_at)
        VALUES (?, ?, ?, 'extract', 'pending', ?)`,
@@ -76,6 +82,10 @@ export function enqueueAnalyses(db: Db, indexFileName: string, clock: Clock): nu
       source.file_id,
       source.processed_hash,
     );
+  }
+  // Sugestões de IA cuja fonte deixou de ser ata (ou sumiu) não podem mais ser aceitas.
+  for (const r of db.all<{ id: string }>("SELECT DISTINCT source_file_id AS id FROM suggestions WHERE review_status = 'pendente' AND origin = 'ai'")) {
+    if (!ataIds.has(r.id)) db.run("UPDATE suggestions SET stale_since = COALESCE(stale_since, ?) WHERE source_file_id = ? AND origin = 'ai' AND review_status = 'pendente'", now, r.id);
   }
   return queued;
 }
@@ -144,6 +154,8 @@ export async function processQueue(deps: AnalysisDeps): Promise<QueueSummary> {
   globals.__liaAnalysisRunning = true;
   try {
     const now = deps.clock.now().toISOString();
+    // Uma análise 'running' só existe se o processo caiu no meio dela (há um único processo e a trava acima).
+    deps.db.run("UPDATE document_analyses SET status = 'pending' WHERE status = 'running'");
     const rows = deps.db.all<AnalysisRow>(
       `SELECT id, file_id, content_hash, attempts FROM document_analyses
         WHERE purpose = 'extract' AND analyzer_version = ?
@@ -212,6 +224,18 @@ async function analyzeOne(deps: AnalysisDeps, row: AnalysisRow): Promise<keyof Q
     return "failed";
   }
 
+  const debounce = deps.debounceMs ?? 0;
+  const processedAt = source.last_processed_at ? Date.parse(source.last_processed_at) : 0;
+  if (debounce > 0 && deps.clock.now().getTime() - processedAt < debounce) return "waiting";
+  if (deps.dailyCallLimit !== undefined) {
+    const since = new Date(deps.clock.now().getTime() - 24 * 3600_000).toISOString();
+    const used = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM ai_calls WHERE created_at >= ?", since)?.n ?? 0;
+    if (used >= deps.dailyCallLimit) {
+      logger.warn("analysis.daily_limit", { used, limit: deps.dailyCallLimit });
+      return "waiting";
+    }
+  }
+
   db.run("UPDATE document_analyses SET status = 'running' WHERE id = ?", row.id);
   const official = officialContext(db, deps.members);
   const prompt = buildExtractPrompt({
@@ -253,10 +277,22 @@ async function analyzeOne(deps: AnalysisDeps, row: AnalysisRow): Promise<keyof Q
     activities: official.validator,
   });
 
+  // A chamada paga é registrada mesmo que a gravação abaixo falhe.
+  recordCall(db, at(), result.model, "ok", null, result.usage, result.latencyMs, result.costUsd);
   db.tx(() => {
     const now = at();
     const live = db.get<{ status: string }>("SELECT status FROM document_analyses WHERE id = ?", row.id);
     if (live?.status !== "running") return;
+    // A fonte pode ter mudado enquanto o modelo trabalhava: a análise desta versão não vale mais.
+    const current = db.get<{ processed_hash: string | null }>("SELECT processed_hash FROM sources WHERE file_id = ?", row.file_id);
+    if (current?.processed_hash !== row.content_hash) {
+      db.run(
+        "UPDATE document_analyses SET status = 'done', error_code = 'obsolete', error_message = 'Versão substituída durante a análise.', finished_at = ? WHERE id = ?",
+        now,
+        row.id,
+      );
+      return;
+    }
     db.run(
       `UPDATE document_analyses SET status = 'done', attempts = ?, error_code = NULL, error_message = NULL, document_summary = ?,
          no_action_json = ?, invalid_json = ?, finished_at = ? WHERE id = ?`,
@@ -267,7 +303,6 @@ async function analyzeOne(deps: AnalysisDeps, row: AnalysisRow): Promise<keyof Q
       now,
       row.id,
     );
-    recordCall(db, now, result.model, "ok", null, result.usage, result.latencyMs, result.costUsd);
 
     // Sugestões pendentes de versões antigas deste arquivo são substituídas pela nova análise.
     const old = db.all<{ id: number; dedupe_key: string }>(

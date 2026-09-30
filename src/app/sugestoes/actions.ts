@@ -59,6 +59,7 @@ export async function reviewAction(_previous: ReviewState, data: FormData): Prom
 /** "Tentar novamente" uma análise por IA que falhou ou ficou pendente (F7.10). */
 export async function retryAnalysisAction(data: FormData) {
   await assertLocalRequest();
+  if (!(await getCurrentPersona())?.canReview) redirect("/sugestoes?aviso=semPermissao");
   const id = Number(text(data, "id"));
   if (Number.isInteger(id)) retryAnalysis(getDb(), id);
   redirect("/sugestoes?aviso=reanalise");

@@ -85,7 +85,8 @@ export function reviewSuggestion(
 ): ReviewOutcome {
   const { reviewer } = input;
   if (!reviewer || !reviewer.canReview) {
-    return { ok: false, code: "not_reviewer", message: "Só revisores (Bruno e Carla) podem decidir sobre sugestões." };
+    const names = members.filter((m) => m.canReview).map((m) => m.name).join(" e ");
+    return { ok: false, code: "not_reviewer", message: `Só revisores (${names}) podem decidir sobre sugestões.` };
   }
   const now = clock.now().toISOString();
   try {
@@ -97,12 +98,20 @@ export function reviewSuggestion(
       );
       if (!row) throw new ReviewError("not_found", "Sugestão não encontrada.");
       // Já decidida ou desatualizada: responde isso antes de qualquer outra checagem.
-      if (row.review_status !== "pendente" || row.stale_since !== null) throw describeClosed(db, row, members);
+      // Rejeitar uma sugestão desatualizada é permitido (descartar); aceitar ou ajustar, não.
+      if (row.review_status !== "pendente" || (row.stale_since !== null && input.action !== "reject")) throw describeClosed(db, row, members);
+      if (input.action !== "reject") {
+        const current = getSource(db, row.source_file_id);
+        if (!current || current.sync_status !== "processed" || current.processed_hash !== row.source_version) {
+          throw new ReviewError("stale", "A fonte desta sugestão mudou ou não está mais disponível. Rejeite-a ou aguarde a nova análise.");
+        }
+      }
 
       const claim = (status: "aceita" | "ajustada" | "rejeitada", reason: string | null) => {
+        const staleClause = status === "rejeitada" ? "" : " AND stale_since IS NULL";
         const r = db.run(
           `UPDATE suggestions SET review_status = ?, reviewer_id = ?, reviewed_at = ?, review_reason = ?
-            WHERE id = ? AND review_status = 'pendente' AND stale_since IS NULL`,
+            WHERE id = ? AND review_status = 'pendente'${staleClause}`,
           status,
           reviewer.id,
           now,
