@@ -598,7 +598,7 @@ Os marcos são resultados visíveis ao usuário, não tarefas de engenharia. O `
 | 3 | Gestão de atividades com histórico | Criar, editar, concluir e bloquear, com persistência e histórico auditável | F6 | V-6 | complete (2026-09-30) | — |
 | 4 | Sincronização automática confiável | Arquivos novos, editados, renomeados e removidos refletidos em ≤15 min. Erros visíveis | F3 | V-3, V-8 | complete (2026-09-30) | — |
 | 5 | Autoridade e conflitos | Planilha homônima não apaga nada. Documentos superados identificados. Regra de precedência visível | F4 | V-5, V-13 | complete (2026-09-30; V-5 com o Drive real a conferir) | — |
-| 6 | Sugestões de IA com revisão humana | Atas geram sugestões com evidência. O revisor aceita, ajusta ou rejeita. Hipóteses ficam de fora | F7, F8 | V-2, V-4, V-7, V-11, V-12 | pending | — |
+| 6 | Sugestões de IA com revisão humana | Atas geram sugestões com evidência. O revisor aceita, ajusta ou rejeita. Hipóteses ficam de fora | F7, F8 | V-2, V-4, V-7, V-11, V-12 | complete (2026-09-30; auditoria das Fases 5 e 6 pendente) | — |
 | 7 | "O que mudou para mim" e novidades | Resumo pessoal confirmadas / pendentes / incertas, com links | F9 | V-9 | pending | — |
 | 8 | "Comece aqui" | Membro novo se orienta sozinho. Lacunas marcadas | F10 | V-10 | pending | — |
 | 9 | Acabamento de experiência e acessibilidade | As 6 áreas, contraste, teclado, celular e estados vazio, erro e carregando validados | F12 | CA-F12.* | pending | — |

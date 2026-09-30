@@ -105,3 +105,12 @@
 - **Descoberta nos dados:** as atas também são citadas no índice e também dizem "status: ativo"; pela ordem da arquitetura elas virariam "documento de direção". Mudei a ordem (ata antes de direção) e registrei o motivo na DEC-018.
 - **O caso da planilha homônima vazia:** um teste de integração prova que, quando ela chega depois da carga, nada nas atividades, nos responsáveis e nos eventos muda (comparação do banco inteiro antes e depois). A planilha aparece como "sem autoridade / possível conflito", com o motivo.
 - **Verificado:** 251 testes, typecheck, lint e build; classificação conferida nos dados reais.
+
+## Quarta, 2026-09-30 (noite) — Fase 6: IA com evidência e revisão humana (E-7)
+
+- **O que entrou:** a IA lê cada ata nova ou editada e propõe atualizar ou criar atividades, sempre com o trecho literal da fonte e as incertezas. Um validador independente confere tudo antes de aparecer, e uma pessoa revisora aceita, ajusta ou rejeita. A atividade oficial só muda depois disso.
+- **Decisão de projeto:** quem decide o que é fato não é a IA, é o validador e a pessoa. O modelo não tem ferramenta nenhuma: só devolve um objeto com o formato combinado. Se o trecho de evidência não existe no documento, se o alvo não é mencionado, se a data é relativa ou se o responsável não está no texto, o item não vira proposta.
+- **O que o spike ensinou:** gravei 7 respostas reais do modelo (as 3 atas do pacote e 4 atas feitas por mim: "até sexta", injeção de instrução, dono desconhecido, decisão misturada com hipótese). O modelo acertou todas, com custo de cerca de 1 centavo de dólar por ata. Mas a primeira resposta real quebrou uma regra minha: eu exigia que a evidência citasse o ID da atividade, e o modelo citava o trecho da mudança, com o ID na frase vizinha. Em vez de afrouxar às cegas, passei a aceitar a menção no mesmo parágrafo e, para compensar, acrescentei um bloqueio para trechos com ordens dirigidas à IA.
+- **Erro meu, corrigido a tempo:** na revisão de uma sugestão já decidida, a checagem de "o valor mudou" vinha antes da de "já foi decidida", e o segundo clique dava a mensagem errada. O teste do critério CA-F8.2 pegou.
+- **Custo medido (M-10):** US$ 0,0086 a 0,0134 por ata; três atas ≈ US$ 0,035.
+- **Verificado:** 296 testes, typecheck, lint e build; o fluxo inteiro (Drive real, modelo real, aceitar, ajustar, rejeitar sem motivo, não revisor) no navegador.
