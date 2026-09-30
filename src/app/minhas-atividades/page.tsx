@@ -37,7 +37,7 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
   return (
     <>
       <PageHeader title={`Minhas atividades — ${persona.name}`} description={area.description} />
-      <p className="mb-4" aria-live="polite">
+      <p className="mb-4">
         {mine.length === 0
           ? "Nenhuma atividade aberta atribuída a você."
           : `${mine.length} atividade(s) aberta(s), inclusive as compartilhadas`}
@@ -51,6 +51,7 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
         </Link>
       </p>
       <ActivityList
+        heading="Suas atividades abertas"
         activities={ordered}
         today={today}
         empty="Você não tem atividades abertas. Veja “Todas as atividades” para o que a Liga está fazendo."

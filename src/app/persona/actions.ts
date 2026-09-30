@@ -2,22 +2,10 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { sameSiteReturnPath } from "@/lib/return-path";
 import { PERSONA_COOKIE } from "@/server/persona/current-persona";
 import { findMember, loadMembers } from "@/server/persona/members";
 import { assertLocalRequest } from "@/server/security/assert-local-request";
-
-/** Volta para a página de onde veio (mesmo host); qualquer outra coisa vai para a raiz. */
-async function returnPath(): Promise<string> {
-  const h = await headers();
-  const referer = h.get("referer");
-  if (!referer) return "/";
-  try {
-    const url = new URL(referer);
-    return url.host === h.get("host") ? `${url.pathname}${url.search}` : "/";
-  } catch {
-    return "/";
-  }
-}
 
 /**
  * Troca a persona ativa. Só guarda a escolha num cookie: não grava evento nem altera
@@ -34,5 +22,6 @@ export async function switchPersonaAction(formData: FormData) {
       maxAge: 60 * 60 * 24 * 365,
     });
   }
-  redirect(await returnPath());
+  const h = await headers();
+  redirect(sameSiteReturnPath(h.get("referer"), h.get("host")));
 }

@@ -21,6 +21,16 @@ describe("parseIndex", () => {
     expect(pointers.superseded).toEqual(["Regras_v1.md"]);
   });
 
+  it("arquivo superado nunca é o registro; a linha de substituição aponta o substituto (R-1)", () => {
+    const only = "`Atividades_2025.xlsx` foi substituída por `Atividades_2026.xlsx`, a nova fonte das atividades.";
+    expect(parseIndex(only).registry).toEqual([expect.objectContaining({ fileName: "Atividades_2026.xlsx" })]);
+    expect(parseIndex(only).superseded).toEqual(["Atividades_2025.xlsx"]);
+    const stale = "`Atividades_2025.xlsx`: fonte das atividades, substituída em 2026.";
+    expect(parseIndex(stale).registry).toEqual([]);
+    const both = ["- `Antigo.xlsx`: fonte das atividades.", "`Antigo.xlsx` está superado por `Novo.xlsx`."].join("\n");
+    expect(parseIndex(both).registry).toEqual([]);
+  });
+
   it("aba ausente vira null; linha sem arquivo ou sem 'fonte' e 'atividades' não conta", () => {
     expect(parseIndex("A fonte das atividades é `Registro.xlsx`.").registry[0]).toMatchObject({
       fileName: "Registro.xlsx",

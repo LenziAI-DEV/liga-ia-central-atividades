@@ -102,11 +102,12 @@ export default async function Page(props: PageProps<"/atividades">) {
           ) : null}
         </div>
       </form>
-      <p className="mb-4" aria-live="polite">
+      <p className="mb-4">
         {filtered ? `${shown.length} de ${all.length} atividade(s)` : `${all.length} atividade(s) no total`}
         {" "}(uma atividade com vários responsáveis conta uma vez).
       </p>
       <ActivityList
+        heading="Atividades da Liga"
         activities={shown}
         today={today}
         empty={all.length === 0 ? "Ainda não há atividades importadas." : "Nenhuma atividade com esses filtros."}

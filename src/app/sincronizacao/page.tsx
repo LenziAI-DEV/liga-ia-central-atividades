@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { getArea } from "@/lib/areas";
 import { formatDateBR, formatDateTimeBR, isoDateInSaoPaulo } from "@/lib/datetime";
 import { RUN_STATUS, RUN_TRIGGER, SOURCE_KIND, SOURCE_STATUS } from "@/lib/labels";
+import { getImportReport } from "@/server/activities/import-hook";
 import { resolveRegistry } from "@/server/authority/registry-locator";
 import { getConnection } from "@/server/auth/token-store";
 import { getEnv, missingGoogleSettings, type AppEnv } from "@/server/config/env";
@@ -175,7 +176,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
         </div>
       </section>
 
-      <RegistryStatus resolution={resolveRegistry(db, env.INDEX_FILE_NAME)} />
+      <RegistryStatus resolution={resolveRegistry(db, env.INDEX_FILE_NAME)} report={getImportReport(db)} />
 
       <section aria-labelledby="sincronizacao" className="mt-8">
         <h2 id="sincronizacao" className="text-xl font-semibold">

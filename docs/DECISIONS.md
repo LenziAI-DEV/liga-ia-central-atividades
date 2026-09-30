@@ -284,3 +284,20 @@
 | Decisões em aberto da arquitetura (OD-04…OD-11) | Ver `ARCHITECTURE.md` §16 | — |
 | ~~Provedor e modelo de IA~~ → DEC-006. Falta: prompt, schema e `effort`, e o custo medido | M6 | D-10 |
 | Política de cache e limpeza | Plano do M4 | D-14 |
+
+## DEC-015 — Revisão formal da Fase 2 (2026-09-30)
+
+- **Contexto:** revisão de código e segurança pedida pelo usuário depois do merge da Fase 2. Um revisor independente (Sonnet, sem santa-loop, DEC-014), mais `npm audit` (0 vulnerabilidades), AgentShield e cobertura.
+- **AgentShield:** 545 "críticos" são falsos positivos (hashes de integridade do `package-lock.json` lidos como chaves do Azure); os demais são "defesas de prompt" ausentes no `CLAUDE.md`, que é instrução de desenvolvimento e não prompt de aplicação. Aceitos.
+- **Achados confirmados e corrigidos (com teste):**
+  1. **HIGH:** o índice podia apontar um arquivo declarado superado como registro (a linha "X foi substituída por Y, a nova fonte das atividades" registrava X). Agora o superado nunca é registro e a linha de substituição aponta o substituto.
+  2. Linhas puladas na importação (ID inválido, repetido, sem título, estado e prazo não reconhecidos) só ficavam no banco. Agora aparecem em "Fonte das atividades", em `/sincronizacao`.
+  3. Importação sem nenhuma linha válida gravava a marca de "importação inicial" e travava para sempre. Agora não grava a marca, mostra a pendência e tenta de novo na próxima sincronização.
+  4. Falha do hook de importação só ia para o log. Agora o resultado (importado, pendente, erro) fica em `app_settings.registry_import` e a tela mostra.
+  5. Localizador da origem histórica usava o texto do cabeçalho (`Atividades!Origem5`); agora usa a letra da coluna (`Atividades!I5`).
+  6. **LOW:** redirecionamento aberto teórico na troca de persona (`//evil.com` no `Referer`); extraído para `lib/return-path.ts`, com teste.
+  7. Títulos `h3` sem `h2` nas listas (h2 só para leitores de tela) e `aria-live` inútil em texto de servidor removido.
+  8. IDs que só diferem na caixa são a mesma atividade; linha sem título não consome o ID; sinônimos "nome" e "entrega" removidos (ambíguos); cabeçalhos toleram pontuação.
+  9. Migração `003-owner-index`: o índice único de responsáveis misturava `member_id` e nome bruto na mesma expressão (colisão teórica).
+- **Verificado sem problema (pelo revisor):** cookie e persona, host e CSRF das actions, `searchParams`, SQL parametrizado, XSS e URLs, regex do índice, transação e idempotência, append-only, logs, datas.
+- **Não feito de propósito:** cobertura automática do cookie e das actions (só o E2E da Fase 9 cobre, pois dependem do runtime do Next).

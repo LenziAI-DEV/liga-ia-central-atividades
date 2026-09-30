@@ -3,6 +3,7 @@ import type { Db } from "../client";
 export const SETTING = {
   rootFolder: "root_folder",
   firstLoadStartedAt: "first_load_started_at",
+  registryImport: "registry_import",
 } as const;
 
 export interface RootFolder {
