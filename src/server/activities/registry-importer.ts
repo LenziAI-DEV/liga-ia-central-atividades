@@ -18,7 +18,7 @@ export interface ImportIssue {
 export type ImportResult =
   | { status: "imported"; imported: number; issues: ImportIssue[] }
   | { status: "already_imported" }
-  | { status: "refused"; reason: string };
+  | { status: "refused"; reason: string; issues?: ImportIssue[] };
 
 /** Índice (0-based) → letras de coluna, só para o localizador `Atividades!A2:J2`. */
 function columnLetters(index: number): string {
@@ -87,16 +87,17 @@ export function importInitialRegistry(
         issues.push({ row: row.rowNumber, id, message: "linha sem ID válido; não importada" });
         continue;
       }
-      if (seen.has(id)) {
+      // IDs comparados sem diferenciar maiúsculas: `lia-001` e `LIA-001` são a mesma atividade.
+      if (seen.has(id.toUpperCase())) {
         issues.push({ row: row.rowNumber, id, message: "ID repetido no registro; só a primeira linha foi importada" });
         continue;
       }
-      seen.add(id);
       if (!title) {
         issues.push({ row: row.rowNumber, id, message: "linha sem título; não importada" });
         continue;
       }
-      if (db.get("SELECT 1 AS present FROM activities WHERE id = ?", id)) {
+      seen.add(id.toUpperCase());
+      if (db.get("SELECT 1 AS present FROM activities WHERE id = ? COLLATE NOCASE", id)) {
         issues.push({ row: row.rowNumber, id, message: "já existe uma atividade com este ID; não importada" });
         continue;
       }
@@ -174,7 +175,7 @@ export function importInitialRegistry(
           id,
           originFile.file_id,
           originFile.drive_version ?? "",
-          `${sheet.name}!${map.origin}${row.rowNumber}`,
+          `${sheet.name}!${columnLetters(sheet.header.indexOf(map.origin!))}${row.rowNumber}`,
           origin,
           now,
         );
@@ -209,6 +210,9 @@ export function importInitialRegistry(
       imported++;
     }
 
+    // Sem nenhuma linha importável (coluna errada, tudo inválido) não se grava a marca de
+    // "importação inicial": o registro continua pendente e a próxima sincronização tenta de novo.
+    if (imported === 0) return;
     db.run("INSERT OR IGNORE INTO id_sequences (prefix, next_value) VALUES ('LIA', 1)");
     db.run(
       `INSERT INTO registry_imports (file_id, sheet, content_hash, kind, imported_at, rows_count, issues_json, snapshot_json)
@@ -228,5 +232,12 @@ export function importInitialRegistry(
     );
   });
 
+  if (imported === 0) {
+    return {
+      status: "refused",
+      reason: `Nenhuma linha da aba "${sheet.name}" pôde ser importada (${issues.length} com problema).`,
+      issues,
+    };
+  }
   return { status: "imported", imported, issues };
 }

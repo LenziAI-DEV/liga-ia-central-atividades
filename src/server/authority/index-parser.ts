@@ -48,10 +48,15 @@ export function parseIndex(text: string): IndexPointers {
     const names = fileNamesOf(line, sheet);
     if (names.length === 0) return;
     const plain = strip(line);
+    const isSuperseded = SUPERSEDED.test(line);
+    if (isSuperseded) superseded.push(names[0]);
     if (/\bfontes?\b/.test(plain) && /\batividades\b/.test(plain)) {
-      registry.push({ fileName: names[0], sheetName: sheet, line: index + 1 });
+      // Numa linha de substituição ("X foi substituída por Y, a nova fonte"), o primeiro
+      // nome é o superado; o registro é o outro nome, se houver.
+      const fileName = isSuperseded ? names.find((n) => n !== names[0]) : names[0];
+      if (fileName) registry.push({ fileName, sheetName: sheet, line: index + 1 });
     }
-    if (SUPERSEDED.test(line)) superseded.push(names[0]);
   });
-  return { registry, superseded };
+  // Um arquivo declarado superado em qualquer linha nunca é o registro vigente.
+  return { registry: registry.filter((p) => !superseded.includes(p.fileName)), superseded };
 }

@@ -1,13 +1,27 @@
 import { ActivityCard } from "@/components/activity-card";
 import type { ActivityView } from "@/server/activities/activity-queries";
 
-export function ActivityList({ activities, today, empty }: { activities: ActivityView[]; today: string; empty: string }) {
+export function ActivityList({
+  activities,
+  today,
+  empty,
+  heading,
+}: {
+  activities: ActivityView[];
+  today: string;
+  empty: string;
+  /** Título de seção só para leitores de tela; evita pular do h1 direto para os h3 dos cartões. */
+  heading?: string;
+}) {
   if (activities.length === 0) return <p className="rounded border border-[var(--line)] p-4">{empty}</p>;
   return (
-    <ul className="grid gap-3">
-      {activities.map((a) => (
-        <ActivityCard key={a.id} activity={a} today={today} />
-      ))}
-    </ul>
+    <>
+      {heading ? <h2 className="sr-only">{heading}</h2> : null}
+      <ul className="grid gap-3">
+        {activities.map((a) => (
+          <ActivityCard key={a.id} activity={a} today={today} />
+        ))}
+      </ul>
+    </>
   );
 }

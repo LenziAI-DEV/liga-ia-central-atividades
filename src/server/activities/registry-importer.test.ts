@@ -89,7 +89,7 @@ describe("importInitialRegistry", () => {
       "SELECT relation, locator FROM activity_references WHERE activity_id = 'ACT-101' ORDER BY relation",
     );
     expect(refs).toEqual([
-      { relation: "historical_origin", locator: "Atividades!Origem2" },
+      { relation: "historical_origin", locator: "Atividades!I2" },
       { relation: "imported_from", locator: "Atividades!A2:J2" },
     ]);
     expect(db.get("SELECT authority_class FROM sources WHERE file_id = 'r'")).toEqual({ authority_class: "registro_vigente" });
@@ -168,6 +168,46 @@ describe("importInitialRegistry", () => {
     expect(importInitialRegistry(db, resolveRegistry(db, "INDEX.md"), members, clock)).toMatchObject({ status: "refused" });
     expect(rows(db)).toEqual([]);
     expect(db.get("SELECT 1 AS present FROM registry_imports")).toBeUndefined();
+  });
+
+  it("importação sem nenhuma linha válida não grava a marca e tenta de novo depois (R-3)", () => {
+    addSource(db, "i", "INDEX.md", "md", extractMarkdown("fonte das atividades: `T.xlsx`, aba `A`"));
+    addSource(db, "t", "T.xlsx", "xlsx", sheetOf("A", ["ID", "Atividade"], [["X-1", ""], ["", "Sem id"]]));
+    const first = importInitialRegistry(db, resolveRegistry(db, "INDEX.md"), members, clock);
+    expect(first).toMatchObject({ status: "refused" });
+    if (first.status !== "refused") throw new Error("esperado refused");
+    expect(first.issues).toHaveLength(2);
+    expect(db.get("SELECT 1 AS present FROM registry_imports")).toBeUndefined();
+    expect(db.get("SELECT authority_class FROM sources WHERE file_id = 't'")).toEqual({ authority_class: null });
+
+    db.run("DELETE FROM source_contents WHERE file_id = 't'");
+    saveContent(db, "t", "h2", sheetOf("A", ["ID", "Atividade"], [["X-1", "Agora com título"]]), NOW);
+    expect(importInitialRegistry(db, resolveRegistry(db, "INDEX.md"), members, clock)).toMatchObject({
+      status: "imported",
+      imported: 1,
+    });
+  });
+
+  it("IDs que só diferem na caixa são a mesma atividade; linha sem título não consome o ID (R-8)", () => {
+    addSource(db, "i", "INDEX.md", "md", extractMarkdown("fonte das atividades: `T.xlsx`, aba `A`"));
+    addSource(
+      db,
+      "t",
+      "T.xlsx",
+      "xlsx",
+      sheetOf(
+        "A",
+        ["ID", "Atividade"],
+        [
+          ["LIA-001", ""],
+          ["LIA-001", "Válida"],
+          ["lia-001", "Repetida só na caixa"],
+        ],
+      ),
+    );
+    const result = importInitialRegistry(db, resolveRegistry(db, "INDEX.md"), members, clock);
+    expect(result).toMatchObject({ status: "imported", imported: 1 });
+    expect(rows(db).map((r) => r.id)).toEqual(["LIA-001"]);
   });
 
   it("fonte não resolvida (pendência) não importa nada", () => {
