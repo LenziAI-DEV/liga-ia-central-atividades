@@ -463,6 +463,7 @@ Regras de dependência:
 │  └─ ai-eval.mjs                # avaliação opcional com a IA real (usa a API HTTP local)
 ├─ src/
 │  ├─ instrumentation.ts         # register() → migra banco e inicia o Scheduler (guardado)
+│  ├─ proxy.ts                   # [auditoria] política de host: canônico passa; 127.0.0.1 → canônico; outro → 403 (DEC-013)
 │  ├─ app/
 │  │  ├─ layout.tsx              # navegação das 6 áreas, seletor de persona, faixa de estado do sync
 │  │  ├─ page.tsx                # primeira tela
@@ -476,7 +477,7 @@ Regras de dependência:
 │  │  ├─ como-decidimos/page.tsx # regra de precedência e fonte oficial (CA-F4.3)
 │  │  ├─ persona/actions.ts
 │  │  └─ api/
-│  │     ├─ auth/google/start/route.ts · callback/route.ts · disconnect/route.ts
+│  │     ├─ auth/google/start/route.ts · callback/route.ts   # "Desconectar" é Server Action (sincronizacao/actions.ts)
 │  │     ├─ sync/status/route.ts
 │  │     └─ health/route.ts
 │  ├─ components/                # StatusBadge, ActivityCard, ActivityTable, SourceLink, DueDate,
@@ -488,7 +489,7 @@ Regras de dependência:
 │  │  ├─ auth/ google-oauth.ts · token-store.ts · crypto.ts
 │  │  ├─ drive/ gateway.ts · google-drive-gateway.ts · local-folder-gateway.ts · fake-drive-gateway.ts
 │  │  │         walk-tree.ts · classify-file.ts · errors.ts · retry.ts
-│  │  ├─ extract/ markdown.ts · xlsx.ts · gdoc.ts · normalize.ts · types.ts
+│  │  ├─ extract/ markdown.ts · xlsx.ts · normalize.ts · types.ts   # export de Google Docs em sync/extract-source.ts
 │  │  ├─ authority/ index-parser.ts · classifier.ts
 │  │  ├─ activities/ activity-service.ts · registry-importer.ts · registry-diff.ts · ids.ts · field-maps.ts
 │  │  ├─ ai/ provider.ts · anthropic-provider.ts · recorded-provider.ts · disabled-provider.ts
@@ -500,7 +501,7 @@ Regras de dependência:
 │  │  ├─ sync/ sync-service.ts · scheduler.ts · lock.ts
 │  │  ├─ persona/ current-persona.ts
 │  │  └─ observability/ logger.ts · redact.ts
-│  └─ lib/ datetime.ts · text.ts · result.ts   # funções puras
+│  └─ lib/ datetime.ts · labels.ts · areas.ts · host-policy.ts   # funções puras e rótulos da UI
 ├─ tests/
 │  ├─ fixtures/
 │  │  ├─ drive/                  # cenários do FakeDrive (árvores e versões), montados de dados_ficticios/
@@ -551,7 +552,9 @@ sequenceDiagram
 
 Nenhum log contém `code`, token, `state` nem a URL de autorização completa. Os erros de callback (`access_denied`, `redirect_uri_mismatch` exibido pelo Google, falha de state) viram mensagem em texto com orientação (ex.: "abra o app por http://localhost:3000, não por 127.0.0.1").
 
-**Desconectar:** `POST /api/auth/google/disconnect`, com verificação de `Origin`, revoga o token no Google, apaga o texto cifrado e marca `disconnected`. O inventário e as atividades **continuam** e aparecem como "desatualizado desde <data>".
+**Desconectar:** Server Action `disconnectAction` (verificação de `Origin` do Next + checagem de Host, DEC-013), revoga o token no Google, apaga o texto cifrado e marca `disconnected`. Se a revogação remota falhar (sem rede, erro do Google), a tela diz isso e orienta a remover o acesso na Conta Google. O inventário e as atividades **continuam**, e a faixa global mostra "desatualizados desde <data>".
+
+**[auditoria]** Se a autorização for recusada depois da troca do código (escopo errado, pasta inacessível, na lixeira ou que não é pasta), o token recebido é revogado antes de voltar à tela. **Host canônico:** o `src/proxy.ts` aplica a política de host a todas as rotas. O Next normaliza `127.0.0.1`, `[::1]` e `localhost` como o mesmo host e reescreve `Location` como relativo, por isso a ida ao host canônico é feita por uma página com `meta refresh`, e não por 30x (DEC-013).
 
 ### 6.2 Carga inicial (F2, CA-F2.1–F2.4)
 
@@ -930,13 +933,14 @@ Convenções:
 
 | Tipo | Rota ou nome | Entrada | Efeito |
 |---|---|---|---|
+| Proxy | `src/proxy.ts` (todas as rotas, menos estáticos) | cabeçalho `Host` | Host canônico passa; `127.0.0.1`/`[::1]` em GET → página que leva ao host canônico; outro host → 403 (DEC-013) |
 | GET | `/api/auth/google/start` | — | Cookie de state e PKCE + 302 para o Google |
 | GET | `/api/auth/google/callback` | `code`, `state` | §6.1 |
-| POST | `/api/auth/google/disconnect` | `Origin` verificado | Revoga e apaga tokens |
-| GET | `/api/sync/status` | — | JSON `{ running, runId, lastSuccessAt, lastAttempt, connection, counts }` (sem segredos), com polling de 3 s na tela de sync |
-| GET | `/api/health` | — | `{ db: ok, scheduler: running, connection: status }` |
+| Action | `disconnectAction()` **[auditoria]** | form; Origin (Next) e Host verificados | Revoga e apaga tokens; `?desconectado=1` ou `=local` (revogação remota falhou) |
+| GET | `/api/sync/status` (Fase 4) | — | JSON `{ running, runId, lastSuccessAt, lastAttempt, connection, counts }` (sem segredos), com polling de 3 s na tela de sync |
+| GET | `/api/health` | — | `{ db: ok }` (Fase 1); `scheduler` e `connection` entram na Fase 4 |
 | Action | `selectPersona(memberId)` | form | Grava o cookie. Nenhuma escrita no banco além disso |
-| Action | `triggerSync()` | form | `SyncService.request('manual')` → `runId` ou "já em execução" |
+| Action | `syncNowAction()` | form; Host verificado | `requestSync('manual')` → resultado do ciclo ou "já em execução" |
 | Action | `createActivity(input)` | form validado por zod | Erros por campo em texto (CA-F6.3) |
 | Action | `updateActivity(id, patch, expectedVersion, reason?)` | form | Evento com os campos alterados |
 | Action | `acceptSuggestion(id)` · `adjustAndAccept(id, fields)` · `rejectSuggestion(id, reason)` | form | §6.6 |
@@ -1069,7 +1073,10 @@ export interface Clock { now(): Date; todayInSaoPaulo(): string /* AAAA-MM-DD */
 | Segredos | Só em `.env.local` (gitignored). `.env.example` só com nomes e marcadores. `env.ts` nunca imprime valores. `import 'server-only'` em todo módulo que lê o env. Nenhuma variável `NEXT_PUBLIC_*` com segredo | F1.3, F13.3, CA-F1.2 |
 | Tokens OAuth | AES-256-GCM (`node:crypto`), IV aleatório por gravação, tag de autenticação, `APP_ENCRYPTION_KEY` (32 bytes base64, gerada por `npm run setup`). Chave errada → estado `reauth_required`, sem crash | [GUIA §10] |
 | CSRF e state | `state` de 32 bytes em cookie httpOnly, SameSite=Lax, 10 min, comparado em tempo constante. PKCE S256. Server Actions com verificação de Origin do Next. `disconnect` confere `Origin` | [GUIA §3, §10] |
-| Host canônico | `start` redireciona para `APP_BASE_URL` se o host diferir, para evitar perda do cookie de state entre `localhost` e `127.0.0.1` | RK-01 |
+| Host canônico | `proxy.ts` (e o `start`, como defesa em profundidade) leva `127.0.0.1`/`[::1]` para `APP_BASE_URL`, para não perder o cookie de state. Página com `meta refresh`, porque o Next reescreve redirecionamentos entre hosts de loopback | RK-01, DEC-013 |
+| Superfície de rede **[auditoria]** | `npm run dev/start/app` escutam só em `127.0.0.1`. O `proxy.ts` recusa (403) qualquer `Host` diferente do canônico: IP da rede local e DNS rebinding. As Server Actions repetem a checagem de Host | DEC-013 |
+| Cabeçalhos HTTP **[auditoria]** | `X-Frame-Options: DENY` e `frame-ancestors 'none'` (clickjacking em "Desconectar"), `nosniff`, `Referrer-Policy: same-origin`, `Permissions-Policy`, sem `X-Powered-By` (`next.config.ts`) | DEC-013 |
+| Conteúdo hostil **[auditoria]** | Extratores lineares (sem regex com backtracking catastrófico); linhas > 4 KB não viram título nem metadado. `.xlsx` estruturalmente inválido (parte ausente, XML inválido, shared string inexistente) lança erro. Nunca vira "vazio" | F2.8, AR-16, DEC-013 |
 | Escopo mínimo | Só `drive.readonly`, conferido no callback. Nenhuma chamada de escrita existe no gateway (a interface nem tem métodos de escrita) | AR-2, AR-9, CA-F13.2 |
 | Restrição à pasta | Toda leitura parte de `DRIVE_TEST_FOLDER_ID`. Atalhos não seguidos. Arquivos fora da árvore → `out_of_scope` e conteúdo apagado | F13.2, [GUIA §5, §7] |
 | Prompt injection | Documento entre delimitadores com nonce e declarado como dado não confiável. O modelo não tem ferramentas de ação. `source_file_id` e `source_version` vêm do servidor. O validador exige evidência literal que mencione o alvo. Não há caminho de escrita a partir da IA (teste de import). Revisão humana obrigatória. Classificação de autoridade não usa IA | F7.7, F7.8, [ESP §6], V-12 |
@@ -1163,14 +1170,15 @@ git clone <repo> && cd liga-ia-central-atividades
 npm ci
 npm run setup        # cria .env.local a partir de .env.example e gera APP_ENCRYPTION_KEY
 # editar .env.local: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DRIVE_TEST_FOLDER_ID (e ANTHROPIC_API_KEY)
-npm run app          # = next build && next start (porta 3000)
+npm run app          # = next build && next start -H 127.0.0.1 (porta 3000, só nesta máquina)
 # abrir http://localhost:3000 → Estado da sincronização → Conectar Google
 ```
 
 Outros scripts:
 
-- `npm run dev` (desenvolvimento);
+- `npm run dev` (desenvolvimento, também só em `127.0.0.1`);
 - `npm test` (unidade e integração, sem rede);
+- `npm run test:coverage` (cobertura de `src/server` e `src/lib`);
 - `npm run test:e2e`;
 - `npm run typecheck`;
 - `npm run lint`;
