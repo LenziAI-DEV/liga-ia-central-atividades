@@ -17,6 +17,8 @@ export interface IndexPointers {
   registry: RegistryPointer[];
   /** Arquivos que o índice declara superados (só o primeiro nome da linha). */
   superseded: string[];
+  /** Todos os arquivos que o índice cita entre crases (em qualquer linha). */
+  cited: string[];
 }
 
 const strip = (text: string) =>
@@ -42,11 +44,13 @@ function fileNamesOf(line: string, exclude: string | null): string[] {
 export function parseIndex(text: string): IndexPointers {
   const registry: RegistryPointer[] = [];
   const superseded: string[] = [];
+  const cited = new Set<string>();
   text.split(/\r?\n/).forEach((line, index) => {
     if (line.length > MAX_LINE) return;
     const sheet = SHEET_OF.exec(line)?.[1].trim() ?? null;
     const names = fileNamesOf(line, sheet);
     if (names.length === 0) return;
+    for (const name of names) cited.add(name);
     const plain = strip(line);
     const isSuperseded = SUPERSEDED.test(line);
     if (isSuperseded) superseded.push(names[0]);
@@ -58,5 +62,5 @@ export function parseIndex(text: string): IndexPointers {
     }
   });
   // Um arquivo declarado superado em qualquer linha nunca é o registro vigente.
-  return { registry: registry.filter((p) => !superseded.includes(p.fileName)), superseded };
+  return { registry: registry.filter((p) => !superseded.includes(p.fileName)), superseded, cited: [...cited] };
 }

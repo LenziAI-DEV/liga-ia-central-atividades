@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Notice } from "@/components/notice";
 import type { ImportReport } from "@/server/activities/import-hook";
 import type { RegistryResolution } from "@/server/authority/registry-locator";
@@ -24,7 +25,10 @@ export function RegistryStatus({
           </p>
         ) : (
           <Notice tone="warn" title="Fonte oficial não identificada:">
-            {resolution.reason} Nenhuma atividade foi importada.
+            {resolution.reason} Nenhuma atividade foi importada.{" "}
+            <Link href="/como-decidimos" className="underline">
+              Como o app decide
+            </Link>
           </Notice>
         )}
         {resolution.status === "ok" && report?.state === "pending" ? (

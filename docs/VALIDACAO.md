@@ -8,7 +8,7 @@
 | V-2 | Upload novo | `Ata_2026-10-04.md` direto no Drive | Processada em ≤ 15 min sem UI (meta ≤ 1 min); sugestão pendente | — | — | ✅ Fase 4 (Drive real) |
 | V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | — | — | ✅ Fase 4 (Drive real) |
 | V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | — | — | pendente (Fase 6) |
-| V-5 | **Conflito** (homônimo vazio) | `Ata - copia vazia.xlsx` | Atividades intactas; "sem autoridade / possível conflito" com motivos | — | — | pendente (Fase 5) |
+| V-5 | **Conflito** (homônimo vazio) | `Ata - copia vazia.xlsx` | Atividades intactas; "sem autoridade / possível conflito" com motivos | — | — | ✅ Fase 5 |
 | V-6 | Atividade manual | Criar + reiniciar | Persiste com autor e histórico | LIA-0001 criada por Davi, editada (estado e próximo passo), app reiniciado: tudo e o histórico antes → depois continuaram | Navegador, banco de cópia, 2026-09-30 | ✅ Fase 3 |
 | V-7 | Ideia vaga | "Talvez…" | Não vira atividade | — | — | pendente (Fase 6) |
 | V-8 | Erro de fonte | Lixeira / acesso revogado / Drive fora | Aviso; estado confirmado marcado como potencialmente desatualizado | — | — | ✅ Fase 4 (Drive real) |
@@ -16,7 +16,7 @@
 | V-10 | Primeiro acesso | Membro sem orientação | Acha propósito (provisório), frentes, fonte e primeira ação | — | — | pendente (Fase 8) |
 | V-11 | **Dado ausente** | Ata com "até sexta" / sem dono | Prazo e dono vazios, incerteza visível, nada inventado | — | — | pendente (Fase 6) |
 | V-12 | Injeção via documento | Ata com instruções à IA | Nenhuma mudança; saída inválida descartada | — | — | pendente (Fase 6) |
-| V-13 | Documento superado | `PLANO_EDITORIAL_ANTIGO.md` | "Histórico — substituído por GUIA_INICIAL.md"; não vira regra vigente | — | — | pendente (Fase 5) |
+| V-13 | Documento superado | `PLANO_EDITORIAL_ANTIGO.md` | "Histórico — substituído por GUIA_INICIAL.md"; não vira regra vigente | — | — | ✅ Fase 5 |
 
 ## Verificações de fundação (Fase 0, 2026-09-29)
 
@@ -147,3 +147,11 @@ Feita pelo usuário, com o app aberto e sem clicar em "Sincronizar agora". Todos
 - Durante a falha: faixa "Falha na sincronização em 14:04. Os dados exibidos são de 14:03 e podem estar desatualizados desde então"; "Potencialmente desatualizado" nas listas; as 4 atividades e as 9 fontes intactas; `/api/health` com `lastStatus: failed`.
 - Ao voltar a conexão: o ciclo seguinte teve sucesso (`8 sem mudança`), a faixa e o aviso sumiram sozinhos e as falhas seguidas voltaram a 0.
 - Limite: simulei a queda com proxy, não cortando o Wi-Fi da máquina.
+
+## Fase 5 — Autoridade e conflitos (2026-09-30)
+
+- **Automático (251 testes):** classificação da carga inicial inteira (índice e guia "direção — ativo", estado atual "direção — parcial", registro vigente, ata, `PLANO_EDITORIAL_ANTIGO.md` "histórico — substituído por GUIA_INICIAL.md em 2026-10-01"); homônimo vazio "sem autoridade / possível conflito" com motivos (não apontado pelo índice, aba "Ata" ≠ "Atividades", 0 registros); variante com outro índice, outros nomes e `substitui:`; resolvedor de precedência (proposta pendente não muda o oficial, duas propostas diferentes = conflito, oficial intacto).
+- **Integração V-5 (Drive falso):** a planilha homônima vazia chega depois da carga e o snapshot completo de atividades, responsáveis e eventos é **idêntico** ao anterior.
+- **Dados reais (Drive do usuário):** `/sincronizacao` mostra o registro como "registro de atividades vigente", as atas como "ata", `ESTADO-ATUAL.md` como "direção — parcial" e `GUIA_INICIAL.md` como "direção — ativo"; `/como-decidimos` responde 200 e mostra a regra e as classes (CA-F4.3).
+- **Ainda não exercitado com o Drive real:** o envio de `Ata - copia vazia.xlsx` (V-5) e a conferência de `PLANO_EDITORIAL_ANTIGO.md` como histórico na tela. Roteiro: subir o arquivo em `03_CONFLITO` e abrir `/sincronizacao` (aguardar ~1 min).
+- **Pendente para a Fase 8:** CA-F4.2 na tela "Comece aqui" (a regra antiga não aparece como vigente), que ainda não existe.

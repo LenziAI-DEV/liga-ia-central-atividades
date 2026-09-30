@@ -41,6 +41,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
           {children}
         </main>
+        <footer className="mx-auto max-w-6xl px-4 pb-8 text-sm text-[var(--ink-muted)] sm:px-6">
+          <Link href="/como-decidimos" className="underline underline-offset-2">
+            Como o app decide o valor oficial
+          </Link>
+        </footer>
       </body>
     </html>
   );
