@@ -20,6 +20,7 @@ export interface ActivitySource {
 export interface ActivityView {
   id: string;
   title: string;
+  description: string | null;
   front: string | null;
   /** null = estado a confirmar. */
   status: ActivityStatus | null;
@@ -28,6 +29,11 @@ export interface ActivityView {
   notes: string | null;
   priority: string | null;
   origin: string;
+  version: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
   owners: ActivityOwner[];
   sources: ActivitySource[];
 }
@@ -48,6 +54,12 @@ export interface ActivityFilter {
 interface ActivityRow {
   id: string;
   title: string;
+  description: string | null;
+  version: number;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
   front: string | null;
   status: ActivityStatus | null;
   due_date: string | null;
@@ -87,12 +99,14 @@ export function listActivityViews(db: Db, members: readonly Member[]): ActivityV
   }
   return db
     .all<ActivityRow>(
-      `SELECT id, title, front, status, due_date, next_step, notes, priority, origin
+      `SELECT id, title, description, front, status, due_date, next_step, notes, priority, origin, version,
+              created_at, created_by, updated_at, updated_by
          FROM activities WHERE archived_at IS NULL`,
     )
     .map((a) => ({
       id: a.id,
       title: a.title,
+      description: a.description,
       front: a.front,
       status: a.status,
       dueDate: a.due_date,
@@ -100,6 +114,11 @@ export function listActivityViews(db: Db, members: readonly Member[]): ActivityV
       notes: a.notes,
       priority: a.priority,
       origin: a.origin,
+      version: a.version,
+      createdAt: a.created_at,
+      createdBy: a.created_by,
+      updatedAt: a.updated_at,
+      updatedBy: a.updated_by,
       owners: owners.get(a.id) ?? [],
       sources: sources.get(a.id) ?? [],
     }));
@@ -141,4 +160,40 @@ export function filterActivities(
 /** Frentes existentes nas atividades, para o filtro (sem inventar valores). */
 export function distinctFronts(list: readonly ActivityView[]): string[] {
   return [...new Set(list.flatMap((a) => (a.front ? [a.front] : [])))].sort((x, y) => x.localeCompare(y, "pt-BR"));
+}
+
+export interface ActivityEvent {
+  id: number;
+  actor: string;
+  occurredAt: string;
+  kind: string;
+  reason: string | null;
+  changes: Array<{ field: string; before: unknown; after: unknown }>;
+}
+
+/** Nome de quem agiu: membro, importação ou o id bruto (nunca some do histórico). */
+export function actorName(actorId: string, members: readonly Member[]): string {
+  if (actorId === "system:import") return "Importação do registro";
+  return members.find((m) => m.id === actorId)?.name ?? actorId;
+}
+
+/** Histórico da atividade, do mais recente para o mais antigo (F6.1, F6.5). */
+export function listEvents(db: Db, activityId: string, members: readonly Member[]): ActivityEvent[] {
+  return db
+    .all<{ id: number; actor_id: string; occurred_at: string; kind: string; reason: string | null; changes_json: string }>(
+      "SELECT id, actor_id, occurred_at, kind, reason, changes_json FROM activity_events WHERE activity_id = ? ORDER BY id DESC",
+      activityId,
+    )
+    .map((e) => ({
+      id: e.id,
+      actor: actorName(e.actor_id, members),
+      occurredAt: e.occurred_at,
+      kind: e.kind,
+      reason: e.reason,
+      changes: JSON.parse(e.changes_json) as ActivityEvent["changes"],
+    }));
+}
+
+export function getActivityView(db: Db, members: readonly Member[], id: string): ActivityView | undefined {
+  return listActivityViews(db, members).find((a) => a.id === id);
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DueDate } from "@/components/due-date";
 import { StatusBadge } from "@/components/status-badge";
 import { ACTIVITY_STATUS } from "@/lib/labels";
@@ -20,7 +21,9 @@ export function ActivityCard({ activity, today }: { activity: ActivityView; toda
     >
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
         <h3 className="font-semibold">
-          <span className="text-[var(--ink-muted)]">{activity.id}</span> · {activity.title}
+          <Link href={`/atividades/${encodeURIComponent(activity.id)}`} className="underline-offset-2 hover:underline">
+            <span className="text-[var(--ink-muted)]">{activity.id}</span> · {activity.title}
+          </Link>
         </h3>
         <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
       </div>

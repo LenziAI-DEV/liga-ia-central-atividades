@@ -9,7 +9,7 @@
 | V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | — | — | pendente (Fase 4) |
 | V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | — | — | pendente (Fase 6) |
 | V-5 | **Conflito** (homônimo vazio) | `Ata - copia vazia.xlsx` | Atividades intactas; "sem autoridade / possível conflito" com motivos | — | — | pendente (Fase 5) |
-| V-6 | Atividade manual | Criar + reiniciar | Persiste com autor e histórico | — | — | pendente (Fase 3) |
+| V-6 | Atividade manual | Criar + reiniciar | Persiste com autor e histórico | LIA-0001 criada por Davi, editada (estado e próximo passo), app reiniciado: tudo e o histórico antes → depois continuaram | Navegador, banco de cópia, 2026-09-30 | ✅ Fase 3 |
 | V-7 | Ideia vaga | "Talvez…" | Não vira atividade | — | — | pendente (Fase 6) |
 | V-8 | Erro de fonte | Lixeira / acesso revogado / Drive fora | Aviso; estado confirmado marcado como potencialmente desatualizado | — | — | pendente (Fases 1/4) |
 | V-9 | Resumo pessoal | Ana × Davi após V-4 | Resumos diferentes, com fontes e estado de aprovação | — | — | pendente (Fase 7) |
@@ -113,3 +113,10 @@ Achados e correções em DEC-013 e em `.claude/reviews/fase-1-review.md`. Cada c
 - **Com o Google real:** "Sincronizar agora" importou ACT-101 a 104 e gravou 4 eventos `imported`, sem duplicar na segunda sincronização.
 - **Navegador (CA-F5.1–F5.3):** Ana vê 101 e 104; Davi vê 102 e 104; filtro "Operações" mostra 2 de 4; "Todas" mostra 4; ACT-103 aparece "Bloqueada" em texto, com o motivo; parâmetros de URL inválidos são ignorados.
 - **Pendente da fase:** CA-F5.5 (vencido com data de demonstração posterior) só tem teste do cálculo (`dueState`); CA-F5.6 conferido só como ausência de rolagem horizontal, não a 375 px reais (E2E na Fase 9).
+
+## Fase 3 — Gestão de atividades com histórico (2026-09-30)
+
+- **Automático (221 testes):** ID `LIA-000n` sem colidir com importados, evento por edição com antes → depois e motivo, sem mudança = sem evento, controle otimista (versão desatualizada recusada sem gravar), responsáveis "a confirmar" preservados, desfaz tudo se o evento falhar, persistência depois de fechar e reabrir o arquivo do banco (v06), validação com erro por campo.
+- **Navegador (CA-F6.1–F6.3):** salvar sem título mostra "Erro: Informe o título da atividade." ligado ao campo e nada é gravado; "Testar persistência" criada como Davi (ID, autor, horário, "Criada manualmente", prazo "a definir"); estado editado; app reiniciado; dados e histórico intactos; "Bloquear" com motivo grava o estado e o motivo. Feito num banco de cópia (`DATABASE_PATH`), removido depois, para não sujar o dado de demonstração.
+- **CA-F6.4:** o detalhe de ACT-101 mostra a planilha de origem com localizador e link e a ata histórica (conferido nos dados; a tela usa os mesmos dados de `/atividades`).
+- **Não coberto:** as Server Actions e o formulário só são exercitados no navegador (sem teste automatizado até o E2E da Fase 9).

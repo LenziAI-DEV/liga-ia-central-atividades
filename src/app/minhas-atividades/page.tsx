@@ -38,6 +38,11 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
     <>
       <PageHeader title={`Minhas atividades — ${persona.name}`} description={area.description} />
       <p className="mb-4">
+        <Link href="/atividades/nova" className="rounded bg-[var(--lia-blue)] px-4 py-2 text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]">
+          Nova atividade
+        </Link>
+      </p>
+      <p className="mb-4">
         {mine.length === 0
           ? "Nenhuma atividade aberta atribuída a você."
           : `${mine.length} atividade(s) aberta(s), inclusive as compartilhadas`}

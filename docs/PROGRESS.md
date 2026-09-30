@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-30 (quarta) — Fase 2 concluída, revisada (DEC-015) e mesclada; Fase 3 em andamento na `fase-3-gestao`.**
+> Última atualização: **2026-09-30 (quarta, noite) — Fases 1, 2 e 3 concluídas; próxima: Fase 4 (sincronização automática).**
 
 ## Prazo
 
@@ -12,10 +12,10 @@
 
 ## ▶ Como retomar (primeira coisa a fazer na próxima sessão)
 
-1. `git checkout fase-3-gestao` (a `main` já contém as Fases 1 e 2 e a revisão da Fase 2).
-2. `npm test` (esperado: **208 testes**), `npm run typecheck`, `npm run lint`.
+1. `git checkout fase-4-sync` (a `main` já contém as Fases 1 a 3).
+2. `npm test` (esperado: **221 testes**), `npm run typecheck`, `npm run lint`.
 3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes, sem santa-loop rotineiro).
-4. Seguir a Fase 2 do `docs/plans/IMPLEMENTATION_PLAN.md`: ✅ 2.1 personas (`config/members.json`, `src/server/persona/`, seletor no cabeçalho, cookie `persona`) → ✅ 2.2 índice (`src/server/authority/`: `parseIndex`, `resolveRegistry`; seção "Fonte das atividades" em `/sincronizacao`) → ✅ 2.3 importação (migração `002-activities`, `src/server/activities/`, hook pós-sync; verificada com o Drive real: 4 atividades, 4 eventos `imported`) → ✅ 2.4 painéis (`/`, `/minhas-atividades`, `/atividades`) → 2.4 painéis. `matchMemberByName` já existe para o importador (2.3).
+4. Seguir a **Fase 4** do `docs/plans/IMPLEMENTATION_PLAN.md` (scheduler, backoff, detecção de arquivo novo, rename, remoção; 4.1–4.3 no plano de quarta, 4.4 na quinta). Antes, ler o MODEL ROUTING da política.
 
 **Como rodar:** `npm install` → `npm run setup` → preencher o `.env.local` → `npm run app` → http://localhost:3000.
 - O servidor escuta **só em 127.0.0.1** (DEC-013).
