@@ -10,6 +10,9 @@ import { StatusBadge } from "@/components/status-badge";
 import { formatDateBR, formatDateTimeBR, isoDateInSaoPaulo } from "@/lib/datetime";
 import { ACTIVITY_STATUS } from "@/lib/labels";
 import { actorName, getActivityView, listEvents } from "@/server/activities/activity-queries";
+import { resolvePrecedence } from "@/server/authority/precedence-resolver";
+import { pendingChangesFor } from "@/server/ai/suggestion-queries";
+import { formatFieldValue, SUGGESTION_FIELD_LABEL } from "@/lib/field-format";
 import { getDb } from "@/server/db";
 import { getCurrentPersona, listMembers } from "@/server/persona/current-persona";
 import { quickStatusAction } from "../actions";
@@ -65,6 +68,13 @@ function show(field: string, value: unknown, memberNames: Map<string, string>): 
   return String(value);
 }
 
+const SOURCE_RELATION_LABEL: Record<string, string> = {
+  imported_from: "Registro importado",
+  historical_origin: "Origem histórica",
+  updated_by: "Atualizada por sugestão aceita",
+  created_by: "Criada a partir de",
+};
+
 const BUTTON = "rounded border border-[var(--line)] px-4 py-2 hover:border-[var(--lia-blue)]";
 
 export default async function Page(props: PageProps<"/atividades/[id]">) {
@@ -77,6 +87,8 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
   const events = listEvents(db, activity.id, members);
   const memberNames = new Map(members.map((m) => [m.id, m.name]));
   const today = isoDateInSaoPaulo(new Date());
+  const changes = pendingChangesFor(db, activity.id);
+  const { conflicts } = resolvePrecedence(activity, changes, false);
   const status = ACTIVITY_STATUS[activity.status ?? "a_confirmar"];
   const notice = typeof query.aviso === "string" ? NOTICES[query.aviso] : undefined;
   const done = activity.status === "concluida";
@@ -98,6 +110,42 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
           {activity.origin === "importada" ? <StatusBadge tone="neutral">Importada do registro</StatusBadge> : null}
         </p>
       </PageHeader>
+      {conflicts.length > 0 ? (
+        <div className="mb-6">
+          <Notice tone="danger" title="Conflito — requer decisão:">
+            Duas ou mais fontes propõem valores diferentes para o mesmo campo. O valor oficial não mudou até um revisor decidir.
+            <ul className="mt-2 list-disc pl-5">
+              {conflicts.map((c) => (
+                <li key={c.field}>
+                  {SUGGESTION_FIELD_LABEL[c.field] ?? c.field}:{" "}
+                  {c.values.map((v, i) => {
+                    const change = changes.find((x) => x.suggestionId === v.suggestionId && x.field === c.field)!;
+                    return (
+                      <span key={v.suggestionId}>
+                        {i > 0 ? " × " : ""}
+                        <Link href={`/sugestoes/${v.suggestionId}`} className="underline">
+                          {formatFieldValue(c.field, v.value, memberNames)}
+                        </Link>{" "}
+                        (fonte: {change.sourceName})
+                      </span>
+                    );
+                  })}
+                </li>
+              ))}
+            </ul>
+          </Notice>
+        </div>
+      ) : null}
+      {activity.pendingSuggestions > 0 ? (
+        <div className="mb-6">
+          <Notice tone="info" title="Atualização pendente:">
+            {activity.pendingSuggestions} sugestão(ões) da IA aguardando revisão. Os valores abaixo são os oficiais e não mudaram.{" "}
+            <Link href="/sugestoes" className="underline">
+              Ver sugestões
+            </Link>
+          </Notice>
+        </div>
+      ) : null}
       {notice ? (
         <div className="mb-6">
           <Notice tone={notice.tone}>{notice.text}</Notice>
@@ -207,7 +255,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
           <ul className="mt-2 list-disc pl-5">
             {activity.sources.map((s, i) => (
               <li key={`${s.fileId}-${s.relation}-${i}`}>
-                {s.relation === "historical_origin" ? "Origem histórica" : "Registro importado"}:{" "}
+                {SOURCE_RELATION_LABEL[s.relation] ?? s.relation}:{" "}
                 <SourceRef source={s} />
                 {s.locator ? ` (${s.locator})` : ""}
               </li>

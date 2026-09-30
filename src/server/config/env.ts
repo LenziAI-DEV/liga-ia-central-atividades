@@ -39,6 +39,8 @@ const EnvSchema = z.object({
   SYNC_INTERVAL_SECONDS: z.preprocess(blankToUndefined, z.coerce.number().int().min(30).max(600).default(60)),
   DRIVE_MODE: z.preprocess(blankToUndefined, z.enum(["google", "local", "fake"]).default("google")),
   LOCAL_DRIVE_DIR: optionalText,
+  AI_EFFORT: z.preprocess(blankToUndefined, z.enum(["low", "medium", "high"]).default("medium")),
+  AI_MAX_INPUT_CHARS: z.preprocess(blankToUndefined, z.coerce.number().int().min(1000).max(400000).default(60000)),
   INDEX_FILE_NAME: z.preprocess(blankToUndefined, z.string().default("INDEX.md")),
   DATABASE_PATH: z.preprocess(blankToUndefined, z.string().default("data/app.db")),
   LOG_LEVEL: z.preprocess(blankToUndefined, z.enum(["debug", "info", "warn", "error"]).default("info")),

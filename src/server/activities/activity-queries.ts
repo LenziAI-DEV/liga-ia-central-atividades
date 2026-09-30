@@ -1,4 +1,5 @@
 import { daysBetween, dueState } from "@/lib/datetime";
+import { pendingByActivity } from "@/server/ai/suggestion-queries";
 import type { Db } from "@/server/db/client";
 import type { Member } from "@/server/persona/members";
 import type { ActivityStatus } from "./field-maps";
@@ -38,6 +39,8 @@ export interface ActivityView {
   updatedBy: string;
   owners: ActivityOwner[];
   sources: ActivitySource[];
+  /** Sugestões da IA aguardando revisão: só aviso, o valor oficial não muda (F4.7, nível 3). */
+  pendingSuggestions: number;
 }
 
 export type StatusFilter = ActivityStatus | "a_confirmar";
@@ -115,6 +118,7 @@ export function listActivityViews(db: Db, members: readonly Member[], onlyId?: s
     });
     sources.set(r.activity_id, list);
   }
+  const pending = pendingByActivity(db, onlyId);
   return db
     .all<ActivityRow>(
       `SELECT id, title, description, front, status, due_date, next_step, notes, priority, origin, version,
@@ -140,6 +144,7 @@ export function listActivityViews(db: Db, members: readonly Member[], onlyId?: s
       updatedBy: a.updated_by,
       owners: owners.get(a.id) ?? [],
       sources: sources.get(a.id) ?? [],
+      pendingSuggestions: pending.get(a.id) ?? 0,
     }));
 }
 

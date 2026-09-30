@@ -44,6 +44,13 @@ const SCALARS = [
   ["notes", "notes"],
 ] as const satisfies ReadonlyArray<readonly [keyof ActivityFields, keyof Row]>;
 
+/** Vínculo de uma mudança com a sugestão aceita e a fonte que a originou (F8.4). */
+export interface SuggestionLink {
+  suggestionId: number;
+  sourceFileId: string;
+  sourceVersion: string;
+}
+
 function insertEvent(
   db: Db,
   activityId: string,
@@ -52,17 +59,22 @@ function insertEvent(
   kind: "created" | "updated",
   changes: FieldChange[],
   reason: string | null,
-) {
-  db.run(
-    `INSERT INTO activity_events (activity_id, actor_id, occurred_at, kind, changes_json, reason)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+  link?: SuggestionLink,
+): number {
+  const result = db.run(
+    `INSERT INTO activity_events (activity_id, actor_id, occurred_at, kind, changes_json, reason, suggestion_id, source_file_id, source_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     activityId,
     actorId,
     at,
-    kind,
+    link ? "suggestion_applied" : kind,
     JSON.stringify(changes),
     reason,
+    link?.suggestionId ?? null,
+    link?.sourceFileId ?? null,
+    link?.sourceVersion ?? null,
   );
+  return Number(result.lastInsertRowid);
 }
 
 function addOwners(db: Db, activityId: string, ownerIds: readonly string[], members: readonly Member[]) {
@@ -98,7 +110,8 @@ export function createActivity(
   actorId: string,
   members: readonly Member[],
   clock: Clock,
-): { id: string } {
+  link?: SuggestionLink,
+): { id: string; eventId: number } {
   assertActor(actorId, members);
   const now = clock.now().toISOString();
   return db.tx(() => {
@@ -106,7 +119,7 @@ export function createActivity(
     db.run(
       `INSERT INTO activities (id, title, description, next_step, front, status, due_date, priority, notes, origin,
          created_at, created_by, updated_at, updated_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual', ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       fields.title,
       fields.description,
@@ -116,6 +129,7 @@ export function createActivity(
       fields.dueDate,
       fields.priority,
       fields.notes,
+      link ? "sugestao" : "manual",
       now,
       actorId,
       now,
@@ -128,8 +142,8 @@ export function createActivity(
       after: fields[key],
     }));
     if (fields.ownerIds.length > 0) changes.push({ field: "ownerIds", before: [], after: fields.ownerIds });
-    insertEvent(db, id, actorId, now, "created", changes, null);
-    return { id };
+    const eventId = insertEvent(db, id, actorId, now, "created", changes, null, link);
+    return { id, eventId };
   });
 }
 
@@ -147,7 +161,8 @@ export function updateActivity(
   members: readonly Member[],
   clock: Clock,
   reason?: string | null,
-): { changed: boolean; version: number } {
+  link?: SuggestionLink,
+): { changed: boolean; version: number; eventId?: number } {
   assertActor(actorId, members);
   const now = clock.now().toISOString();
   return db.tx(() => {
@@ -193,7 +208,7 @@ export function updateActivity(
       db.run("DELETE FROM activity_owners WHERE activity_id = ? AND member_id IS NOT NULL", id);
       addOwners(db, id, nextOwners, members);
     }
-    insertEvent(db, id, actorId, now, "updated", changes, reason?.trim() || null);
-    return { changed: true, version: row.version + 1 };
+    const eventId = insertEvent(db, id, actorId, now, "updated", changes, reason?.trim() || null, link);
+    return { changed: true, version: row.version + 1, eventId };
   });
 }

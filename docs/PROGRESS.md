@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 5 concluídas; próxima: Fase 6 (IA: sugestões com evidência e revisão humana).**
+> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 6 concluídas e auditadas; `fase-6-ia` mesclada; próxima: Fase 7 ("O que mudou para mim").**
 
 ## Prazo
 
@@ -13,9 +13,9 @@
 ## ▶ Como retomar (primeira coisa a fazer na próxima sessão)
 
 1. `git checkout main` e criar a branch da próxima fase (a `main` contém as Fases 1 a 4).
-2. `npm test` (esperado: **251 testes**), `npm run typecheck`, `npm run lint`.
+2. `npm test` (esperado: **309 testes** + 7 de gravação pulados), `npm run typecheck`, `npm run lint`.
 3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes, sem santa-loop rotineiro).
-4. Seguir a **Fase 6** (IA: sugestões com evidência; a de maior risco e peso na nota) — planejar com `/ecc:plan` e fazer o MODEL ROUTING (Opus só se justificar) do `docs/plans/IMPLEMENTATION_PLAN.md`. Antes, ler o MODEL ROUTING da política.
+4. **Pendências de teste manual do usuário** (o conector do Drive não edita conteúdo): editar o Google Doc `Ata_2026-10-03` (fonte alterada, V-3 com IA) e uma célula do `Ata_registro.xlsx` (diferença do registro com arquivo real). Depois, **Fase 7** ("O que mudou para mim" e Novidades).
 
 **Como rodar:** `npm install` → `npm run setup` → preencher o `.env.local` → `npm run app` → http://localhost:3000.
 - O servidor escuta **só em 127.0.0.1** (DEC-013).

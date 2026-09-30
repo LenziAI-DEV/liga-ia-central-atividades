@@ -7,15 +7,15 @@
 | V-1 | Visão pessoal | Personas Ana e Davi | Ana: ACT-101, ACT-104; Davi: ACT-102, ACT-104; troca não altera dados | Ana: 101 e 104; Davi: 102 e 104; ACT-104 conta uma vez; 4 eventos antes e depois das trocas | Com o Drive real, 2026-09-30 | ✅ Fase 2 |
 | V-2 | Upload novo | `Ata_2026-10-04.md` direto no Drive | Processada em ≤ 15 min sem UI (meta ≤ 1 min); sugestão pendente | — | — | ✅ Fase 4 (Drive real) |
 | V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | — | — | ✅ Fase 4 (Drive real) |
-| V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | — | — | pendente (Fase 6) |
+| V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | — | — | ✅ Fase 6 |
 | V-5 | **Conflito** (homônimo vazio) | `Ata - copia vazia.xlsx` | Atividades intactas; "sem autoridade / possível conflito" com motivos | — | — | ✅ Fase 5 |
 | V-6 | Atividade manual | Criar + reiniciar | Persiste com autor e histórico | LIA-0001 criada por Davi, editada (estado e próximo passo), app reiniciado: tudo e o histórico antes → depois continuaram | Navegador, banco de cópia, 2026-09-30 | ✅ Fase 3 |
-| V-7 | Ideia vaga | "Talvez…" | Não vira atividade | — | — | pendente (Fase 6) |
+| V-7 | Ideia vaga | "Talvez…" | Não vira atividade | — | — | ✅ Fase 6 |
 | V-8 | Erro de fonte | Lixeira / acesso revogado / Drive fora | Aviso; estado confirmado marcado como potencialmente desatualizado | — | — | ✅ Fase 4 (Drive real) |
 | V-9 | Resumo pessoal | Ana × Davi após V-4 | Resumos diferentes, com fontes e estado de aprovação | — | — | pendente (Fase 7) |
 | V-10 | Primeiro acesso | Membro sem orientação | Acha propósito (provisório), frentes, fonte e primeira ação | — | — | pendente (Fase 8) |
-| V-11 | **Dado ausente** | Ata com "até sexta" / sem dono | Prazo e dono vazios, incerteza visível, nada inventado | — | — | pendente (Fase 6) |
-| V-12 | Injeção via documento | Ata com instruções à IA | Nenhuma mudança; saída inválida descartada | — | — | pendente (Fase 6) |
+| V-11 | **Dado ausente** | Ata com "até sexta" / sem dono | Prazo e dono vazios, incerteza visível, nada inventado | — | — | ✅ Fase 6 (respostas reais gravadas) |
+| V-12 | Injeção via documento | Ata com instruções à IA | Nenhuma mudança; saída inválida descartada | — | — | ✅ Fase 6 (respostas reais gravadas) |
 | V-13 | Documento superado | `PLANO_EDITORIAL_ANTIGO.md` | "Histórico — substituído por GUIA_INICIAL.md"; não vira regra vigente | — | — | ✅ Fase 5 |
 
 ## Verificações de fundação (Fase 0, 2026-09-29)
@@ -155,3 +155,19 @@ Feita pelo usuário, com o app aberto e sem clicar em "Sincronizar agora". Todos
 - **Dados reais (Drive do usuário):** `/sincronizacao` mostra o registro como "registro de atividades vigente", as atas como "ata", `ESTADO-ATUAL.md` como "direção — parcial" e `GUIA_INICIAL.md` como "direção — ativo"; `/como-decidimos` responde 200 e mostra a regra e as classes (CA-F4.3).
 - **Ainda não exercitado com o Drive real:** o envio de `Ata - copia vazia.xlsx` (V-5) e a conferência de `PLANO_EDITORIAL_ANTIGO.md` como histórico na tela. Roteiro: subir o arquivo em `03_CONFLITO` e abrir `/sincronizacao` (aguardar ~1 min).
 - **Pendente para a Fase 8:** CA-F4.2 na tela "Comece aqui" (a regra antiga não aparece como vigente), que ainda não existe.
+
+## Fase 6 — IA: sugestões com evidência e revisão humana (2026-09-30)
+
+- **Automático (296 testes):** 17 do validador (uma regra por teste, com saídas sintéticas ruins: data inventada, responsável desconhecido, evidência inexistente, injeção, mudança de responsável, hipótese, dedupe, possível relação), 7 passando as **respostas reais gravadas do modelo** pelo validador (CA-F7.1 a F7.5), 8 da fila (espera pelo registro, idempotência, fonte editada, IA fora do ar com tentativas, IA desligada, limite de tamanho, `ai_calls` sem conteúdo), 9 da revisão (CA-F8.1 a F8.5, valor que mudou, sugestão desatualizada, ajuste inválido) e 4 da diferença do registro.
+- **Modelo real (spike 6.0):** 7 documentos, US$ 0,0086 a 0,0134 cada (média ≈ US$ 0,0115), ≤ 7 s. Resultados: ata 03 → 1 update de ACT-101 (prazo 2026-10-07, responsável mantido; Bruno só aprova); ata 04 → 1 criação para Carla (10/10, frente incerta, possível relação com ACT-103) e a ideia vaga em "sem ação"; ata 01 → nenhuma sugestão; "até sexta" → sem data, "prazo relativo — confirmar"; injeção → ignorada pelo modelo e bloqueada também pelo validador; Marina (desconhecida) → nome desconhecido, não vira membro.
+- **Fim a fim com o Drive real e o modelo real (banco de cópia, removido depois):** as 3 atas foram analisadas sozinhas depois da sincronização (sem clicar em nada); `/sugestoes` listou a atualização de ACT-101 (05/10 → 07/10, com trecho e link) e a criação para Carla; como Davi os botões não aparecem e o motivo é dito em texto (CA-F8.4); rejeitar sem motivo pede o motivo (CA-F8.5); como Bruno, aceitar mudou ACT-101 para 07/10 e o histórico mostra "Sugestão aplicada por Bruno", prazo e próximo passo antes → depois, com as referências à planilha e à ata (CA-F8.1); como Carla, ajustar o próximo passo e aceitar criou LIA-0001, que aparece em "Minhas atividades" dela (CA-F8.3).
+- **V-5 (planilha homônima vazia) com o Drive real:** conferido pelo usuário em 2026-09-30, passou.
+- **Ainda a conferir:** V-2 e V-3 com IA no Drive real (enviar `Ata_2026-10-04.md` e editar a Ata_2026-10-03 pelo Drive e ver a sugestão e o "fonte alterada"); a diferença do registro com uma edição real do `.xlsx` (hoje só testada com conteúdo simulado).
+
+### Testes com o Drive real depois da Fase 6 (2026-09-30, conector do Drive + app real + modelo real)
+
+- **V-2 com IA (arquivo novo, cenário inédito):** `Ata_2026-10-05.md` (decisão que não estava nos dados do pacote) enviada ao Drive; **detectada em 28 s**, analisada sozinha e com as sugestões corretas: update de ACT-102 (prazo 06/10 → 09/10, próximo passo "Validar as etapas com Carla") e criação da lista de presença da Carla **sem prazo inventado** ("sem prazo combinado").
+- **DN-12 (cópia idêntica):** uma cópia da ata de 04/10 gerou uma segunda sugestão de criação. Defeito real, corrigido (DEC-020): a chave agora usa a evidência literal.
+- **CA-F4.4 (conflito):** `Ata_2026-10-06.md` propôs 09/10 para o prazo de ACT-101, já com 07/10 proposto pela ata de 03/10; a página da atividade mostra "Conflito — requer decisão: Prazo 07/10 (Ata_2026-10-03) × 09/10 (Ata_2026-10-06.md)" e o oficial segue 05/10.
+- **Custo real acumulado:** 6 chamadas ≈ US$ 0,07 (≈ US$ 0,012 cada).
+- **Limite do conector:** cria, renomeia, move e manda para a lixeira, mas não edita o conteúdo de um arquivo. Por isso dependem de edição manual do usuário: (a) editar o texto do Google Doc `Ata_2026-10-03` para ver "fonte alterada" e a substituição da sugestão (V-3 com IA); (b) editar uma célula do `Ata_registro.xlsx` no Drive para ver a diferença do registro com arquivo real.

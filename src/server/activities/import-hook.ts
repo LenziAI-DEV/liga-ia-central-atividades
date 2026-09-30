@@ -4,6 +4,7 @@ import { getSetting, setSetting, SETTING } from "@/server/db/repos/settings-repo
 import { logger } from "@/server/observability/logger";
 import { loadMembers } from "@/server/persona/members";
 import type { AfterSyncContext } from "@/server/sync/sync-service";
+import { diffRegistry } from "./registry-diff";
 import { importInitialRegistry, type ImportIssue } from "./registry-importer";
 
 /** Último resultado da importação do registro, para a tela mostrar o que ficou de fora. */
@@ -31,10 +32,23 @@ export function registryImportHook(indexFileName: string) {
     const at = clock.now().toISOString();
     const save = (report: Omit<ImportReport, "at">) => setSetting(db, SETTING.registryImport, { at, ...report }, at);
     try {
-      const result = importInitialRegistry(db, resolveRegistry(db, indexFileName), loadMembers(), clock);
+      const members = loadMembers();
+      const result = importInitialRegistry(db, resolveRegistry(db, indexFileName), members, clock);
       if (result.status === "imported") {
         save({ state: "imported", imported: result.imported, message: null, issues: result.issues });
         logger.info("registry.import.done", { run_id: runId, imported: result.imported, issues: result.issues.length });
+      } else if (result.status === "already_imported") {
+        // Registro já importado: uma versão nova vira sugestões, nunca escrita direta (DN-02).
+        const diff = diffRegistry(db, indexFileName, members, clock);
+        if (diff.status === "compared") {
+          save({
+            state: "imported",
+            imported: 0,
+            message: `Nova versão do registro comparada com o valor oficial: ${diff.suggestions} sugestão(ões) para revisar.`,
+            issues: diff.warnings,
+          });
+          logger.info("registry.diff.done", { run_id: runId, suggestions: diff.suggestions, warnings: diff.warnings.length });
+        }
       } else if (result.status === "refused") {
         save({ state: "pending", imported: 0, message: result.reason, issues: result.issues ?? [] });
         logger.info("registry.import.pending", { run_id: runId, reason: result.reason });

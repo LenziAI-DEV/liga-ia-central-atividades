@@ -17,9 +17,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --coverage.include=src/server/** --coverage.include=src/lib/** --coverage.exclude=**/*.test.ts",
     "typecheck": "next typegen && tsc --noEmit",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ai:record": "node scripts/ai-record.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
     "@googleapis/drive": "^26.0.1",
     "fast-xml-parser": "^5.11.1",
     "google-auth-library": "^11.1.0",

@@ -21,6 +21,7 @@ const official: ActivityView = {
   updatedBy: "system:import",
   owners: [],
   sources: [],
+  pendingSuggestions: 0,
 };
 const change = (id: number, field: string, value: unknown, file = "f1"): PendingChange => ({ suggestionId: id, field, value, sourceFileId: file });
 

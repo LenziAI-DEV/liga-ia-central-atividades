@@ -1,0 +1,50 @@
+{
+  "label": "ata_decisao_e_hipotese",
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "usage": {
+    "inputTokens": 2834,
+    "outputTokens": 610,
+    "cacheReadTokens": 0
+  },
+  "costUsd": 0.011768,
+  "latencyMs": 4496,
+  "output": {
+    "document_summary": "A ata atualiza o próximo passo da atividade ACT-104 (fluxo de solicitação de materiais) para desenhar o novo formulário, com Davi acompanhando. A ideia de podcast semanal não tem responsável nem compromisso e não gera mudança.",
+    "items": [
+      {
+        "kind": "update",
+        "target_activity_id": "ACT-104",
+        "title": null,
+        "owners": [],
+        "due_date": null,
+        "due_date_text": null,
+        "next_step": "Desenhar o novo formulário",
+        "front": null,
+        "status": null,
+        "evidence": "Davi passa a acompanhar o fluxo de solicitação de materiais, `ACT-104`, e o próximo passo agora é desenhar o novo formulário",
+        "rationale": "O texto cita explicitamente ACT-104 e define um novo próximo passo. Davi já é responsável da atividade, então os owners não foram alterados. Nenhum prazo, frente ou estado foi afirmado.",
+        "uncertainties": [
+          "Confirmar se Davi acompanha sozinho ou continua junto com Ana como responsáveis",
+          "Confirmar quem executa o desenho do novo formulário"
+        ]
+      },
+      {
+        "kind": "no_action",
+        "target_activity_id": null,
+        "title": "Podcast semanal sobre ferramentas de IA",
+        "owners": [],
+        "due_date": null,
+        "due_date_text": null,
+        "next_step": null,
+        "front": null,
+        "status": null,
+        "evidence": "talvez a gente também faça um podcast semanal sobre ferramentas de IA, mas ninguém se comprometeu com isso",
+        "rationale": "É apenas uma ideia hipotética, sem responsável, prazo ou decisão; o texto afirma que ninguém se comprometeu.",
+        "uncertainties": [
+          "Possível relação com ACT-101 (carrossel sobre ferramentas), tema semelhante"
+        ]
+      }
+    ]
+  }
+}
