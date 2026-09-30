@@ -160,6 +160,38 @@ describe("getOnboarding", () => {
     const view = getOnboarding(db, members, ana, "INDEX.md", "2026-10-02");
     expect(view).toMatchObject({ hasDirection: false, purpose: [], rules: [], historical: [], references: [] });
     expect(view.registry.status).toBe("pending");
-    expect(view.firstAction).toEqual({ kind: "none", steps: [] });
+    expect(view.firstAction).toEqual({ kind: "none", allDone: false, steps: [] });
+  });
+});
+
+describe("correções da auditoria (Fases 7+8)", () => {
+  it("frases com ponto dentro de nome de arquivo não perdem o começo", () => {
+    expect(sentences("Operações usa Ata_registro.xlsx para tudo. Growth publica.")).toEqual([
+      "Operações usa Ata_registro.xlsx para tudo.",
+      "Growth publica.",
+    ]);
+    expect(sentences("Veja INDEX.md e fale com Bruno.")).toEqual(["Veja INDEX.md e fale com Bruno."]);
+    expect(sentences("Versão 1.2 do guia.")).toEqual(["Versão 1.2 do guia."]);
+  });
+
+  it("código, tabela e citação ficam de fora; linha recuada continua o item", () => {
+    const md = "# T\n\nstatus: ativo\n\n## S\n\n1. Primeiro passo\n   que continua aqui.\n2. Segundo.\n\n```\n# nao e secao\n- nem item\n```\n\n| a | b |\n> citacao\n";
+    const blocks = readBlocks(extractMarkdown(md));
+    expect(blocks.map((b) => b.text)).toEqual(["Primeiro passo que continua aqui.", "Segundo."]);
+  });
+
+  it("persona com tudo concluído não recebe 'sem atividades atribuídas'", () => {
+    const db = seed();
+    db.run("UPDATE activities SET status = 'concluida'");
+    const view = getOnboarding(db, members, ana, "INDEX.md", "2026-10-02");
+    expect(view.firstAction).toMatchObject({ kind: "none", allDone: true });
+  });
+
+  it("sem lista numerada no guia, nenhum passo é inventado a partir de regras soltas", () => {
+    const db = seed(false);
+    db.run("UPDATE source_contents SET extracted_json = REPLACE(extracted_json, '1. Leia', '- Leia') WHERE file_id = 'g'");
+    db.run("UPDATE source_contents SET extracted_json = REPLACE(extracted_json, '2. Consulte', '- Consulte') WHERE file_id = 'g'");
+    const view = getOnboarding(db, members, bruno, "INDEX.md", "2026-10-02");
+    expect(view.firstAction).toMatchObject({ kind: "none", steps: [] });
   });
 });

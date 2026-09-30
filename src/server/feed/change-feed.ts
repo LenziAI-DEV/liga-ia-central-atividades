@@ -71,7 +71,7 @@ export interface PersonalFeed {
   pending: PendingItem[];
   uncertain: UncertainItem[];
   attention: AttentionItem[];
-  /** Verdadeiro se nenhum dos quatro grupos tem item (CA-F9.3). */
+  /** Nada mudou desde o marco: sem confirmadas nem pendentes. Atenção e incertezas são o estado de agora, não mudança (CA-F9.3). */
   empty: boolean;
 }
 
@@ -148,7 +148,7 @@ function confirmedFor(db: Db, members: readonly Member[], personaId: string, sin
   const rows = db.all<EventRow>(
     `SELECT e.id, e.activity_id, e.actor_id, e.occurred_at, e.kind, e.changes_json, e.reason, e.source_file_id, a.title
        FROM activity_events e JOIN activities a ON a.id = e.activity_id
-      WHERE e.occurred_at > ? AND e.kind <> 'imported'
+      WHERE e.occurred_at > ? AND e.kind <> 'imported' AND a.archived_at IS NULL
       ORDER BY e.id DESC`,
     since,
   );
@@ -175,7 +175,7 @@ function confirmedFor(db: Db, members: readonly Member[], personaId: string, sin
       activityId: e.activity_id,
       activityTitle: e.title,
       kind: e.kind,
-      actor: actorLabel(e.actor_id, members),
+      actor: e.actor_id === personaId ? "você" : actorLabel(e.actor_id, members),
       occurredAt: e.occurred_at,
       reason: e.reason,
       changes: changes.map((c) => formatChange(c.field, c.before, c.after, names)),
@@ -199,11 +199,12 @@ interface SuggestionRow {
 function pendingFor(
   db: Db,
   members: readonly Member[],
-  personaId: string,
+  persona: Member,
   since: string,
   sources: SourceCache,
   titles: ReadonlyMap<string, string>,
 ): PendingItem[] {
+  const personaId = persona.id;
   const names = memberNameMap(members);
   const rows = db.all<SuggestionRow>(
     `SELECT id, kind, target_activity_id, source_file_id, doc_date, stale_since, uncertainties_json, created_at
@@ -215,10 +216,16 @@ function pendingFor(
             SELECT 1 FROM suggestion_fields f, json_each(f.proposed_value_json) j
              WHERE f.suggestion_id = s.id AND f.field = 'owners' AND j.value = ?
           )
+          OR (
+            s.kind = 'create'
+            AND NOT EXISTS (SELECT 1 FROM suggestion_fields o WHERE o.suggestion_id = s.id AND o.field = 'owners' AND o.proposed_value_json <> '[]')
+            AND EXISTS (SELECT 1 FROM suggestion_fields fr WHERE fr.suggestion_id = s.id AND fr.field = 'front' AND json_extract(fr.proposed_value_json, '$') = ?)
+          )
         )
       ORDER BY id DESC`,
     personaId,
     personaId,
+    persona.front,
   );
   return rows.map((s) => {
     const fields = db
@@ -337,7 +344,7 @@ export function forPersona(db: Db, members: readonly Member[], persona: Member, 
   const mine = views.filter((v) => v.owners.some((o) => o.memberId === persona.id));
 
   const confirmed = confirmedFor(db, members, persona.id, since, sources);
-  const pending = pendingFor(db, members, persona.id, since, sources, titles);
+  const pending = pendingFor(db, members, persona, since, sources, titles);
   const uncertain = uncertainFor(db, members, mine, pending, sources);
   const attention = attentionFor(mine, today);
   return {
@@ -345,7 +352,7 @@ export function forPersona(db: Db, members: readonly Member[], persona: Member, 
     pending,
     uncertain,
     attention,
-    empty: confirmed.length + pending.length + uncertain.length + attention.length === 0,
+    empty: confirmed.length === 0 && pending.length === 0,
   };
 }
 
@@ -360,8 +367,12 @@ export interface DocumentNews {
   aiSummary: string | null;
 }
 
-/** "Novidades dos documentos" (F9.7): novos, alterados e indisponíveis desde o marco. */
-export function documents(db: Db, since: string): DocumentNews[] {
+/**
+ * "Novidades dos documentos" (F9.7): novos, alterados e indisponíveis desde o marco. `ignoreFirstSeenUpTo`
+ * (fim da carga inicial) tira da lista de "novos" o que só chegou com a carga, para a primeira visita não
+ * anunciar a pasta inteira como novidade. "Alterado" exige pelo menos duas versões lidas.
+ */
+export function documents(db: Db, since: string, ignoreFirstSeenUpTo?: string): DocumentNews[] {
   const rows = db.all<{
     file_id: string;
     name: string;
@@ -371,9 +382,11 @@ export function documents(db: Db, since: string): DocumentNews[] {
     first_seen_at: string;
     removed_at: string | null;
     last_version_at: string | null;
+    versions: number;
   }>(
     `SELECT s.file_id, s.name, s.web_url, s.sync_status, s.status_reason, s.first_seen_at, s.removed_at,
-            (SELECT MAX(v.processed_at) FROM source_versions v WHERE v.file_id = s.file_id) AS last_version_at
+            (SELECT MAX(v.processed_at) FROM source_versions v WHERE v.file_id = s.file_id) AS last_version_at,
+            (SELECT COUNT(*) FROM source_versions v WHERE v.file_id = s.file_id) AS versions
        FROM sources s
       WHERE s.kind NOT IN ('folder', 'shortcut')`,
   );
@@ -385,9 +398,10 @@ export function documents(db: Db, since: string): DocumentNews[] {
       kind = "indisponivel";
       at = r.removed_at;
     } else if (r.removed_at === null && r.first_seen_at > since) {
+      if (ignoreFirstSeenUpTo !== undefined && r.first_seen_at <= ignoreFirstSeenUpTo) continue;
       kind = "novo";
       at = r.first_seen_at;
-    } else if (r.removed_at === null && r.last_version_at !== null && r.last_version_at > since) {
+    } else if (r.removed_at === null && r.versions >= 2 && r.last_version_at !== null && r.last_version_at > since) {
       kind = "alterado";
       at = r.last_version_at;
     }

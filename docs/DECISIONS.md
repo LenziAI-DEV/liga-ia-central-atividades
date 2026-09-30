@@ -374,3 +374,11 @@
 - **Não feito:** o resumo de direção por IA (`direction_digest`) não foi implementado, o fallback literal do plano basta e custa zero. A tabela aceita o propósito se for preciso depois.
 - **Defeito achado no teste real:** `displayQuote` apagava sublinhados ("Ata_registro.xlsx" virava "Ataregistro.xlsx"); agora só tira ênfase de Markdown. Vale também para a evidência das sugestões.
 - **Limite:** as regras repetem os itens de "Frentes e pessoas" quando o guia os lista como itens; é fiel ao documento, só não deduplicado.
+
+## DEC-024 — Auditoria das Fases 7 e 8 (2026-09-30)
+
+Um revisor (Sonnet, somente leitura). **Sem CRITICAL.** 1 HIGH, 5 MEDIUM e 4 LOW; procedentes foram corrigidos, com testes (348).
+- **HIGH corrigido:** `sentences()` cortava o começo de frases com ponto dentro de nome de arquivo ("Ata_registro.xlsx"), quebrando o "trecho literal". Agora só corta em `.!?` seguido de espaço ou fim.
+- **MEDIUM corrigidos:** (1) "Nada mudou" agora vale quando não há confirmadas nem pendentes; atenção e incertezas (estado de agora, não mudança) aparecem abaixo. (2) Criação proposta sem responsável aparece para quem é da frente proposta. (3) A visita só é gravada ao abrir o resumo padrão (escolher período não consome o marco). (4) Na primeira visita ou "desde a carga", a pasta da carga inicial não vira "novo"; "alterado" exige 2 versões lidas. (5) Passos da primeira ação só vêm de lista numerada de um guia ativo (nunca regras soltas); `readBlocks` ignora código, tabela e citação e junta linha recuada ao item; a lista de regras avisa quando há mais itens.
+- **LOW corrigidos:** mensagem de "tudo concluído" diferente de "sem atividades"; `aria-labelledby` sem espaços; chaves React sem colisão; eventos da própria persona como "você" e atividade arquivada fora; `displayQuote` só remove ênfase em pares.
+- **Não feito:** documento restaurado após `removed_at` sem nova versão não reaparece em novidades; `__init__` (Markdown negrito) perde os sublinhados na exibição; testes de página (Server Components) ficam para o E2E da Fase 9.

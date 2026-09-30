@@ -30,6 +30,14 @@ export function loadStartAt(db: Db, fallback: string): string {
   return source?.t ?? fallback;
 }
 
+/** Fim da carga inicial (primeira sincronização terminada, senão o início dela). */
+export function initialLoadEndAt(db: Db, fallback: string): string {
+  const run = db.get<{ t: string | null }>(
+    "SELECT COALESCE(finished_at, started_at) AS t FROM sync_runs ORDER BY id LIMIT 1",
+  );
+  return run?.t ?? fallback;
+}
+
 /**
  * Registra a abertura da página. Visitas dentro da janela de "mesma visita" só movem a última
  * visita; o marco anterior fica, para o resumo continuar igual ao recarregar.

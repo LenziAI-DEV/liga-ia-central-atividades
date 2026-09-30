@@ -30,6 +30,8 @@ export interface OnboardingView {
   purpose: Snippet[];
   fronts: Array<{ name: string; snippets: Snippet[] }>;
   rules: Array<{ section: string | null; items: Snippet[] }>;
+  /** Itens de regra que não couberam na lista (a página avisa que há mais no documento). */
+  rulesHidden: number;
   /** "Este documento substitui X ...", dito pelo próprio documento de direção ativo. */
   supersedes: Array<{ doc: DocRef; text: string }>;
   historical: Array<{ doc: DocRef; supersededBy: string | null }>;
@@ -37,7 +39,7 @@ export interface OnboardingView {
   registry:
     | { status: "ok"; fileId: string; fileName: string; webUrl: string | null; sheet: string; indexName: string; importedAt: string | null }
     | { status: "pending"; reason: string };
-  firstAction: { kind: "activity"; activity: ActivityView } | { kind: "none"; steps: Snippet[] };
+  firstAction: { kind: "activity"; activity: ActivityView } | { kind: "none"; allDone: boolean; steps: Snippet[] };
 }
 
 const MAX_FRONT_SNIPPETS = 3;
@@ -140,10 +142,15 @@ export function getOnboarding(db: Db, members: readonly Member[], persona: Membe
   // Regras: só itens de documentos de direção ativos (nunca de parciais, históricos ou atas).
   const groups = new Map<string, Snippet[]>();
   let ruleCount = 0;
+  let rulesHidden = 0;
   for (const { d, blocks: bs } of blocks) {
     if (!d.active) continue;
     for (const b of bs) {
-      if (b.kind !== "item" || ruleCount >= MAX_RULES) continue;
+      if (b.kind !== "item") continue;
+      if (ruleCount >= MAX_RULES) {
+        rulesHidden++;
+        continue;
+      }
       const key = `${d.ref.fileId}|${b.section ?? ""}`;
       const list = groups.get(key) ?? [];
       list.push({ text: displayQuote(b.text), doc: d.ref });
@@ -172,18 +179,17 @@ export function getOnboarding(db: Db, members: readonly Member[], persona: Membe
         }
       : { status: "pending", reason: resolution.reason };
 
-  let firstAction: OnboardingView["firstAction"] = { kind: "none", steps: [] };
-  const mine = persona
-    ? sortByDue(filterActivities(listActivityViews(db, members), { ownerId: persona.id, openOnly: true }, today))
-    : [];
+  let firstAction: OnboardingView["firstAction"] = { kind: "none", allDone: false, steps: [] };
+  const all = persona ? filterActivities(listActivityViews(db, members), { ownerId: persona.id }, today) : [];
+  const mine = sortByDue(all.filter((a) => a.status !== "concluida"));
   if (mine.length > 0) firstAction = { kind: "activity", activity: mine[0] };
   else {
-    // Sem atividade atribuída: os passos iniciais do guia vigente (lista numerada, senão a primeira lista).
-    const items = blocks.filter((x) => x.d.active).flatMap((x) => x.blocks.flatMap((b) => (b.kind === "item" ? [{ b, d: x.d }] : [])));
-    const numbered = items.filter((i) => i.b.kind === "item" && i.b.ordered);
-    const pick = (numbered.length > 0 ? numbered : items).slice(0, MAX_STEPS);
-    firstAction = { kind: "none", steps: pick.map((i) => ({ text: displayQuote(i.b.text), doc: i.d.ref })) };
+    // Sem atividade aberta: os passos da primeira lista numerada de um guia vigente (nunca regras soltas).
+    const guide = blocks.find((x) => x.d.active && x.blocks.some((b) => b.kind === "item" && b.ordered));
+    const steps = guide
+      ? guide.blocks.flatMap((b) => (b.kind === "item" && b.ordered ? [{ text: displayQuote(b.text), doc: guide.d.ref }] : [])).slice(0, MAX_STEPS)
+      : [];
+    firstAction = { kind: "none", allDone: all.length > 0, steps };
   }
-
-  return { hasDirection: docs.length > 0, purpose, fronts, rules, supersedes, historical, references, registry, firstAction };
+  return { hasDirection: docs.length > 0, purpose, fronts, rules, rulesHidden, supersedes, historical, references, registry, firstAction };
 }
