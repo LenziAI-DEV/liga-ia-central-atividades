@@ -65,6 +65,13 @@ function show(field: string, value: unknown, memberNames: Map<string, string>): 
   return String(value);
 }
 
+const SOURCE_RELATION_LABEL: Record<string, string> = {
+  imported_from: "Registro importado",
+  historical_origin: "Origem histórica",
+  updated_by: "Atualizada por sugestão aceita",
+  created_by: "Criada a partir de",
+};
+
 const BUTTON = "rounded border border-[var(--line)] px-4 py-2 hover:border-[var(--lia-blue)]";
 
 export default async function Page(props: PageProps<"/atividades/[id]">) {
@@ -98,6 +105,16 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
           {activity.origin === "importada" ? <StatusBadge tone="neutral">Importada do registro</StatusBadge> : null}
         </p>
       </PageHeader>
+      {activity.pendingSuggestions > 0 ? (
+        <div className="mb-6">
+          <Notice tone="info" title="Atualização pendente:">
+            {activity.pendingSuggestions} sugestão(ões) da IA aguardando revisão. Os valores abaixo são os oficiais e não mudaram.{" "}
+            <Link href="/sugestoes" className="underline">
+              Ver sugestões
+            </Link>
+          </Notice>
+        </div>
+      ) : null}
       {notice ? (
         <div className="mb-6">
           <Notice tone={notice.tone}>{notice.text}</Notice>
@@ -207,7 +224,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
           <ul className="mt-2 list-disc pl-5">
             {activity.sources.map((s, i) => (
               <li key={`${s.fileId}-${s.relation}-${i}`}>
-                {s.relation === "historical_origin" ? "Origem histórica" : "Registro importado"}:{" "}
+                {SOURCE_RELATION_LABEL[s.relation] ?? s.relation}:{" "}
                 <SourceRef source={s} />
                 {s.locator ? ` (${s.locator})` : ""}
               </li>

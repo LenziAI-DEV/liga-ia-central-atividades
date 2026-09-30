@@ -26,7 +26,10 @@ export function ActivityCard({ activity, today }: { activity: ActivityView; toda
             <span className="text-[var(--ink-muted)]">{activity.id}</span> · {activity.title}
           </Link>
         </h3>
-        <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+        <span className="flex flex-wrap items-center gap-2">
+          {activity.pendingSuggestions > 0 ? <StatusBadge tone="info">Atualização pendente</StatusBadge> : null}
+          <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+        </span>
       </div>
       <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[max-content_1fr]">
         <dt className="text-[var(--ink-muted)]">Responsável</dt>
