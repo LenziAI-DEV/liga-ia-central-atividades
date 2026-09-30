@@ -245,6 +245,7 @@
      - **[rodada 2]** a consulta da conta e a falha de decifragem vão para o log;
      - **[rodada 3]** o escopo concedido só pode ter `drive.readonly` e escopos de identidade: Documentos e Planilhas, que permitem escrever, são recusados.
   10. **Testes:** `@vitest/coverage-v8` (dev) e `npm run test:coverage`. Cobertura de `src/server` + `src/lib`: 76,5% → 84% das linhas.
+  11. **Rodada 4 (corrigida sem 5ª rodada, DEC-014):** fórmula com resultado de texto vazio (`t="str"`, `<v></v>`) é célula vazia, não erro (fórmula sem `<v>` continua recusada); título Markdown com U+2028/U+2029 (`[sS]` no lugar de `.`, antes não era nem reconhecido); `findEntry` com índice minúsculo por pacote e limite de 256 abas. Cobertura por 5 testes novos (170 no total).
 - **Adiado de propósito:**
   - política de novo download para arquivo com falha permanente (vem com o backoff do scheduler, Fase 4);
   - histórico A→B→A em `source_versions` (Fase 4.3);

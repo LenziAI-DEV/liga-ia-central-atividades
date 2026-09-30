@@ -32,6 +32,7 @@ const parser = new XMLParser({
 const MAX_COLUMN_INDEX = 16_383;
 const MAX_ROW = 1_048_576;
 const MAX_FORMAT_CODE = 255;
+const MAX_SHEETS = 256;
 const CELL_REF = /^([A-Za-z]{1,3})([0-9]{1,7})$/;
 
 type XmlNode = Record<string, unknown>;
@@ -125,10 +126,21 @@ function resolveTarget(target: string): string {
 function findEntry(zip: JSZip, path: string): JSZip.JSZipObject | null {
   const exact = zip.file(path);
   if (exact) return exact;
-  const lower = path.toLowerCase();
-  const match = Object.keys(zip.files).find((name) => name.toLowerCase() === lower);
+  let byLowerName = lowerNameIndex.get(zip);
+  if (!byLowerName) {
+    byLowerName = new Map();
+    for (const name of Object.keys(zip.files)) {
+      const lower = name.toLowerCase();
+      if (!byLowerName.has(lower)) byLowerName.set(lower, name);
+    }
+    lowerNameIndex.set(zip, byLowerName);
+  }
+  const match = byLowerName.get(path.toLowerCase());
   return match ? zip.file(match) : null;
 }
+
+/** Índice minúsculo → nome real, montado uma vez por pacote (a busca linear era quadrática). */
+const lowerNameIndex = new WeakMap<JSZip, Map<string, string>>();
 
 async function readXml(zip: JSZip, path: string): Promise<XmlNode | null> {
   const file = findEntry(zip, path);
@@ -206,6 +218,9 @@ async function readWorkbook(data: Uint8Array): Promise<SheetExtract> {
   const date1904 = ["1", "true"].includes(String((workbook.workbookPr as XmlNode | undefined)?.["@_date1904"] ?? ""));
   const sheetEntries = ((workbook.sheets as XmlNode | undefined)?.sheet as XmlNode[] | undefined) ?? [];
   if (sheetEntries.length === 0) throw new XlsxError("Arquivo .xlsx sem nenhuma aba.");
+  if (sheetEntries.length > MAX_SHEETS) {
+    throw new XlsxError(`O arquivo tem mais de ${MAX_SHEETS} abas, mais do que o app lê.`);
+  }
 
   const relsXml = await readXml(zip, "xl/_rels/workbook.xml.rels");
   if (!relsXml && sheetEntries.length > 0) throw new XlsxError("Arquivo .xlsx sem relacionamentos das abas.");
@@ -327,8 +342,10 @@ function readCell(c: XmlNode, address: string, context: CellContext): CellValue 
   const raw = asText(c.v);
 
   // Fórmula sem valor calculado (arquivo salvo sem recalcular): o valor é
-  // desconhecido, não vazio (F2.8).
-  if ("f" in c && raw.trim() === "" && type !== "inlineStr") {
+  // desconhecido, não vazio (F2.8). Resultado de texto vazio (`t="str"` com `<v></v>`,
+  // ex. `=SE(...;"";...)`) é legítimo e vira célula vazia.
+  const emptyTextResult = (type === "str" || type === "e") && c.v !== undefined;
+  if ("f" in c && raw.trim() === "" && type !== "inlineStr" && !emptyTextResult) {
     throw new XlsxError(
       `A célula ${address} tem uma fórmula sem valor calculado. Abra e salve a planilha no Excel ou no Google Planilhas.`,
     );

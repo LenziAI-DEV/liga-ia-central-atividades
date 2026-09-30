@@ -6,7 +6,8 @@ import type { Section, TextExtract } from "./types";
  * Drive (não confiável), e o extrator roda no mesmo processo da interface. Nada de
  * quantificadores sobrepostos como `(.+?)\s*#*\s*$` (backtracking catastrófico).
  */
-const HEADING = /^(#{1,6})[ \t]+(.*)$/;
+// `[\s\S]` em vez de `.`: o ponto não casa U+2028/U+2029 e o `$` retrocederia a cada posição (quadrático).
+const HEADING = /^(#{1,6})[ \t]+([\s\S]*)$/;
 /** `chave: valor` com chave de uma palavra (ex.: `status`, `data_da_reuniao`). */
 const METADATA = /^[ \t]*([\p{L}_][\p{L}\p{N}_]*)[ \t]*:(.*)$/u;
 const METADATA_SCAN_LINES = 20;

@@ -77,6 +77,16 @@ describe("extractMarkdown", () => {
     expect(doc.text).toContain("fim");
   });
 
+  it("título com separadores U+2028/U+2029 não vira quadrático (R4-2)", () => {
+    const separator = String.fromCharCode(0x2028);
+    const line = `# ${`a${separator}`.repeat(1500)}`;
+    const text = Array.from({ length: 2500 }, () => line).join("\n");
+    const start = performance.now();
+    const doc = extractMarkdown(text);
+    expect(performance.now() - start).toBeLessThan(1500);
+    expect(doc.sections).toHaveLength(2500);
+  });
+
   it("o hash não muda com CRLF, BOM ou espaços no fim da linha", () => {
     const a = extractMarkdown("# T\n\nstatus: ativo\n\ntexto");
     const b = extractMarkdown(`${BOM}# T  \r\n\r\nstatus: ativo \r\n\r\ntexto\r\n`);

@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-29 (terça), ~22h30 BRT — Fase 1 concluída e auditada, aguardando a decisão do usuário sobre o merge.**
+> Última atualização: **2026-09-30 (quarta), manhã — Fase 1 fechada e mesclada na `main`; começa a Fase 2.**
 
 ## Prazo
 
@@ -12,11 +12,10 @@
 
 ## ▶ Como retomar (primeira coisa a fazer na próxima sessão)
 
-1. `git checkout fase-1-drive`. A branch tem commits **locais** ainda não enviados (desde `d15164f`), que só vão ao GitHub depois da decisão da P-3.
-2. `npm test` (esperado: **165 testes** passando), `npm run typecheck`, `npm run lint`.
-3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes) e resolver a **P-3**: corrigir os 3 MEDIUM da 4ª rodada, rodar o `verification-loop` e fazer o merge, sem nova rodada de santa-loop.
-4. Push da `fase-1-drive`, merge na `main`, Marco 1 como `complete` no PRD §16, branch `fase-2-painel`.
-5. Seguir a Fase 2 do `docs/plans/IMPLEMENTATION_PLAN.md` (2.1 personas → 2.2 índice → 2.3 importação → 2.4 painéis).
+1. `git checkout fase-2-painel` (criada a partir da `main`, que já contém a Fase 1).
+2. `npm test` (esperado: **170 testes**), `npm run typecheck`, `npm run lint`.
+3. **Ler `docs/AI_EXECUTION_POLICY.md`** (DEC-014: Sonnet + Medium por padrão, MODEL ROUTING antes de tarefas relevantes, sem santa-loop rotineiro).
+4. Seguir a Fase 2 do `docs/plans/IMPLEMENTATION_PLAN.md` (2.1 personas → 2.2 índice → 2.3 importação → 2.4 painéis).
 
 **Como rodar:** `npm install` → `npm run setup` → preencher o `.env.local` → `npm run app` → http://localhost:3000.
 - O servidor escuta **só em 127.0.0.1** (DEC-013).
@@ -26,7 +25,7 @@
 ## Estado atual
 
 - **Fase 0 — Fundação:** ✅ concluída, com merge na `main`.
-- **Fase 1 — Drive conectado:** ✅ **concluída e verificada**, na branch `fase-1-drive`, ainda **sem merge**.
+- **Fase 1 — Drive conectado:** ✅ **concluída, verificada e mesclada na `main`** (2026-09-30). Marco 1 `complete`.
   - **Teste real com o Google:** CA-F1.1, F1.3, F1.4, F2.1 e F13.2 conferidos pelo log e pelo banco (`VALIDACAO.md`).
   - **Auditoria completa:** revisão de código, segurança (segredos, `npm audit`, cabeçalhos, host) e 3 rodadas de revisão adversarial (santa-loop). Achados e correções na DEC-013.
   - **Números:** 165 testes; 85% de cobertura de `src/server` + `src/lib`; typecheck, lint e build limpos; Lighthouse (acessibilidade) 100.
@@ -52,7 +51,7 @@
 
 | # | Pendência | Responsável | Observação |
 |---|---|---|---|
-| **P-3** | **Corrigir os 3 MEDIUM da 4ª rodada e fazer o merge** `fase-1-drive` → `main` | Assistente (Sonnet Medium, DEC-014) | A 4ª rodada (escolhida pelo usuário) reprovou. **Não haverá 5ª rodada** (DEC-014): corrigir com teste e `verification-loop`, depois merge. Os MEDIUM a corrigir: **(1)** `xlsx.ts` ~l.331 recusa fórmula `t="str"` com `<v>` vazio (resultado `""` legítimo, ex. `=SE(...;"";...)`), o que bloquearia a importação da Fase 2; só recusar quando `<v>` estiver ausente, ou vazio sem `t` / com `t="n"`. **(2)** `markdown.ts` `HEADING` é quadrático com U+2028/U+2029 (o `.` não casa, e o `$` retrocede): usar a flag `s` ou fatiar à mão; teste com U+2028. **(3)** `xlsx.ts` `findEntry` é O(n) por busca (quadrático com nomes de partes em outra caixa): montar um `Map` minúsculo → entrada uma vez por zip e limitar a quantidade de abas. LOW baratos a considerar: `[m]`/`[mm]` virando data; colisão da chave `#E`; abas repetidas relidas; `ENETUNREACH` e outros códigos de rede sem retry; erro de rede no `exchangeCode` mostrando "confira o Client Secret"; texto "veja a tabela" no aviso de ciclo parcial; "Desconectar" também em `reauth_required`; UTF-8 com BOM caindo para Windows-1252; cerca de código mais curta fechando o bloco; `forceRefreshOnFailure`; comentário do exceljs em `lib/datetime.ts` |
+| ~~P-3~~ | ~~Corrigir os 3 MEDIUM da 4ª rodada e fazer o merge~~ | Assistente | ✅ 2026-09-30: corrigidos com teste (170 testes), `verification-loop` verde, merge feito. LOW da 4ª rodada seguem como dívida menor (lista na DEC-013): `[m]`/`[mm]` virando data; colisão da chave `#E`; abas repetidas relidas; `ENETUNREACH` sem retry; erro de rede no `exchangeCode`; texto "veja a tabela" no aviso parcial; "Desconectar" em `reauth_required`; UTF-8 com BOM + byte inválido; cerca mais curta; `forceRefreshOnFailure`; comentário do exceljs em `lib/datetime.ts` |
 | **P-4** | **Fase 2** (painel pessoal): personas, índice e registro vigente, importação da planilha, "Minhas" e "Todas" | Assistente | Meta: quarta 09-30 |
 | P-6 | Conferir se a `LunkiBR` aceitou o convite de colaboradora | Usuário/assistente (`gh api repos/LenziAI-DEV/liga-ia-central-atividades/invitations`) | Pendente em 2026-09-29; o convite vence por volta de 06/10 |
 | P-7 | Anotar para o README (Fase 10) | Assistente | Node ≥ 22.13; npm 11 e `unrs-resolver`; tela "Google não verificou este app"; expiração da autorização em 7 dias; o servidor só escuta em `127.0.0.1` (abrir por `localhost`); `npm run test:coverage` |
@@ -63,7 +62,7 @@
 
 | Dia | Data | Fases | Situação |
 |---|---|---|---|
-| Ter | 09-29 | 0, 1 | ✅ Fase 0 · ✅ Fase 1 (auditada; merge aguardando P-3) |
+| Ter | 09-29 | 0, 1 | ✅ Fase 0 · ✅ Fase 1 (auditada e mesclada) |
 | Qua | 09-30 | 2, 3, 4.1–4.3 | Próximo passo |
 | Qui | 10-01 | 4.4, 5, 6.0–6.3 | Chave da Anthropic ✅ já no `.env.local` |
 | Sex | 10-02 | 6.4–6.6, 7 | — |
@@ -72,7 +71,7 @@
 
 ## Blockers
 
-Nenhum bloqueio técnico. Só a **decisão da P-3**, que é do usuário.
+Nenhum.
 
 ## Riscos de prazo
 

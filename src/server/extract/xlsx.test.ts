@@ -234,6 +234,51 @@ describe("extractXlsx — robustez (F2.8: falha de leitura nunca vira vazio)", (
     await expect(extractXlsx(data)).rejects.toThrow(/fórmula/);
   });
 
+  it("fórmula cujo resultado é texto vazio (t=\"str\") é célula vazia, não erro (R4-1)", async () => {
+    const data = await buildXlsx(
+      `<row r="1">${inline("A1", "Prazo")}${inline("B1", "Nota")}</row>` +
+        `<row r="2">${inline("A2", "x")}<c r="B2" t="str"><f>IF(1=1,"","a")</f><v></v></c></row>`,
+    );
+    const [sheet] = (await extractXlsx(data)).sheets;
+    expect(sheet.rows[0].cells.Prazo.text).toBe("x");
+    expect(sheet.rows[0].cells.Nota).toBeUndefined();
+  });
+
+  it("fórmula numérica com <v> vazio continua sendo erro (R4-1)", async () => {
+    const data = await buildXlsx(
+      `<row r="1">${inline("A1", "Prazo")}</row><row r="2"><c r="A2" s="1"><f>A1+1</f><v></v></c></row>`,
+    );
+    await expect(extractXlsx(data)).rejects.toThrow(/fórmula/);
+  });
+
+  it("muitas abas são recusadas com motivo, sem travar (R4-3)", async () => {
+    const sheets = Array.from({ length: 5000 }, (_, i) => `<sheet name="A${i}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("");
+    const rels = Array.from(
+      { length: 5000 },
+      (_, i) => `<Relationship Id="rId${i + 1}" Type="worksheet" Target="worksheets/sheet${i + 1}.xml"/>`,
+    ).join("");
+    const data = await buildXlsx(`<row r="1">${inline("A1", "ID")}</row>`, {
+      "xl/workbook.xml": `<?xml version="1.0"?><workbook ${NS} xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets}</sheets></workbook>`,
+      "xl/_rels/workbook.xml.rels": `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`,
+    });
+    const start = performance.now();
+    await expect(extractXlsx(data)).rejects.toThrow(/abas/);
+    expect(performance.now() - start).toBeLessThan(1500);
+  });
+
+  it("nomes de partes em outra caixa são achados sem varrer o pacote a cada busca (R4-3)", async () => {
+    const zip = new JSZip();
+    zip.file("XL/WORKBOOK.XML", WORKBOOK);
+    zip.file("XL/_RELS/WORKBOOK.XML.RELS", RELS);
+    zip.file("XL/STYLES.XML", STYLES);
+    zip.file("XL/WORKSHEETS/SHEET1.XML", `<?xml version="1.0"?><worksheet ${NS}><sheetData><row r="1">${inline("A1", "ID")}</row></sheetData></worksheet>`);
+    for (let i = 0; i < 20_000; i++) zip.file(`docProps/lixo${i}.txt`, "x");
+    const start = performance.now();
+    const [sheet] = (await extractXlsx(await zip.generateAsync({ type: "uint8array" }))).sheets;
+    expect(sheet.header).toEqual(["ID"]);
+    expect(performance.now() - start).toBeLessThan(3000);
+  });
+
   it("formatos de duração ([h]:mm, [mm]:ss) não viram data (R3-4)", () => {
     for (const code of ["[h]:mm", "[hh]:mm:ss", "[mm]:ss", "[ss]", "[Red][h]:mm"]) {
       expect(isDateFormatCode(code), code).toBe(false);
