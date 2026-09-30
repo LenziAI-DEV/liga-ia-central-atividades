@@ -92,8 +92,8 @@ export default async function Page() {
         {view.purpose.length === 0 ? (
           <p>Os documentos lidos não trazem uma descrição do propósito.</p>
         ) : (
-          view.purpose.map((p) => (
-            <p key={`${p.doc.fileId}-${p.text}`}>
+          view.purpose.map((p, i) => (
+            <p key={`${p.doc.fileId}-${i}`}>
               <Quote snippet={p} />
             </p>
           ))
@@ -108,8 +108,8 @@ export default async function Page() {
                 <p className="text-sm">Os documentos de direção não explicam esta frente.</p>
               ) : (
                 <ul className="mt-1 grid gap-1 text-sm">
-                  {f.snippets.map((s) => (
-                    <li key={`${s.doc.fileId}-${s.text}`}>
+                  {f.snippets.map((s, i) => (
+                    <li key={`${s.doc.fileId}-${i}`}>
                       <Quote snippet={s} />
                     </li>
                   ))}
@@ -124,14 +124,14 @@ export default async function Page() {
         {view.rules.length === 0 ? (
           <p>Nenhum documento de direção ativo traz regras em lista.</p>
         ) : (
-          view.rules.map((g) => (
-            <div key={`${g.items[0].doc.fileId}-${g.section}`}>
+          view.rules.map((g, gi) => (
+            <div key={`${g.items[0].doc.fileId}-${gi}`}>
               <h3 className="font-semibold">
                 {g.section ?? "Regras"} <span className="text-sm font-normal">({g.items[0].doc.name})</span>
               </h3>
               <ul className="mt-1 list-disc pl-5">
-                {g.items.map((s) => (
-                  <li key={s.text}>
+                {g.items.map((s, i) => (
+                  <li key={i}>
                     <Quote snippet={s} />
                   </li>
                 ))}
@@ -139,6 +139,11 @@ export default async function Page() {
             </div>
           ))
         )}
+        {view.rulesHidden > 0 ? (
+          <p className="text-sm">
+            Há mais {view.rulesHidden} item(ns) de regras que não cabem aqui: abra os documentos de referência abaixo para ler tudo.
+          </p>
+        ) : null}
         {view.supersedes.map((s) => (
           <p key={s.doc.fileId} className="text-sm">
             <DocLink doc={s.doc} /> {s.text}.
@@ -225,12 +230,17 @@ export default async function Page() {
         ) : (
           <>
             <p>
-              <strong>Você ainda não tem atividades atribuídas.</strong> Comece pelos passos do guia vigente:
+              <strong>
+                {view.firstAction.allDone ? "Todas as suas atividades estão concluídas." : "Você ainda não tem atividades atribuídas."}
+              </strong>{" "}
+              {view.firstAction.steps.length > 0
+                ? "Comece pelos passos do guia vigente:"
+                : "O guia vigente não traz passos numerados; leia os documentos de referência no passo 2."}
             </p>
             {view.firstAction.steps.length > 0 ? (
               <ol className="list-decimal pl-5">
-                {view.firstAction.steps.map((s) => (
-                  <li key={s.text}>
+                {view.firstAction.steps.map((s, i) => (
+                  <li key={i}>
                     <Quote snippet={s} />
                   </li>
                 ))}

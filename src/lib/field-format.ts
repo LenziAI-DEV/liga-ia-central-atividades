@@ -31,6 +31,7 @@ export function formatFieldValue(field: string, value: unknown, memberNames: Rea
  */
 export function displayQuote(quote: string): string {
   return quote
-    .replace(/[*`]/g, "")
+    .replace(/\*{1,3}([^\s*](?:[^*]*[^\s*])?)\*{1,3}/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
     .replace(/(^|\s)_+(\S(?:[^_]*\S)?)_+(?=\s|[.,;:!?]|$)/g, "$1$2");
 }

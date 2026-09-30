@@ -249,3 +249,39 @@ describe("ChangeFeed.documents", () => {
     expect(documents(db, SINCE)).toEqual([]);
   });
 });
+
+describe("correções da auditoria (Fases 7+8)", () => {
+  it("atenção e incertezas não tiram o 'nada mudou': empty vale só para confirmadas e pendentes", () => {
+    const db = seed();
+    activity(db, "ACT-301", ["carla"], { due: "2026-10-01" });
+    const feed = forPersona(db, members, carla, SINCE, TODAY);
+    expect(feed.attention).toHaveLength(1);
+    expect(feed.empty).toBe(true);
+  });
+
+  it("criação sem responsável aparece para quem é da frente proposta", () => {
+    const db = seed();
+    suggestion(db, { id: 9, kind: "create", target: null, fields: [["title", null, "Algo"], ["owners", null, []], ["front", null, "Formação"]] });
+    expect(forPersona(db, members, carla, SINCE, TODAY).pending.map((p) => p.suggestionId)).toEqual([9]);
+    expect(forPersona(db, members, davi, SINCE, TODAY).pending).toHaveLength(0);
+  });
+
+  it("eventos da própria persona aparecem como 'você'; atividade arquivada não entra", () => {
+    const db = seed();
+    db.run("INSERT INTO activity_events (activity_id, actor_id, occurred_at, kind, changes_json) VALUES ('ACT-101', 'ana', ?, 'updated', '[]')", AFTER);
+    db.run("INSERT INTO activity_events (activity_id, actor_id, occurred_at, kind, changes_json) VALUES ('ACT-102', 'bruno', ?, 'updated', '[]')", AFTER);
+    db.run("UPDATE activities SET archived_at = ? WHERE id = 'ACT-102'", AFTER);
+    expect(forPersona(db, members, ana, SINCE, TODAY).confirmed.map((c) => c.actor)).toEqual(["você"]);
+    expect(forPersona(db, members, davi, SINCE, TODAY).confirmed).toHaveLength(0);
+  });
+
+  it("documentos: a carga inicial não vira 'novo' e 'alterado' exige duas versões", () => {
+    const db = testDb();
+    source(db, "a", "Carga.md", { first: "2026-10-01T10:30:00.000Z" });
+    source(db, "b", "Depois.md", { first: AFTER });
+    source(db, "c", "SoUmaVersao.md");
+    db.run("INSERT INTO source_versions (file_id, content_hash, processed_at) VALUES ('c', 'h1', ?)", AFTER);
+    const names = documents(db, SINCE, "2026-10-01T11:00:00.000Z").map((n) => n.name);
+    expect(names).toEqual(["Depois.md"]);
+  });
+});

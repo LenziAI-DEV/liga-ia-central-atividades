@@ -51,10 +51,10 @@ function ActivityLink({ activity }: { activity: { id: string; title: string } })
   );
 }
 
-function Group({ title, hint, count, children }: { title: string; hint: string; count: number; children: React.ReactNode }) {
+function Group({ id, title, hint, count, children }: { id: string; title: string; hint: string; count: number; children: React.ReactNode }) {
   return (
-    <section aria-labelledby={`g-${title}`} className="mb-8">
-      <h2 id={`g-${title}`} className="font-serif text-2xl font-semibold">
+    <section aria-labelledby={`g-${id}`} className="mb-8">
+      <h2 id={`g-${id}`} className="font-serif text-2xl font-semibold">
         {title} <span className="text-base font-normal text-[var(--ink-muted)]">({count})</span>
       </h2>
       <p className="mt-1 text-sm text-[var(--ink-muted)]">{hint}</p>
@@ -67,7 +67,7 @@ const card = "rounded border border-[var(--line)] p-3";
 
 export function ConfirmedGroup({ items }: { items: readonly ConfirmedItem[] }) {
   return (
-    <Group title="Mudanças confirmadas" hint="Já aprovadas e registradas no histórico oficial." count={items.length}>
+    <Group id="confirmadas" title="Mudanças confirmadas" hint="Já aprovadas e registradas no histórico oficial." count={items.length}>
       {items.map((e) => (
         <li key={e.eventId} className={card}>
           <p>
@@ -96,6 +96,7 @@ export function ConfirmedGroup({ items }: { items: readonly ConfirmedItem[] }) {
 export function PendingGroup({ items }: { items: readonly PendingItem[] }) {
   return (
     <Group
+      id="pendentes"
       title="Propostas pendentes de aprovação"
       hint="A IA sugeriu, mas nada mudou ainda: um revisor precisa decidir."
       count={items.length}
@@ -138,7 +139,7 @@ export function PendingGroup({ items }: { items: readonly PendingItem[] }) {
 
 export function UncertainGroup({ items }: { items: readonly UncertainItem[] }) {
   return (
-    <Group title="Dados incertos ou em conflito" hint="O sistema não decide por você: confira as fontes." count={items.length}>
+    <Group id="incertos" title="Dados incertos ou em conflito" hint="O sistema não decide por você: confira as fontes." count={items.length}>
       {items.map((u) => (
         <li key={u.key} className={card}>
           {u.activity ? (
@@ -163,7 +164,7 @@ export function UncertainGroup({ items }: { items: readonly UncertainItem[] }) {
 
 export function AttentionGroup({ items, today }: { items: readonly AttentionItem[]; today: string }) {
   return (
-    <Group title="Precisam de atenção" hint="Suas atividades bloqueadas, vencidas ou perto do prazo." count={items.length}>
+    <Group id="atencao" title="Precisam de atenção" hint="Suas atividades bloqueadas, vencidas ou perto do prazo." count={items.length}>
       {items.map((a) => (
         <li key={a.activityId} className={card}>
           <p className="flex flex-wrap items-center gap-2">
@@ -189,6 +190,7 @@ const DOC_KIND: Record<DocumentNews["kind"], { text: string; tone: "ok" | "info"
 export function DocumentsGroup({ items }: { items: readonly DocumentNews[] }) {
   return (
     <Group
+      id="documentos"
       title="Novidades dos documentos"
       hint="Documentos novos, alterados ou indisponíveis na pasta do Drive. O resumo vem da análise por IA."
       count={items.length}

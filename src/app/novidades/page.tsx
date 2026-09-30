@@ -8,7 +8,7 @@ import { getArea } from "@/lib/areas";
 import { formatDateTimeBR, isoDateInSaoPaulo } from "@/lib/datetime";
 import { getDb } from "@/server/db";
 import { documents, forPersona } from "@/server/feed/change-feed";
-import { getVisit, loadStartAt, recordVisit, resolveMarker } from "@/server/feed/visits";
+import { getVisit, initialLoadEndAt, loadStartAt, recordVisit, resolveMarker } from "@/server/feed/visits";
 import { getCurrentPersona, listMembers } from "@/server/persona/current-persona";
 
 const area = getArea("/novidades");
@@ -40,8 +40,9 @@ export default async function Page(props: PageProps<"/novidades">) {
   const marker = resolveMarker({ param: desde, visit: getVisit(db, persona.id), loadStart: loadStartAt(db, now.toISOString()), now });
   const today = isoDateInSaoPaulo(now);
   const feed = forPersona(db, listMembers(), persona, marker.since, today);
-  const news = documents(db, marker.since);
-  recordVisit(db, persona.id, now);
+  const news = documents(db, marker.since, marker.kind === "carga" ? initialLoadEndAt(db, now.toISOString()) : undefined);
+  // Só a abertura do resumo padrão conta como visita; escolher um período não consome o marco.
+  if (desde === undefined) recordVisit(db, persona.id, now);
   const activeParam = PERIODS.some((p) => p.param === desde) ? (desde ?? null) : desde ? "custom" : null;
 
   return (
@@ -80,10 +81,11 @@ export default async function Page(props: PageProps<"/novidades">) {
         <>
           <ConfirmedGroup items={feed.confirmed} />
           <PendingGroup items={feed.pending} />
-          <UncertainGroup items={feed.uncertain} />
-          <AttentionGroup items={feed.attention} today={today} />
         </>
       )}
+      {/* Estado de agora (não é mudança): aparece com ou sem novidades. */}
+      {feed.uncertain.length > 0 ? <UncertainGroup items={feed.uncertain} /> : null}
+      {feed.attention.length > 0 ? <AttentionGroup items={feed.attention} today={today} /> : null}
       <DocumentsGroup items={news} />
       <p className="text-sm text-[var(--ink-muted)]">
         Todas as fontes da pasta são visíveis a todas as personas neste protótipo. Datas, responsáveis e estados vêm dos registros oficiais; só o resumo de cada documento é gerado por IA.
