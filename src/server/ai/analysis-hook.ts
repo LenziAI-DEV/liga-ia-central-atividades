@@ -25,8 +25,8 @@ export function analysisHook(env: AppEnv) {
       clock: context.clock,
       indexFileName: env.INDEX_FILE_NAME,
       maxInputChars: env.AI_MAX_INPUT_CHARS,
-      // Espera a versão ficar estável por 2 min e limita a 100 chamadas por dia (custo previsível).
-      debounceMs: 120_000,
+      // Espera a versão ficar estável (padrão 2 min; 0 nos testes E2E) e limita a 100 chamadas por dia (custo previsível).
+      debounceMs: env.AI_DEBOUNCE_SECONDS * 1000,
       dailyCallLimit: 100,
     }).catch((error) => logger.error("analysis.queue_failed", { error }));
   };

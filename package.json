@@ -18,7 +18,8 @@
     "test:coverage": "vitest run --coverage --coverage.include=src/server/** --coverage.include=src/lib/** --coverage.exclude=**/*.test.ts",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint",
-    "ai:record": "node scripts/ai-record.mjs"
+    "ai:record": "node scripts/ai-record.mjs",
+    "test:e2e": "node scripts/e2e.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
@@ -33,6 +34,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.19.0",
     "@types/react": "^19",
