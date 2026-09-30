@@ -490,3 +490,16 @@ Todas as novas sessões e tarefas relevantes deste projeto respeitam esta polít
 7. só então trabalhar.
 
 Objetivo permanente: **qualidade + confiabilidade + segurança + eficiência de tokens**. Nunca maximizar recursos por padrão. Usar sempre só os recursos necessários para executar a tarefa corretamente.
+
+## 38. Avaliação de tokens no início de cada fase (obrigatória)
+
+Antes de iniciar **cada fase** (e qualquer auditoria ou etapa grande), o assistente apresenta ao usuário, junto do MODEL ROUTING, uma avaliação curta de tokens. Não depende de o usuário pedir.
+
+1. **Contexto atual:** a sessão está longa? Se sim, recomendar `/compact` **antes** de começar (cada chamada relê o contexto inteiro).
+2. **Custo esperado da fase:** pequeno (leitura e interface), médio (novo serviço com testes) ou grande (IA, auditoria com subagente), em número aproximado de chamadas.
+3. **Modelo e effort:** padrão Sonnet + Medium; só subir com justificativa.
+4. **Subagentes:** só com ganho claro (auditoria independente, no máximo um).
+5. **Plano B:** o que será cortado ou adiado se o limite apertar (teste de menor risco primeiro).
+6. **Registro:** o número de chamadas ao modelo de IA do produto e o custo em US$ entram no `VALIDACAO.md` quando houver.
+
+Registrada por pedido do usuário em 2026-09-30.

@@ -21,6 +21,7 @@ Ao concluir um marco, atualize `PROGRESS.md` e os documentos afetados. As decis�
 - Leia `docs/AI_EXECUTION_POLICY.md` antes de tarefas relevantes. As regras de modelo, effort, subagentes, contexto e revisão são **obrigatórias**.
 - Nenhuma tarefa complexa começa sem um **MODEL ROUTING** curto (modelo, effort, motivo, subagentes). Padrão: **Sonnet + Medium**. Opus, High e subagentes só com justificativa. Se o modelo atual for excessivo ou insuficiente, avise antes de trabalhar.
 - Revisão proporcional ao risco. Santa-loop só em milestone crítico ou pré-entrega.
+- **Antes de cada fase**, apresentar a **avaliação de tokens** (contexto e `/compact`, custo esperado, modelo, subagentes, plano B): obrigatório, sem o usuário pedir (política §38).
 
 ## Regras inegociáveis
 
