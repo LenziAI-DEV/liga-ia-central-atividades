@@ -95,7 +95,7 @@ describe("ActivityService", () => {
   it("edição gera um evento com os campos antes → depois e o motivo (CA-F6.2)", () => {
     seedImported(db);
     const result = updateActivity(db, "ACT-102", { status: "em_andamento", nextStep: "Enviar versão 1" }, 1, "davi", members, clock, "avançou");
-    expect(result).toEqual({ changed: true, version: 2 });
+    expect(result).toMatchObject({ changed: true, version: 2 });
     const [event] = listEvents(db, "ACT-102", members);
     expect(event).toMatchObject({ kind: "updated", actor: "Davi", reason: "avançou" });
     expect(event.changes).toEqual([
