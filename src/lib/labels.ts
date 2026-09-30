@@ -37,3 +37,14 @@ export const RUN_TRIGGER: Record<SyncTrigger, string> = {
   scheduled: "automática",
   manual: "manual",
 };
+
+/** Estados da atividade (RN-2). `null` = estado a confirmar (valor da planilha não reconhecido). */
+export const ACTIVITY_STATUS = {
+  a_fazer: { label: "A fazer", tone: "neutral" },
+  em_andamento: { label: "Em andamento", tone: "info" },
+  bloqueada: { label: "Bloqueada", tone: "danger" },
+  concluida: { label: "Concluída", tone: "ok" },
+  a_confirmar: { label: "Estado a confirmar", tone: "warn" },
+} as const satisfies Record<string, { label: string; tone: Tone }>;
+
+export const ROLE_LABEL = { leader: "líder", member: "membro" } as const;

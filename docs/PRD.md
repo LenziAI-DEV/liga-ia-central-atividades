@@ -594,7 +594,7 @@ Os marcos são resultados visíveis ao usuário, não tarefas de engenharia. O `
 | # | Marco | Resultado visível | Features | Cenários | Status | Plano |
 |---|---|---|---|---|---|---|
 | 1 | Pasta conectada e fontes visíveis | O operador conecta a pasta. Vê pasta, escopo, última sincronização e o inventário de arquivos com estado e link | F1, F2, F13 | CA-F2.1–F2.3 | complete (2026-09-30) | `docs/plans/IMPLEMENTATION_PLAN.md` (Fases 0 e 1) |
-| 2 | Atividades importadas e painel pessoal | A planilha apontada pelo índice é importada. "Minhas" e "Todas" funcionam com filtros e troca de persona | F4.2, F5, F11 | V-1 | pending | — |
+| 2 | Atividades importadas e painel pessoal | A planilha apontada pelo índice é importada. "Minhas" e "Todas" funcionam com filtros e troca de persona | F4.2, F5, F11 | V-1 | complete (2026-09-30) | — |
 | 3 | Gestão de atividades com histórico | Criar, editar, concluir e bloquear, com persistência e histórico auditável | F6 | V-6 | pending | — |
 | 4 | Sincronização automática confiável | Arquivos novos, editados, renomeados e removidos refletidos em ≤15 min. Erros visíveis | F3 | V-3, V-8 | pending | — |
 | 5 | Autoridade e conflitos | Planilha homônima não apaga nada. Documentos superados identificados. Regra de precedência visível | F4 | V-5, V-13 | pending | — |

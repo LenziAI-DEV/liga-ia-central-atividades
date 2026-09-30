@@ -7,6 +7,7 @@ import { countVersions, getContent, getSource, listSources } from "@/server/db/r
 import { acquireRun, lastFinishedRun } from "@/server/db/repos/sync-runs-repo";
 import { createInitialLoadDrive } from "@/server/drive/fake-seed";
 import { MIME } from "@/server/drive/gateway";
+import { registryImportHook } from "@/server/activities/import-hook";
 import { runSync } from "./sync-service";
 
 const DATA_DIR = join(process.cwd(), "dados_ficticios");
@@ -323,5 +324,18 @@ describe("runSync — escopo da pasta monitorada (F3.7, AR-16)", () => {
     await runSync({ db, gateway: drive, rootFolderId: drive.rootId, clock: steppingClock(), maxFileBytes: 32 * 1024 }, "manual");
     expect(getSource(db, big)).toMatchObject({ sync_status: "failed", status_reason: expect.stringMatching(/limite/) });
     expect(drive.calls.download - downloads).toBe(6); // só os 6 arquivos do pacote
+  });
+});
+
+describe("runSync + importação do registro (CA-F2.4)", () => {
+  it("a primeira sincronização importa as 4 atividades e a segunda não duplica", async () => {
+    const { db, drive } = setup();
+    const clock = steppingClock();
+    const run = () => runSync({ db, gateway: drive, rootFolderId: drive.rootId, clock, afterSync: [registryImportHook("INDEX.md")] }, "manual");
+    await run();
+    expect(db.get<{ n: number }>("SELECT COUNT(*) AS n FROM activities")?.n).toBe(4);
+    await run();
+    expect(db.get<{ n: number }>("SELECT COUNT(*) AS n FROM activities")?.n).toBe(4);
+    expect(db.get<{ n: number }>("SELECT COUNT(*) AS n FROM activity_events")?.n).toBe(4);
   });
 });

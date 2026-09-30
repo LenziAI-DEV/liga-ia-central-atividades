@@ -1,4 +1,5 @@
 import { migration001Core } from "./001-core";
+import { migration002Activities } from "./002-activities";
 
 export interface Migration {
   version: number;
@@ -7,4 +8,4 @@ export interface Migration {
 }
 
 /** Migrações em ordem crescente. Nunca edite uma migração já aplicada: crie outra. */
-export const MIGRATIONS: readonly Migration[] = [migration001Core];
+export const MIGRATIONS: readonly Migration[] = [migration001Core, migration002Activities];

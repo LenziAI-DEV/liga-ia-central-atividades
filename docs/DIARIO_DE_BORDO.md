@@ -81,3 +81,11 @@
   - Lighthouse (acessibilidade) 100;
   - 403 para Host forjado;
   - cabeçalhos de proteção presentes.
+
+## Quarta, 2026-09-30 — Fase 2: atividades importadas e painel pessoal
+
+- **O que entrou:** personas (arquivo de configuração, cookie e seletor que funciona sem JavaScript), localização do registro vigente pelo índice, importação inicial da planilha em transação e os painéis "Minhas" e "Todas".
+- **Decisão de projeto:** o índice é lido por regras determinísticas, nunca pela IA. Sem certeza sobre qual arquivo é o registro (zero, vários, aba ausente), o app não importa nada e mostra o motivo na tela.
+- **Cuidado com os dados:** a importação preserva o ID, casa responsáveis por nome ou apelido e, quando o nome não casa, marca "responsável a confirmar" em vez de inventar um membro. Estado ou prazo que não se reconhece fica "a confirmar" ou "a definir", com aviso.
+- **Erro meu, corrigido:** no começo do dia, os 3 achados MEDIUM da 4ª rodada de revisão (fórmula de texto vazio, título com U+2028, busca quadrática de partes do .xlsx) foram corrigidos com teste antes do merge da Fase 1.
+- **Verificado:** 203 testes, typecheck, lint e build limpos; importação conferida com o Drive real; demo da fase (Ana → Davi → filtro → Todas) executada no navegador.

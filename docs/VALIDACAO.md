@@ -4,7 +4,7 @@
 
 | # | Cenário | Entrada | Esperado | Observado | Correções | Status |
 |---|---|---|---|---|---|---|
-| V-1 | Visão pessoal | Personas Ana e Davi | Ana: ACT-101, ACT-104; Davi: ACT-102, ACT-104; troca não altera dados | — | — | pendente (Fase 2) |
+| V-1 | Visão pessoal | Personas Ana e Davi | Ana: ACT-101, ACT-104; Davi: ACT-102, ACT-104; troca não altera dados | Ana: 101 e 104; Davi: 102 e 104; ACT-104 conta uma vez; 4 eventos antes e depois das trocas | Com o Drive real, 2026-09-30 | ✅ Fase 2 |
 | V-2 | Upload novo | `Ata_2026-10-04.md` direto no Drive | Processada em ≤ 15 min sem UI (meta ≤ 1 min); sugestão pendente | — | — | pendente (Fases 4/6) |
 | V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | — | — | pendente (Fase 4) |
 | V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | — | — | pendente (Fase 6) |
@@ -106,3 +106,10 @@ Achados e correções em DEC-013 e em `.claude/reviews/fase-1-review.md`. Cada c
 | Cabeçalhos | Qualquer resposta | Anti-clickjacking, `nosniff`, `Referrer-Policy`; sem `X-Powered-By` | ✅ |
 | Segredos | Bundle do navegador, logs, HTML, histórico do Git | Nenhum valor do `.env.local` | ✅ (só o ID da pasta aparece, no link da pasta, o que é esperado) |
 | Dependências | `npm audit` | 0 vulnerabilidades | ✅ |
+
+## Fase 2 — Atividades e painel pessoal (2026-09-30)
+
+- **Automático (203 testes):** importação do registro real (4 atividades, responsáveis, ACT-103 bloqueada, prazos como data pura), variante com IDs, cabeçalhos, aba e apelido diferentes (RNF-7), idempotência, cópia vazia homônima sem efeito (CA-F4.1), eventos append-only, filtros e ordenação, personas (parser e casamento de nomes).
+- **Com o Google real:** "Sincronizar agora" importou ACT-101 a 104 e gravou 4 eventos `imported`, sem duplicar na segunda sincronização.
+- **Navegador (CA-F5.1–F5.3):** Ana vê 101 e 104; Davi vê 102 e 104; filtro "Operações" mostra 2 de 4; "Todas" mostra 4; ACT-103 aparece "Bloqueada" em texto, com o motivo; parâmetros de URL inválidos são ignorados.
+- **Pendente da fase:** CA-F5.5 (vencido com data de demonstração posterior) só tem teste do cálculo (`dueState`); CA-F5.6 conferido só como ausência de rolagem horizontal, não a 375 px reais (E2E na Fase 9).
