@@ -102,3 +102,27 @@ describe("ensureScheduler", () => {
     resetSchedulerForTests();
   });
 });
+
+describe("createScheduler — geração", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("stop() e start() durante um ciclo em andamento não criam duas cadeias", async () => {
+    let release: () => void = () => {};
+    const runCycle = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<{ status: string }>((resolve) => (release = () => resolve({ status: "success" }))))
+      .mockResolvedValue({ status: "success" });
+    const s = createScheduler({ ...opts, runCycle });
+    s.start();
+    await vi.advanceTimersByTimeAsync(5_000);
+    s.stop();
+    s.start();
+    release();
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(runCycle).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(runCycle).toHaveBeenCalledTimes(3);
+    s.stop();
+  });
+});

@@ -1,6 +1,7 @@
 import { getConnection } from "@/server/auth/token-store";
 import { getDb } from "@/server/db";
-import { getScheduler } from "@/server/sync/scheduler";
+import { logger } from "@/server/observability/logger";
+import { getScheduler, getSchedulerStartError } from "@/server/sync/scheduler";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +20,11 @@ export function GET() {
             lastCycleAt: scheduler.lastCycleAt ? new Date(scheduler.lastCycleAt).toISOString() : null,
             consecutiveFailures: scheduler.consecutiveFailures,
           }
-        : { running: false },
+        : { running: false, ...(getSchedulerStartError() ? { error: getSchedulerStartError() } : {}) },
       connection: getConnection(db)?.status ?? "none",
     });
-  } catch {
+  } catch (error) {
+    logger.error("health.failed", { error });
     return Response.json({ db: "error" }, { status: 503 });
   }
 }

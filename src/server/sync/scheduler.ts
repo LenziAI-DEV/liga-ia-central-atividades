@@ -32,6 +32,8 @@ export function createScheduler(options: SchedulerOptions) {
   let failures = 0;
   let lastCycleAt: number | null = null;
   let lastStatus: string | null = null;
+  // Cada start()/stop() abre uma nova geração: um ciclo em andamento de geração antiga não reagenda.
+  let generation = 0;
 
   function schedule(delayMs: number) {
     timer = setTimeout(cycle, delayMs);
@@ -41,12 +43,14 @@ export function createScheduler(options: SchedulerOptions) {
   async function cycle() {
     timer = null;
     if (!running) return;
+    const mine = generation;
     let result: CycleResult | { status: "error"; error: unknown };
     try {
       result = await options.runCycle();
     } catch (error) {
       result = { status: "error", error };
     }
+    if (mine !== generation) return;
     lastCycleAt = now();
     lastStatus = result.status;
     failures = result.status === "failed" || result.status === "error" ? failures + 1 : 0;
@@ -60,10 +64,12 @@ export function createScheduler(options: SchedulerOptions) {
     start() {
       if (running) return;
       running = true;
+      generation++;
       schedule(options.firstDelayMs);
     },
     stop() {
       running = false;
+      generation++;
       if (timer) clearTimeout(timer);
       timer = null;
     },
@@ -75,7 +81,16 @@ export function createScheduler(options: SchedulerOptions) {
 
 export type Scheduler = ReturnType<typeof createScheduler>;
 
-const globals = globalThis as unknown as { __liaScheduler?: Scheduler };
+const globals = globalThis as unknown as { __liaScheduler?: Scheduler; __liaSchedulerError?: string | null };
+
+/** Motivo de o agendador não ter subido (para o diagnóstico); null quando subiu. */
+export function setSchedulerStartError(reason: string | null) {
+  globals.__liaSchedulerError = reason;
+}
+
+export function getSchedulerStartError(): string | null {
+  return globals.__liaSchedulerError ?? null;
+}
 
 /** Um agendador por processo, mesmo se o módulo for reavaliado (HMR) ou `register()` rodar de novo (RT-B). */
 export function ensureScheduler(build: () => Scheduler): Scheduler {

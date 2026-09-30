@@ -109,7 +109,7 @@ export function ActivityForm({
           </datalist>
         </>
       ))}
-      <fieldset className="grid gap-1">
+      <fieldset id="campo-ownerIds" className="grid gap-1" aria-describedby={state.errors.ownerIds ? "campo-ownerIds-erro" : undefined}>
         <legend className="font-medium">Responsáveis</legend>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {members.map((m) => (
@@ -124,13 +124,14 @@ export function ActivityForm({
             Também consta como responsável a confirmar: {initial.unresolvedOwners.join("; ")} (mantido).
           </p>
         ) : null}
-        {state.errors.ownerIds ? <p className="text-sm font-medium text-[var(--danger-ink)]">Erro: {state.errors.ownerIds}</p> : null}
+        {state.errors.ownerIds ? <p id="campo-ownerIds-erro" className="text-sm font-medium text-[var(--danger-ink)]">Erro: {state.errors.ownerIds}</p> : null}
       </fieldset>
       {field("nextStep", "Próximo passo", ({ id, describedBy, invalid }) => (
         <input id={id} name="nextStep" defaultValue={value("nextStep")} aria-describedby={describedBy} aria-invalid={invalid} className={INPUT} />
       ))}
       {field("status", "Estado", ({ id, describedBy, invalid }) => (
-        <select id={id} name="status" defaultValue={value("status") || "a_fazer"} aria-describedby={describedBy} aria-invalid={invalid} className={INPUT}>
+        <select id={id} name="status" defaultValue={initial.values.status === "" ? value("status") : value("status") || "a_fazer"} aria-describedby={describedBy} aria-invalid={invalid} className={INPUT}>
+          {initial.values.status === "" ? <option value="">Estado a confirmar (escolha um)</option> : null}
           {STATUS_VALUES.map((s) => (
             <option key={s} value={s}>
               {ACTIVITY_STATUS[s].label}
@@ -152,7 +153,7 @@ export function ActivityForm({
           <label htmlFor="campo-reason" className="font-medium">
             Motivo da alteração (opcional)
           </label>
-          <input id="campo-reason" name="reason" defaultValue={value("reason")} className={INPUT} />
+          <input id="campo-reason" name="reason" maxLength={2000} defaultValue={value("reason")} className={INPUT} />
         </div>
       ) : null}
 

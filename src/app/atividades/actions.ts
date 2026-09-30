@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { systemClock } from "@/lib/datetime";
 import { parseActivityForm, STATUS_VALUES, type ActivityFields, type FieldErrors } from "@/server/activities/activity-input";
+import { getActivityView } from "@/server/activities/activity-queries";
 import { createActivity, updateActivity } from "@/server/activities/activity-service";
 import { getDb } from "@/server/db";
 import { AppError, toSafeMessage } from "@/server/errors";
@@ -41,11 +42,24 @@ export async function saveActivityAction(_previous: FormState, data: FormData): 
       return { errors: {}, message: "Escolha uma persona no topo da página antes de salvar.", values };
     }
     const members = listMembers();
-    const parsed = parseActivityForm(Object.fromEntries(data), members, data.getAll("ownerIds"));
+    const id = text(data, "id");
+    const existing = id ? getActivityView(getDb(), members, id) : undefined;
+    const parsed = parseActivityForm(
+      Object.fromEntries(data),
+      members,
+      data.getAll("ownerIds"),
+      existing && {
+        title: existing.title,
+        description: existing.description,
+        nextStep: existing.nextStep,
+        front: existing.front,
+        priority: existing.priority,
+        notes: existing.notes,
+      },
+    );
     if (!parsed.ok) {
       return { errors: parsed.errors, message: "Corrija os campos indicados. Nada foi salvo.", values };
     }
-    const id = text(data, "id");
     if (!id) {
       const created = createActivity(getDb(), parsed.value, persona.id, members, systemClock);
       redirect(`/atividades/${encodeURIComponent(created.id)}?aviso=criada`);

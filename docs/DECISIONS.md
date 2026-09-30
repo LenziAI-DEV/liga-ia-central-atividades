@@ -312,3 +312,13 @@
 - **Detalhe da fonte** (`/fontes/[fileId]`): estado, motivo, autoridade, versões processadas e datas (primeira detecção, modificação no Drive, processamento), para cronometrar M-3.
 - **Diagnóstico:** `/api/health` mostra banco, agendador (último ciclo e falhas seguidas) e estado da conexão, sem segredos.
 - **Pendente (4.4):** validação com o Drive real que exige ações do usuário (subir, editar, renomear, apagar arquivos). Roteiro no `VALIDACAO.md`. Os cenários equivalentes já têm teste com o Drive falso (CA-F3.1–F3.6).
+
+## DEC-017 — Auditoria das Fases 3 e 4 (2026-09-30)
+
+- **Contexto:** revisão de código e segurança de `349243e..4433724` por um único revisor independente (Sonnet, DEC-014), mais `npm audit` (0 vulnerabilidades), varredura de segredos e cobertura (85%). Veredito do revisor: aprovado, sem CRITICAL nem HIGH.
+- **MEDIUM corrigidos (com teste):**
+  1. Editar uma atividade com estado "a confirmar" mudava o estado para "a fazer" em silêncio. Agora o formulário oferece "Estado a confirmar", o campo presente e vazio significa `null`, e só uma escolha da pessoa muda o estado.
+  2. `boot()` podia derrubar o servidor com banco inválido e marcava "iniciado" antes de dar certo. Agora todo o `boot()` está protegido, a marca só vale no sucesso (a próxima chamada tenta de novo) e `/api/health` informa `start_failed`.
+  3. Linha do registro com ID igual ao de uma atividade criada pela interface antes da importação já era listada em "linhas com problema"; a mensagem agora explica a causa. Mantive `LIA-` (DN-15) em vez de trocar o prefixo.
+- **LOW corrigidos:** limite de tamanho não bloqueia mais a edição de campo importado que já vinha maior (só vale se o valor mudar); link do resumo de erros e `aria-describedby` do grupo de responsáveis; motivo do bloqueio avisa que vira as notas, e os campos de motivo têm `maxLength`; detalhe e edição consultam só a atividade pedida; `/api/health` registra falha no log e informa o motivo quando o agendador não subiu; contador de geração no agendador evita duas cadeias em `stop()` seguido de `start()`.
+- **Não feito de propósito:** teste automatizado das Server Actions (dependem do runtime do Next; cobertas no navegador e pelo E2E da Fase 9); `raw_name` dos membros é regravado com o nome atual ao trocar responsáveis (o valor cru importado continua no histórico do evento de importação).

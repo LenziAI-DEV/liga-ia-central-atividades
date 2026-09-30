@@ -53,6 +53,7 @@ const NOTICES: Record<string, { tone: "ok" | "warn" | "danger" | "info"; text: s
 };
 
 function show(field: string, value: unknown, memberNames: Map<string, string>): string {
+  if (field === "status" && (value === null || value === "")) return ACTIVITY_STATUS.a_confirmar.label;
   if (value === null || value === undefined || value === "") return "(vazio)";
   if (field === "status" && typeof value === "string") {
     return ACTIVITY_STATUS[value as keyof typeof ACTIVITY_STATUS]?.label ?? value;
@@ -185,7 +186,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
               {hidden}
               <input type="hidden" name="status" value="bloqueada" />
               <label className="grid gap-1 text-sm">
-                Motivo do bloqueio (opcional)
+                Motivo do bloqueio (opcional; vira as notas)
                 <input name="reason" maxLength={2000} className="rounded border border-[var(--line)] px-3 py-2" />
               </label>
               <button type="submit" className="rounded border border-[var(--danger-ink)] px-4 py-2 text-[var(--danger-ink)]">

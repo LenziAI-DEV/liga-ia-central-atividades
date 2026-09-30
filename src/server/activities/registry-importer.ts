@@ -98,7 +98,7 @@ export function importInitialRegistry(
       }
       seen.add(id.toUpperCase());
       if (db.get("SELECT 1 AS present FROM activities WHERE id = ? COLLATE NOCASE", id)) {
-        issues.push({ row: row.rowNumber, id, message: "já existe uma atividade com este ID; não importada" });
+        issues.push({ row: row.rowNumber, id, message: "já existe uma atividade com este ID (por exemplo, criada pela interface antes da importação); esta linha não foi importada" });
         continue;
       }
 

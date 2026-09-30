@@ -10,7 +10,8 @@ export interface ActivityFields {
   description: string | null;
   nextStep: string | null;
   front: string | null;
-  status: ActivityStatus;
+  /** null = estado a confirmar (valor da planilha não reconhecido); só uma pessoa o define. */
+  status: ActivityStatus | null;
   dueDate: string | null;
   priority: string | null;
   notes: string | null;
@@ -35,10 +36,16 @@ function text(raw: unknown): string | null {
  * Lê o formulário (texto cru) e devolve os campos válidos ou um erro em texto por campo
  * (F6.9). Vazio vira `null`; o prazo é data de calendário sem hora (DN-13).
  */
-export function parseActivityForm(raw: Record<string, unknown>, members: readonly Member[], ownerIds: unknown[]): ParsedInput<ActivityFields> {
+export function parseActivityForm(
+  raw: Record<string, unknown>,
+  members: readonly Member[],
+  ownerIds: unknown[],
+  /** Valores atuais (edição): um campo importado acima do limite continua editável se não for alterado. */
+  current?: Partial<Record<keyof typeof LIMITS, string | null>>,
+): ParsedInput<ActivityFields> {
   const errors: FieldErrors = {};
   const tooLong = (field: keyof typeof LIMITS, label: string, value: string | null) => {
-    if (value !== null && value.length > LIMITS[field]) {
+    if (value !== null && value.length > LIMITS[field] && current?.[field] !== value) {
       errors[field] = `${label} pode ter no máximo ${LIMITS[field]} caracteres.`;
     }
   };
@@ -57,9 +64,11 @@ export function parseActivityForm(raw: Record<string, unknown>, members: readonl
   const notes = text(raw.notes);
   tooLong("notes", "As notas", notes);
 
-  const statusText = text(raw.status) ?? "a_fazer";
-  const status = STATUS_VALUES.find((s) => s === statusText);
-  if (!status) errors.status = "Escolha um estado da lista.";
+  // Campo ausente = "a fazer" (criação). Campo presente e vazio = "a confirmar" (só existe ao editar
+  // uma atividade que já estava assim), para que salvar outro campo não decida o estado por ninguém.
+  const statusText = raw.status === undefined ? "a_fazer" : text(raw.status);
+  const status = statusText === null ? null : (STATUS_VALUES.find((s) => s === statusText) ?? undefined);
+  if (status === undefined) errors.status = "Escolha um estado da lista.";
 
   const dueText = text(raw.dueDate);
   if (dueText !== null && !(/^\d{4}-\d{2}-\d{2}$/.test(dueText) && isValidIsoDate(dueText))) {
@@ -70,7 +79,7 @@ export function parseActivityForm(raw: Record<string, unknown>, members: readonl
   const ids = [...new Set(ownerIds.filter((v): v is string => typeof v === "string"))];
   if (ids.some((id) => !known.has(id))) errors.ownerIds = "Escolha responsáveis da lista.";
 
-  if (Object.keys(errors).length > 0 || title === null || !status) return { ok: false, errors };
+  if (Object.keys(errors).length > 0 || title === null || status === undefined) return { ok: false, errors };
   return {
     ok: true,
     value: { title, description, nextStep, front, status, dueDate: dueText, priority, notes, ownerIds: ids },
