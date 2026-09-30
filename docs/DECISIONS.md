@@ -359,3 +359,10 @@
 - **Achado no teste real da diferença do registro:** editar o `Ata_registro.xlsx` pelo Planilhas Google fez o Drive salvar o mesmo arquivo como `Ata_registro.xlsm` (planilha com macros). O app só lia `.xlsx`: o registro "sumiu" (pendência visível, nada importado, como deve ser) e a diferença do registro nunca rodou.
 - **Decisão:** `.xlsm` (tipo MIME de macros ou extensão) é lido como planilha: é o mesmo pacote OOXML, o app só lê células e nunca executa macros. Se o índice cita `X.xlsx` e não há arquivo com esse nome exato, vale a **única** planilha de mesmo nome-base (ex.: `X.xlsm`); zero ou mais de uma continua pendência. O arquivo exato sempre vence.
 - **Limite conhecido (README):** Planilha Google nativa (sem arquivo .xlsx por trás) ainda não é lida; a tela diz isso e como resolver (enviar como .xlsx ou salvar como .xlsx).
+
+## DEC-022 — "O que mudou para mim" por consulta, sem modelo (Fase 7, 2026-09-30)
+
+- **Decisão:** o resumo pessoal (`feed/change-feed.ts`) é montado só por consulta aos registros: confirmadas (eventos oficiais, exceto a carga inicial), pendentes que afetam a persona (responsável da atividade-alvo ou da criação proposta), incertas/em conflito (proposta desatualizada, propostas divergentes no mesmo campo, estado "a confirmar", fonte indisponível) e atenção (bloqueadas, vencidas, vencendo em até 3 dias). Custo de IA: zero. Só o resumo de cada documento em "Novidades" vem da IA, sempre rotulado.
+- **Marco (DN-10):** `persona_visits` (migração 005). A página lê o marco antes de gravar a visita. Recarregar dentro de 2 minutos conta como a mesma visita (não zera o resumo); `?desde=24h|7d|carga|AAAA-MM-DD` escolhe o período (dia em horário de São Paulo).
+- **Quem vê a mudança:** quem é responsável agora ou era antes do evento (mudança de responsáveis).
+- **Limites:** documentos "reclassificados" não entram (a classe é calculada na leitura e não há histórico dela); visibilidade: todas as fontes são visíveis a todas as personas (F9.6, README).

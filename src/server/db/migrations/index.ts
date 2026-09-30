@@ -2,6 +2,7 @@ import { migration001Core } from "./001-core";
 import { migration002Activities } from "./002-activities";
 import { migration003OwnerIndex } from "./003-owner-index";
 import { migration004Ai } from "./004-ai";
+import { migration005PersonaVisits } from "./005-persona-visits";
 
 export interface Migration {
   version: number;
@@ -10,4 +11,4 @@ export interface Migration {
 }
 
 /** Migrações em ordem crescente. Nunca edite uma migração já aplicada: crie outra. */
-export const MIGRATIONS: readonly Migration[] = [migration001Core, migration002Activities, migration003OwnerIndex, migration004Ai];
+export const MIGRATIONS: readonly Migration[] = [migration001Core, migration002Activities, migration003OwnerIndex, migration004Ai, migration005PersonaVisits];
