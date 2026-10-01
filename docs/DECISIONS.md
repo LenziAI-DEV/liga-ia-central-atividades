@@ -391,3 +391,14 @@ Um revisor (Sonnet, somente leitura). **Sem CRITICAL.** 1 HIGH, 5 MEDIUM e 4 LOW
 - **Estados (CA-F12.5):** `loading.tsx` (carregando), `error.tsx` (erro inesperado, com "Tentar de novo"), aviso "Sem conexão" (`connection-status.tsx`) e os estados vazios que cada tela já tinha.
 - **Contraste (CA-F12.2):** `lib/contrast.ts` registra os pares texto/fundo (todos ≥ 4,5:1, com teste) e agora um teste garante que os tokens de `globals.css` são os mesmos valores da paleta testada.
 - **Limites:** a varredura do axe cobre só parte do WCAG; o teclado para editar/filtrar e a leitura em leitor de tela seguem para conferência manual (V-14).
+
+## DEC-026 — Redesign do frontend (2026-09-30)
+
+- **Motivo:** o protótipo tinha "cara de IA": azul e ciano sem relação com a marca, Georgia nos títulos, cabeçalho de três faixas (~145 px; três linhas de navegação e três de persona a 375 px), atividades em cartões de mais de 300 px, selos com ícones decorativos, microcopy genérica e a decisão da sugestão no fim da página.
+- **Decisões do usuário:** tipografia IBM Plex Sans + Mono, self-hosted (`@fontsource`, sem CDN: a banca roda offline); cor de marca = índigo da logo `#32439B`, neutros frios e âmbar para atenção, **sem ciano**; abas compactas no topo, sem barra lateral.
+- **O que mudou:** tokens semânticos (`--primary`, `--surface`, `--text-muted`, `--success/warning/error-*`...) em `globals.css`, espelhados em `lib/contrast.ts` com teste de deriva; primitivos `Button`, `Field`, `Card`, `EmptyState`; `StatusBadge` sem ícone; header de uma faixa com logo, persona compacta e abas (menu "Menu" no celular); Início com "próxima ação"; lista de atividades densa; sugestão em duas colunas com diff em tabela e decisão fixa; detalhe da atividade com ações e fontes ao lado; microcopy mais curta e vazios com contexto; logo como marca de 32 px e favicon (`src/app/icon.png`).
+- **O que não mudou:** lógica de negócio, Server Actions, contratos de dados e rotas. Só o E2E mudou em dois pontos (menu do celular; selo sem o filtro de ícones).
+- **Logo:** veio de um print do WhatsApp (800 px). Serve só como marca pequena e favicon; reduzida para 96 px (cabeçalho) e 256 px (favicon) por canvas no Chromium, porque o `sharp` está bloqueado no Windows. Se a banca tiver o arquivo vetorial, basta trocar os dois PNGs.
+- **`<img>` em vez de `next/image`:** o `sharp` não roda neste ambiente e a imagem já tem 12 KB; o `eslint-disable` está justificado no layout.
+- **Verificação:** 354 testes unitários, 8 E2E com axe (WCAG 2.2 AA) e escala de cinza, browser QA a 1280 e 375 px (navegação, filtro, concluir/reabrir/bloquear, erro de validação, rejeitar sem motivo, 404) sem erro de console nem HTTP ≥ 400, auditoria de tokens (nenhum hex, raio ou cor fora do sistema) e revisão por agente React. Documento do sistema: `docs/DESIGN_SYSTEM.md`.
+- **Limites:** sem modo escuro (fora do escopo); a conferência manual com teclado e leitor de tela segue pendente (V-14).

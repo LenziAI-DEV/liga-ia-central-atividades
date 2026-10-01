@@ -38,9 +38,10 @@ export function MainNav() {
                   <Link
                     href={area.href}
                     aria-current={active ? "page" : undefined}
+                    onClick={() => setOpenAt(null)}
                     className={`block border-[var(--primary)] px-3 py-2.5 text-sm md:border-b-2 md:py-2 ${
                       active
-                        ? "bg-[var(--primary-soft)] font-semibold text-[var(--primary)] md:bg-transparent md:border-b-2"
+                        ? "bg-[var(--primary-soft)] font-semibold text-[var(--primary)] md:bg-transparent"
                         : "border-transparent text-[var(--text-muted)] hover:text-[var(--primary)] md:hover:border-[var(--border-strong)]"
                     }`}
                   >

@@ -82,6 +82,10 @@ test.describe("celular (375 px)", () => {
     await expect(menu).toHaveAttribute("aria-expanded", "true");
     await page.getByRole("navigation", { name: "Áreas principais" }).getByRole("link", { name: AREAS[2] }).click();
     await expect(page.getByRole("button", { name: /^Menu/ })).toHaveAttribute("aria-expanded", "false");
+    // voltar à rota onde o menu foi aberto não o reabre
+    await page.goBack();
+    await expect(page.getByRole("button", { name: /^Menu/ })).toHaveAttribute("aria-expanded", "false");
+    await page.goForward();
     await expect(page).toHaveURL(/\/atividades$/);
     // dono, prazo e estado seguem visíveis na tela estreita
     const card = page.locator("main li").filter({ hasText: "Responsável" }).first();

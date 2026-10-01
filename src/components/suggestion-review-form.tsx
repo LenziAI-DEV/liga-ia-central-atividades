@@ -24,6 +24,7 @@ export function SuggestionReviewForm({
 }) {
   const [state, formAction, pending] = useActionState<ReviewState, FormData>(reviewAction, { message: null, errors: {} });
   const hasFieldErrors = Object.keys(state.errors).length > 0;
+  const typed = (key: string, fallback: string | string[]) => state.values?.[key] ?? fallback;
   return (
     <form action={formAction} className="grid gap-4" noValidate>
       <input type="hidden" name="id" value={id} />
@@ -63,7 +64,7 @@ export function SuggestionReviewForm({
                     <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
                       {members.map((m) => (
                         <label key={m.id} className="flex items-center gap-2">
-                          <input type="checkbox" name="adj_ownerIds" value={m.id} defaultChecked={(f.proposed as string[]).includes(m.id)} />
+                          <input type="checkbox" name="adj_ownerIds" value={m.id} defaultChecked={(typed("ownerIds", f.proposed) as string[]).includes(m.id)} />
                           {m.name}
                         </label>
                       ))}
@@ -75,7 +76,7 @@ export function SuggestionReviewForm({
                       {f.label}
                     </label>
                     {f.key === "status" ? (
-                      <select id={inputId} name={`adj_${f.key}`} defaultValue={f.proposed as string} className={CONTROL}>
+                      <select id={inputId} name={`adj_${f.key}`} defaultValue={typed(f.key, f.proposed) as string} className={CONTROL}>
                         {(["a_fazer", "em_andamento", "bloqueada", "concluida"] as const).map((s) => (
                           <option key={s} value={s}>
                             {ACTIVITY_STATUS[s].label}
@@ -87,7 +88,7 @@ export function SuggestionReviewForm({
                         id={inputId}
                         name={`adj_${f.key}`}
                         type={f.key === "dueDate" ? "date" : "text"}
-                        defaultValue={f.proposed as string}
+                        defaultValue={typed(f.key, f.proposed) as string}
                         aria-describedby={state.errors[f.key] ? `${inputId}-erro` : undefined}
                         aria-invalid={Boolean(state.errors[f.key])}
                         className={CONTROL}
@@ -114,7 +115,7 @@ export function SuggestionReviewForm({
         <label htmlFor="reason" className="text-sm font-medium">
           Motivo da rejeição <span className="font-normal text-[var(--text-muted)]">(obrigatório para rejeitar)</span>
         </label>
-        <input id="reason" name="reason" maxLength={2000} className={CONTROL} />
+        <input id="reason" name="reason" maxLength={2000} defaultValue={typed("reason", "") as string} className={CONTROL} />
         <Button type="submit" name="action" value="reject" variant="danger" disabled={pending}>
           Rejeitar
         </Button>
