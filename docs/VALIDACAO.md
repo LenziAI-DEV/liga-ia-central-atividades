@@ -5,19 +5,19 @@
 | # | Cenário | Entrada | Esperado | Observado | Correções | Status |
 |---|---|---|---|---|---|---|
 | V-1 | Visão pessoal | Personas Ana e Davi | Ana: ACT-101, ACT-104; Davi: ACT-102, ACT-104; troca não altera dados | Ana: 101 e 104; Davi: 102 e 104; ACT-104 conta uma vez; 4 eventos antes e depois das trocas | Com o Drive real, 2026-09-30 | ✅ Fase 2 |
-| V-2 | Upload novo | `Ata_2026-10-04.md` direto no Drive | Processada em ≤ 15 min sem UI (meta ≤ 1 min); sugestão pendente | — | — | ✅ Fase 4 (Drive real) |
-| V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | — | — | ✅ Fase 4 (Drive real) |
-| V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | — | — | ✅ Fase 6 |
-| V-5 | **Conflito** (homônimo vazio) | `Ata - copia vazia.xlsx` | Atividades intactas; "sem autoridade / possível conflito" com motivos | — | — | ✅ Fase 5 |
+| V-2 | Upload novo | `Ata_2026-10-04.md` direto no Drive | Processada em ≤ 15 min sem UI (meta ≤ 1 min); sugestão pendente | `Ata_2026-10-04.md` apareceu como Processado sozinha em < 1 min; `Ata_2026-10-05.md` (cenário inédito) detectada em 28 s, com as sugestões corretas e sem prazo inventado | Drive real, 2026-09-30 (Fase 4 §4.4 e testes pós-Fase 6) | ✅ Fase 4 (Drive real) |
+| V-3 | Edição | Editar `Ata_2026-10-03` (Google Doc) | Nova versão, 1 só fonte, sugestões antigas "fonte alterada" | Edição do Google Doc gerou nova versão na mesma fonte (uma só fonte ativa); a sugestão antiga foi substituída pela nova | Substituição leva alguns minutos por causa da espera de 2 min (DEC-020) | ✅ Fase 4 (Drive real) |
+| V-4 | Atualização de prazo | `Ata_2026-10-03` → ACT-101 | 1 update com evidência; oficial inalterado até o aceite; aceite registra histórico | 1 sugestão de atualização de ACT-101 (prazo 05/10 → 07/10, responsável mantido; Bruno só aprova), com trecho literal e link; oficial inalterado até o aceite; aceitar gravou o evento com antes → depois | Modelo e Drive reais, 2026-09-30 | ✅ Fase 6 |
+| V-5 | **Conflito** (homônimo vazio) | `Ata - copia vazia.xlsx` | Atividades intactas; "sem autoridade / possível conflito" com motivos | Planilha homônima vazia: snapshot do banco idêntico antes e depois; aparece como "sem autoridade / possível conflito" com motivos (não apontada pelo índice, aba ≠ Atividades, 0 registros); conferido pelo usuário no Drive real | — | ✅ Fase 5 |
 | V-6 | Atividade manual | Criar + reiniciar | Persiste com autor e histórico | LIA-0001 criada por Davi, editada (estado e próximo passo), app reiniciado: tudo e o histórico antes → depois continuaram | Navegador, banco de cópia, 2026-09-30 | ✅ Fase 3 |
-| V-7 | Ideia vaga | "Talvez…" | Não vira atividade | — | — | ✅ Fase 6 |
-| V-8 | Erro de fonte | Lixeira / acesso revogado / Drive fora | Aviso; estado confirmado marcado como potencialmente desatualizado | — | — | ✅ Fase 4 (Drive real) |
+| V-7 | Ideia vaga | "Talvez…" | Não vira atividade | Ideia vaga da `Ata_2026-10-04` ("série diária de notícias") foi para "sem ação"; nenhuma atividade criada | — | ✅ Fase 6 |
+| V-8 | Erro de fonte | Lixeira / acesso revogado / Drive fora | Aviso; estado confirmado marcado como potencialmente desatualizado | Lixeira → "Indisponível desde …" com a atividade preservada; acesso revogado → reautorização, banco intacto; rede cortada por proxy morto → faixa "dados potencialmente desatualizados", backoff 30 → 60 → 120 s, volta sozinho | Rede simulada com proxy, não cortando o Wi-Fi | ✅ Fase 4 (Drive real) |
 | V-9 | Resumo pessoal | Ana × Davi após V-4 | Resumos diferentes, com fontes e estado de aprovação | — | — | ✅ automatizado + teste manual Ana × Davi passou (2026-09-30) |
 | V-10 | Primeiro acesso | Membro sem orientação | Acha propósito (provisório), frentes, fonte e primeira ação | — | — | ✅ automatizado + teste manual Davi e Bruno passou (2026-09-30) |
-| V-11 | **Dado ausente** | Ata com "até sexta" / sem dono | Prazo e dono vazios, incerteza visível, nada inventado | — | — | ✅ Fase 6 (respostas reais gravadas) |
-| V-12 | Injeção via documento | Ata com instruções à IA | Nenhuma mudança; saída inválida descartada | — | — | ✅ Fase 6 (respostas reais gravadas) |
-| V-13 | Documento superado | `PLANO_EDITORIAL_ANTIGO.md` | "Histórico — substituído por GUIA_INICIAL.md"; não vira regra vigente | — | — | ✅ Fase 5 |
-| V-14 | Acessibilidade e celular | E2E com axe, teclado, 375 px, cinza, sem rede | Sem violações; tudo pelo teclado; sem rolagem lateral | 8 testes verdes; o axe achou 1 alvo pequeno (corrigido) | Link "detalhes" em Sincronização | ✅ automatizado (Fase 9); conferência manual de teclado e celular pendente |
+| V-11 | **Dado ausente** | Ata com "até sexta" / sem dono | Prazo e dono vazios, incerteza visível, nada inventado | "até sexta" → sem data, "prazo relativo — confirmar"; responsável desconhecido (Marina) → nome mantido como a confirmar, não vira membro; `Ata_2026-10-05` criou a lista de presença da Carla sem prazo inventado | — | ✅ Fase 6 (respostas reais gravadas) |
+| V-12 | Injeção via documento | Ata com instruções à IA | Nenhuma mudança; saída inválida descartada | Injeção ignorada pelo modelo e **também** bloqueada pelo validador; saída inválida descartada (17 testes do validador) | Bloqueio de ordens à IA acrescentado depois da primeira resposta real | ✅ Fase 6 (respostas reais gravadas) |
+| V-13 | Documento superado | `PLANO_EDITORIAL_ANTIGO.md` | "Histórico — substituído por GUIA_INICIAL.md"; não vira regra vigente | `PLANO_EDITORIAL_ANTIGO.md` aparece "histórico — substituído por GUIA_INICIAL.md em 2026-10-01" e não entra nas regras de "Comece aqui" | — | ✅ Fase 5 |
+| V-14 | Acessibilidade e celular | E2E com axe, teclado, 375 px, cinza, sem rede | Sem violações; tudo pelo teclado; sem rolagem lateral | 8 testes verdes (axe sem violação em 9 telas, teclado, 375 px, escala de cinza, sem rede); redesign (DEC-026) reverificado com os mesmos testes e browser QA a 1280 e 375 px sem erro de console | Axe achou 1 alvo pequeno (link "detalhes"), corrigido; menu do celular reabria ao voltar, corrigido | ✅ automatizado (Fase 9); conferência manual de teclado e celular pendente |
 
 ## Verificações de fundação (Fase 0, 2026-09-29)
 
@@ -25,7 +25,7 @@
 |---|---|
 | SQLite (`node:sqlite`) em `next dev` e `next build && next start` | `/api/health` → `{"db":"ok"}` nos dois modos |
 | Migrações idempotentes e transacionais | Testes: 2ª execução não aplica nada; migração com erro é desfeita sem registro |
-| Contraste da paleta (CA-F12.2) | 12 pares de texto ≥ 4,5:1 (teste automatizado); ciano + branco = 1,7:1 → proibido |
+| Contraste da paleta (CA-F12.2) | 17 pares de texto ≥ 4,5:1 e contorno de campo ≥ 3:1 (teste automatizado; paleta atual, DEC-026) |
 | Segredos fora do Git | `.env.local` gerado pelo `npm run setup` e ignorado (`git check-ignore`) |
 | Env inválido | A mensagem lista só os **nomes** das variáveis (teste garante que o valor não aparece) |
 
