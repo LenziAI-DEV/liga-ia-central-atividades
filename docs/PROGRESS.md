@@ -1,7 +1,7 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 9 concluídas e redesign do frontend (DEC-026, `docs/DESIGN_SYSTEM.md`); próxima: Fase 10 (pacote de entrega).**
+> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 9 concluídas e redesign do frontend (DEC-026, `docs/DESIGN_SYSTEM.md`); Fase 10 (pacote de entrega) com os documentos prontos; faltam só os passos do usuário (ver Pendências).**
 
 ## Prazo
 
@@ -47,16 +47,22 @@
 | 2026-09-29 | **Auditoria da Fase 1** (P-2): code review, varredura de segurança, santa-loop em 3 rodadas, correções com TDD (100 → 165 testes), QA de navegador, página 404 em português | DEC-013, `.claude/reviews/fase-1-review.md` |
 | 2026-09-29 | GateGuard: pastas do projeto liberadas pelo usuário (`GATEGUARD_EXEMPT_GLOBS`) | P-5 resolvida |
 
+| 2026-09-30 | **Redesign do frontend** (tokens, IBM Plex, logo, abas, lista densa, revisão de sugestão em duas colunas); QA de navegador e revisão por agentes | DEC-026, `docs/DESIGN_SYSTEM.md` |
+| 2026-09-30 | **Fase 10 — pacote de entrega** (10.1 a 10.4): README completo, registro de validação fechado, diário com declaração de IA (E-7), roteiro da demo; instalação limpa testada; varredura de segredos limpa | `README.md`, `docs/DEMO.md`, `docs/VALIDACAO.md`, `docs/DIARIO_DE_BORDO.md` |
+
 ## Pendências (em ordem)
 
 | # | Pendência | Responsável | Observação |
 |---|---|---|---|
 | ~~P-3~~ | ~~Corrigir os 3 MEDIUM da 4ª rodada e fazer o merge~~ | Assistente | ✅ 2026-09-30: corrigidos com teste (170 testes), `verification-loop` verde, merge feito. LOW da 4ª rodada seguem como dívida menor (lista na DEC-013): `[m]`/`[mm]` virando data; colisão da chave `#E`; abas repetidas relidas; `ENETUNREACH` sem retry; erro de rede no `exchangeCode`; texto "veja a tabela" no aviso parcial; "Desconectar" em `reauth_required`; UTF-8 com BOM + byte inválido; cerca mais curta; `forceRefreshOnFailure`; comentário do exceljs em `lib/datetime.ts` |
 | **P-4** | **Fase 2** (painel pessoal): personas, índice e registro vigente, importação da planilha, "Minhas" e "Todas" | Assistente | Meta: quarta 09-30 |
-| P-6 | Conferir se a `LunkiBR` aceitou o convite de colaboradora | Usuário/assistente (`gh api repos/LenziAI-DEV/liga-ia-central-atividades/invitations`) | Pendente em 2026-09-29; o convite vence por volta de 06/10 |
-| P-7 | Anotar para o README (Fase 10) | Assistente | Node ≥ 22.13; npm 11 e `unrs-resolver`; tela "Google não verificou este app"; expiração da autorização em 7 dias; o servidor só escuta em `127.0.0.1` (abrir por `localhost`); `npm run test:coverage` |
+| ~~P-6~~ | ~~Conferir se a `LunkiBR` aceitou o convite~~ | — | **Resolvida em 2026-09-30:** `LunkiBR` consta como colaboradora do repositório |
+| ~~P-7~~ | ~~Anotar para o README~~ | — | **Feita** na Fase 10 (README completo) |
 | P-8 | Reautorizar o Google no dia da demo (a autorização de teste expira por volta de 06/10) | Usuário | Checklist pré-demo (Fase 10.4) |
 | P-9 | Itens adiados pela auditoria (DEC-013, "Adiado de propósito") | Assistente | Com o scheduler (Fase 4): corrida de reconexão, lease, backoff, falha permanente. Na Fase 9: tabela a 375 px, confirmação em "Desconectar" |
+| P-10 | Ensaio cronometrado da demo com `docs/DEMO.md` (pasta e banco limpos) | Usuário | Checklist pré-demo |
+| P-11 | **Enviar no privado ao organizador o link do repositório e o diário de bordo (`docs/DIARIO_DE_BORDO.md`) até 2026-10-04, 23h59** | Usuário | E-1 |
+| P-12 | Conferência manual com teclado e leitor de tela (V-14) | Usuário | Opcional |
 
 ## Próximas fases (plano §5)
 

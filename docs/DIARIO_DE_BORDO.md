@@ -2,7 +2,7 @@
 
 > Registro informal de como o trabalho aconteceu: tentativas, decisões, mudanças de direção, ferramentas de IA usadas, verificações e aprendizados ([CASE p3]). Sem conversas completas e sem credenciais.
 
-**Ferramentas de IA usadas para construir:** Claude Code (modelo Claude Opus 5.5) com o plugin ECC — agente `ecc:architect` para a arquitetura, skills `plan-prd`, `plan` e `claude-api` (documentação atual da API da Anthropic). **Dentro do produto:** Claude Sonnet 5.5 (`claude-sonnet-5-5`), só para propor sugestões a partir de atas (DEC-006).
+**Ferramentas de IA usadas para construir:** Claude Code (Claude Opus 5.5 no início, na arquitetura; Sonnet 5.5 com esforço médio como padrão depois da política DEC-014) com o plugin ECC — agente `ecc:architect` para a arquitetura, skills `plan-prd`, `plan` e `claude-api` (documentação atual da API da Anthropic). **Dentro do produto:** Claude Sonnet 5.5 (`claude-sonnet-5-5`), só para propor sugestões a partir de atas (DEC-006).
 
 ---
 
@@ -114,3 +114,36 @@
 - **Erro meu, corrigido a tempo:** na revisão de uma sugestão já decidida, a checagem de "o valor mudou" vinha antes da de "já foi decidida", e o segundo clique dava a mensagem errada. O teste do critério CA-F8.2 pegou.
 - **Custo medido (M-10):** US$ 0,0086 a 0,0134 por ata; três atas ≈ US$ 0,035.
 - **Verificado:** 296 testes, typecheck, lint e build; o fluxo inteiro (Drive real, modelo real, aceitar, ajustar, rejeitar sem motivo, não revisor) no navegador.
+
+## Quarta, 2026-09-30 (noite) — Fases 7 e 8: "o que mudou para mim" e "Comece aqui"
+
+- **O que entrou:** o resumo pessoal (confirmadas, pendentes, incertas e em conflito, bloqueadas e vencendo) e a página de primeiro acesso (propósito, frentes, regras vigentes, fonte das atividades e primeira ação).
+- **Decisão de projeto:** nenhuma das duas telas usa IA. São consultas aos registros e trechos **literais** dos documentos de direção, o que custa zero e não tem como inventar nada. Só o resumo de cada documento, em "Novidades", vem do modelo, sempre rotulado.
+- **Defeito achado no teste real:** a função que limpa o Markdown para exibir apagava sublinhados, e "Ata_registro.xlsx" virava "Ataregistro.xlsx". Agora só remove ênfase de verdade.
+- **Teste de uso:** Ana e Davi viram resumos diferentes depois de aceitar uma sugestão; Davi e Bruno acharam propósito, frentes, fonte e primeira ação sem orientação.
+- **Auditoria das duas fases** (DEC-024): 348 testes depois das correções.
+
+## Quarta, 2026-09-30 (noite) — Fase 9: E2E, acessibilidade e estados de tela
+
+- **O que entrou:** Playwright com axe (8 testes, cerca de 11 s) contra o build de produção, com Drive falso e IA gravada: seis áreas pelo teclado, persona e aceitar sugestão só pelo teclado, axe em 9 telas, sem rede, escala de cinza, 375 px e "criar, reiniciar o servidor, continuar lá". Telas de carregando, erro e sem conexão.
+- **O que o teste achou:** o link "detalhes" da tabela de fontes tinha alvo menor que 24 px (WCAG 2.2). Corrigido.
+- **Tropeços do próprio teste:** o servidor de teste recusava o host por causa da lista de hosts permitidos; o Enter num seletor não envia o formulário (o teste vai ao botão com Tab); o debounce de 2 min da IA esconderia as sugestões (virou configuração, 0 nos testes).
+
+## Quarta, 2026-09-30 (noite) — Redesign do frontend (DEC-026)
+
+- **Motivo:** o protótipo tinha "cara de IA": azul e ciano sem relação com a marca, fonte serifada nos títulos, cabeçalho de três faixas, cartões altos e microcopy genérica.
+- **Decisões minhas:** IBM Plex servida pelo próprio app (a banca roda offline), índigo da logo como cor de marca, sem ciano, abas compactas no topo.
+- **A logo veio de um print de celular.** Avaliei que serve só pequena (32 px) e como favicon. Como o `sharp` está bloqueado pela política do Windows, reduzi a imagem no Chromium com canvas.
+- **Verificação:** 354 testes unitários e 8 E2E; navegação, filtro, concluir, bloquear, erro de validação e 404 a 1280 e 375 px sem erro de console.
+- **Dois defeitos reais achados por revisores:** o menu do celular reabria sozinho ao voltar no navegador, e o formulário de revisão apagava o que a pessoa digitou depois de um erro. Corrigidos e cobertos por teste.
+- **Um erro de método meu, sem custo:** um script de QA clicou com a versão antiga da atividade e recebeu "alterada por outra pessoa". Era o controle de concorrência funcionando; o erro estava no script.
+
+## Quarta, 2026-09-30 (noite) — Fase 10: pacote de entrega
+
+- **O que entrou:** README completo (todas as seções do E-2), registro de validação fechado, esta declaração de uso de IA, roteiro da demonstração com checklist (`docs/DEMO.md`).
+
+## Declaração de uso de IA (E-7)
+
+**Para construir:** Claude Code com modelos Claude e o plugin ECC (agentes de arquitetura, revisão de código, segurança e React; rotinas de verificação). Regras de uso em `docs/AI_EXECUTION_POLICY.md`. **Dentro do produto:** Claude Sonnet 5.5, só para propor sugestões e resumir documentos. Nada altera um dado oficial sem uma pessoa aceitar.
+
+**Decisão alterada depois de uma saída incorreta do modelo:** o agente de arquitetura propôs extrair dados com "tool use com `tool_choice` forçado" e "temperatura 0". Ao conferir a documentação atual da API, os dois **retornam erro 400 no Claude Sonnet 5.5**. Troquei por saída estruturada (Structured Outputs), pensamento adaptativo com esforço baixo e checagem do motivo de parada, e depois subi para esforço médio. O mesmo documento também ignorava as respostas da banca e a escolha do modelo, enviadas enquanto ele rodava, e propunha um intervalo de 120 s, longo demais para uma demo ao vivo (baixei para 60 s). Outra saída que mudou uma decisão: a primeira resposta real do modelo citava o trecho da mudança, e não o ID da atividade, como minha regra exigia. Em vez de afrouxar às cegas, passei a aceitar a menção no mesmo parágrafo e, para compensar, bloqueei trechos com ordens dirigidas à IA.
