@@ -44,9 +44,9 @@ IBM Plex Sans (interface) e IBM Plex Mono (IDs como `ACT-101` e datas do histór
 
 ## Espaço, raio e sombra
 
-- Base de 4 px (`--space-1` a `--space-8`); na prática, a escala padrão do Tailwind.
+- Espaço: escala de 4 px do Tailwind (`p-4`, `gap-3`...), sem tokens próprios.
 - Dois raios: `--radius` 6 px (`rounded-md`: botões, campos, selos) e `--radius-lg` 10 px (`rounded-lg`: cartões).
-- Sem sombra nos cartões. `--shadow-overlay` existe só para camadas sobrepostas (nenhuma em uso hoje).
+- Sem sombras. Se uma camada sobreposta (menu, diálogo) for criada, definir o token de sombra junto com ela.
 
 ## Componentes
 

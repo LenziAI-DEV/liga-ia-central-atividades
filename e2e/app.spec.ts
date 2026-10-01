@@ -81,9 +81,11 @@ test.describe("celular (375 px)", () => {
     await menu.click();
     await expect(menu).toHaveAttribute("aria-expanded", "true");
     await page.getByRole("navigation", { name: "Áreas principais" }).getByRole("link", { name: AREAS[2] }).click();
+    await expect(page).toHaveURL(/\/atividades$/);
     await expect(page.getByRole("button", { name: /^Menu/ })).toHaveAttribute("aria-expanded", "false");
     // voltar à rota onde o menu foi aberto não o reabre
     await page.goBack();
+    await expect(page).toHaveURL(/localhost:\d+\/$/);
     await expect(page.getByRole("button", { name: /^Menu/ })).toHaveAttribute("aria-expanded", "false");
     await page.goForward();
     await expect(page).toHaveURL(/\/atividades$/);

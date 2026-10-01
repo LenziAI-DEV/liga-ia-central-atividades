@@ -67,8 +67,8 @@ export default async function Home() {
             Primeiro acesso?{" "}
             <Link href="/comece-aqui" className={link}>
               Comece aqui
-            </Link>{" "}
-           .
+            </Link>
+            .
           </p>
         </>
       )}
