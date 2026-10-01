@@ -72,7 +72,7 @@ export default async function Page(props: PageProps<"/sugestoes">) {
           Aguardando revisão ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <p className="mt-3 rounded border border-[var(--line)] p-4">Nenhuma sugestão pendente.</p>
+          <p className="mt-3 rounded-md border border-[var(--border)] p-4">Nenhuma sugestão pendente.</p>
         ) : (
           <ul className="mt-3 grid gap-3">
             {pending.map((s) => (
@@ -87,22 +87,22 @@ export default async function Page(props: PageProps<"/sugestoes">) {
           Documentos analisados pela IA
         </h2>
         {analyses.length === 0 ? (
-          <p className="mt-3 rounded border border-[var(--line)] p-4">Nenhuma ata foi analisada ainda.</p>
+          <p className="mt-3 rounded-md border border-[var(--border)] p-4">Nenhuma ata foi analisada ainda.</p>
         ) : (
           <ul className="mt-3 grid gap-3">
             {analyses.map((a) => {
               const status = ANALYSIS_STATUS[a.status] ?? { label: a.status, tone: "neutral" as const };
               return (
-                <li key={a.id} className="rounded border border-[var(--line)] p-4">
+                <li key={a.id} className="rounded-md border border-[var(--border)] p-4">
                   <div className="flex flex-wrap items-center gap-3">
-                    <Link href={`/fontes/${encodeURIComponent(a.fileId)}`} className="font-semibold text-[var(--lia-blue)] underline underline-offset-2">
+                    <Link href={`/fontes/${encodeURIComponent(a.fileId)}`} className="font-semibold text-[var(--primary)] underline underline-offset-2">
                       {a.fileName}
                     </Link>
                     <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-                    {a.finishedAt ? <span className="text-sm text-[var(--ink-muted)]">{formatDateTimeBR(a.finishedAt)}</span> : null}
+                    {a.finishedAt ? <span className="text-sm text-[var(--text-muted)]">{formatDateTimeBR(a.finishedAt)}</span> : null}
                   </div>
                   {a.summary ? <p className="mt-2">{a.summary}</p> : null}
-                  {a.errorMessage ? <p className="mt-2 text-[var(--danger-ink)]">{a.errorMessage}</p> : null}
+                  {a.errorMessage ? <p className="mt-2 text-[var(--error-ink)]">{a.errorMessage}</p> : null}
                   {a.noAction.length > 0 ? (
                     <details className="mt-2">
                       <summary className="cursor-pointer text-sm">Trechos sem ação ({a.noAction.length})</summary>
@@ -116,12 +116,12 @@ export default async function Page(props: PageProps<"/sugestoes">) {
                     </details>
                   ) : null}
                   {a.invalidCount > 0 ? (
-                    <p className="mt-2 text-sm text-[var(--ink-muted)]">{a.invalidCount} item(ns) da IA foram descartados pela validação (sem evidência confiável).</p>
+                    <p className="mt-2 text-sm text-[var(--text-muted)]">{a.invalidCount} item(ns) da IA foram descartados pela validação (sem evidência confiável).</p>
                   ) : null}
                   {a.status === "failed" || a.status === "disabled" || a.status === "pending" ? (
                     <form action={retryAnalysisAction} className="mt-2">
                       <input type="hidden" name="id" value={a.id} />
-                      <button type="submit" className="rounded border border-[var(--line)] px-3 py-1 text-sm hover:border-[var(--lia-blue)]">
+                      <button type="submit" className="rounded-md border border-[var(--border)] px-3 py-1 text-sm hover:border-[var(--primary)]">
                         Tentar novamente
                       </button>
                     </form>
@@ -160,7 +160,7 @@ const STATUS_LABEL: Record<SuggestionView["status"], { label: string; tone: "ok"
 function SuggestionCard({ s, memberNames }: { s: SuggestionView; memberNames: ReadonlyMap<string, string> }) {
   const status = STATUS_LABEL[s.status];
   return (
-    <li className="rounded-md border border-[var(--line)] p-4">
+    <li className="rounded-md border border-[var(--border)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-semibold">
           <Link href={`/sugestoes/${s.id}`} className="underline-offset-2 hover:underline">
@@ -173,7 +173,7 @@ function SuggestionCard({ s, memberNames }: { s: SuggestionView; memberNames: Re
           <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
         </span>
       </div>
-      <p className="mt-2 text-sm text-[var(--ink-muted)]">
+      <p className="mt-2 text-sm text-[var(--text-muted)]">
         Fonte: {s.sourceName}
         {s.docDate ? ` · reunião de ${formatDateBR(s.docDate)}` : ""}
       </p>
@@ -187,7 +187,7 @@ function SuggestionCard({ s, memberNames }: { s: SuggestionView; memberNames: Re
         ))}
       </ul>
       {s.evidence[0] ? (
-        <blockquote className="mt-2 border-l-4 border-[var(--line)] pl-3 text-sm italic">“{displayQuote(s.evidence[0].quote)}”</blockquote>
+        <blockquote className="mt-2 border-l-4 border-[var(--border)] pl-3 text-sm italic">“{displayQuote(s.evidence[0].quote)}”</blockquote>
       ) : null}
       {s.uncertainties.length > 0 ? <p className="mt-2 text-sm">{s.uncertainties.length} ponto(s) a confirmar.</p> : null}
       {s.reviewerName ? (
@@ -198,7 +198,7 @@ function SuggestionCard({ s, memberNames }: { s: SuggestionView; memberNames: Re
         </p>
       ) : null}
       <p className="mt-2">
-        <Link href={`/sugestoes/${s.id}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+        <Link href={`/sugestoes/${s.id}`} className="text-[var(--primary)] underline underline-offset-2">
           {s.status === "pendente" ? "Revisar" : "Ver detalhes"}
         </Link>
       </p>

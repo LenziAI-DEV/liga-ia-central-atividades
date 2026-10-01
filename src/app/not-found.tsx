@@ -19,13 +19,13 @@ export default function NotFound() {
         </h2>
         <ul className="space-y-2">
           <li>
-            <Link href="/" className="font-semibold text-[var(--lia-blue)] underline">
+            <Link href="/" className="font-semibold text-[var(--primary)] underline">
               Início
             </Link>
           </li>
           {AREAS.map((area) => (
             <li key={area.href}>
-              <Link href={area.href} className="text-[var(--lia-blue)] underline">
+              <Link href={area.href} className="text-[var(--primary)] underline">
                 {area.label}
               </Link>
             </li>

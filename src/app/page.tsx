@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { ActivityList } from "@/components/activity-list";
 import { PageHeader } from "@/components/page-header";
-import { AREAS } from "@/lib/areas";
+import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { isoDateInSaoPaulo } from "@/lib/datetime";
 import { filterActivities, listActivityViews, sortByDue } from "@/server/activities/activity-queries";
 import { getDb } from "@/server/db";
 import { getCurrentPersona, listMembers } from "@/server/persona/current-persona";
 
-const NEXT_UP = 3;
+const LATER = 3;
+const link = "text-[var(--primary)] underline underline-offset-2";
 
 export default async function Home() {
   const persona = await getCurrentPersona();
@@ -15,64 +17,65 @@ export default async function Home() {
   const mine = persona
     ? sortByDue(filterActivities(listActivityViews(getDb(), listMembers()), { ownerId: persona.id, openOnly: true }, today))
     : [];
+  const [next, ...rest] = mine;
   return (
     <>
       <PageHeader
-        title="Central de contexto e atividades"
-        description="Duas perguntas guiam esta central: o que preciso fazer agora? E o que mudou desde a última vez que acompanhei a Liga?"
+        title={persona ? `Olá, ${persona.name}` : "Central da Liga IA"}
+        description={
+          persona
+            ? "O que fazer agora e o que mudou desde a sua última visita."
+            : "Atividades da Liga, sugestões da IA e novidades dos documentos, num só lugar."
+        }
       />
-      <p className="mb-8 rounded border-l-4 border-[var(--lia-blue)] bg-[var(--lia-cyan-soft)] px-4 py-3">
-        <strong>Primeiro acesso?</strong>{" "}
-        <Link href="/comece-aqui" className="text-[var(--lia-blue)] underline underline-offset-2">
-          Comece aqui
-        </Link>
-        : propósito, frentes, regras, fonte das atividades e a sua primeira ação, em quatro passos.
-      </p>
-      <section aria-labelledby="proximas" className="mb-10">
-        <h2 id="proximas" className="text-xl font-semibold">
-          {persona ? `Próximas atividades de ${persona.name}` : "Suas próximas atividades"}
-        </h2>
-        <div className="mt-3">
-          {persona ? (
-            <>
-              <ActivityList
-                activities={mine.slice(0, NEXT_UP)}
-                today={today}
-                empty="Você não tem atividades abertas atribuídas."
-              />
-              {mine.length > NEXT_UP ? (
-                <p className="mt-3">
-                  <Link href="/minhas-atividades" className="text-[var(--lia-blue)] underline underline-offset-2">
+
+      {!persona ? (
+        <EmptyState
+          title="Escolha quem você é para ver o que é seu"
+          action={
+            <ButtonLink href="/comece-aqui" variant="primary">
+              Começar pelo guia
+            </ButtonLink>
+          }
+        >
+          Use “Trocar para” no topo da página. Primeira vez por aqui? O guia explica a Liga em quatro passos.
+        </EmptyState>
+      ) : (
+        <>
+          <section aria-labelledby="proxima" className="mb-8">
+            <h2 id="proxima" className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              Sua próxima ação
+            </h2>
+            <ActivityList activities={next ? [next] : []} today={today} empty="Você não tem atividades abertas atribuídas." />
+          </section>
+          {rest.length > 0 ? (
+            <section aria-labelledby="depois" className="mb-8">
+              <h2 id="depois" className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                Em seguida
+              </h2>
+              <ActivityList activities={rest.slice(0, LATER)} today={today} empty="" />
+              {rest.length > LATER ? (
+                <p className="mt-3 text-sm">
+                  <Link href="/minhas-atividades" className={link}>
                     Ver as {mine.length} atividades abertas
                   </Link>
                 </p>
               ) : null}
-            </>
-          ) : (
-            <p className="rounded border border-[var(--line)] p-4">
-              Escolha uma persona no topo da página para ver o que é seu, com prazo e próximo passo.
-            </p>
-          )}
-        </div>
-      </section>
-      <section aria-labelledby="areas-titulo">
-        <h2 id="areas-titulo" className="text-xl font-semibold">
-          Áreas da central
-        </h2>
-        <ul className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {AREAS.map((area) => (
-            <li key={area.href}>
-              <Link
-                href={area.href}
-                className="block h-full rounded-md border border-[var(--line)] p-5 transition-colors hover:border-[var(--lia-blue)]"
-              >
-                <span className="block font-semibold text-[var(--lia-blue)]">{area.label}</span>
-                <span className="mt-1 block text-sm text-[var(--ink-muted)]">{area.description}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+            </section>
+          ) : null}
+          <p className="text-sm text-[var(--text-muted)]">
+            Primeiro acesso?{" "}
+            <Link href="/comece-aqui" className={link}>
+              Comece aqui
+            </Link>{" "}
+            · Dúvidas sobre qual valor vale?{" "}
+            <Link href="/como-decidimos" className={link}>
+              Como o app decide
+            </Link>
+            .
+          </p>
+        </>
+      )}
     </>
   );
 }

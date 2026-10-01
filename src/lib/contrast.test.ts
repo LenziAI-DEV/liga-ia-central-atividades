@@ -6,8 +6,9 @@ describe("contraste da paleta (CA-F12.2)", () => {
     expect(contrastRatio(PALETTE[text], PALETTE[background])).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("ciano com texto branco é proibido (contraste insuficiente)", () => {
-    expect(contrastRatio(PALETTE.paper, PALETTE.liaCyan)).toBeLessThan(4.5);
+  it("o contorno dos campos tem ≥ 3:1 sobre as superfícies (WCAG 1.4.11)", () => {
+    expect(contrastRatio(PALETTE.borderStrong, PALETTE.surface)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(PALETTE.borderStrong, PALETTE.bg)).toBeGreaterThanOrEqual(3);
   });
 
   it("calcula valores conhecidos", () => {
@@ -20,20 +21,22 @@ describe("paleta e globals.css", () => {
     const { readFileSync } = await import("node:fs");
     const css = readFileSync("src/app/globals.css", "utf8").toLowerCase();
     const tokens: Record<string, string> = {
-      "--lia-blue": PALETTE.liaBlue,
-      "--lia-blue-dark": PALETTE.liaBlueDark,
-      "--lia-cyan": PALETTE.liaCyan,
-      "--lia-cyan-soft": PALETTE.liaCyanSoft,
-      "--ink": PALETTE.ink,
-      "--ink-muted": PALETTE.inkMuted,
-      "--paper": PALETTE.paper,
-      "--paper-alt": PALETTE.paperAlt,
-      "--ok-ink": PALETTE.okInk,
-      "--ok-bg": PALETTE.okBg,
-      "--warn-ink": PALETTE.warnInk,
-      "--warn-bg": PALETTE.warnBg,
-      "--danger-ink": PALETTE.dangerInk,
-      "--danger-bg": PALETTE.dangerBg,
+      "--primary": PALETTE.primary,
+      "--primary-hover": PALETTE.primaryHover,
+      "--primary-soft": PALETTE.primarySoft,
+      "--on-primary": PALETTE.onPrimary,
+      "--bg": PALETTE.bg,
+      "--surface": PALETTE.surface,
+      "--surface-muted": PALETTE.surfaceMuted,
+      "--border-strong": PALETTE.borderStrong,
+      "--text": PALETTE.text,
+      "--text-muted": PALETTE.textMuted,
+      "--success-ink": PALETTE.successInk,
+      "--success-bg": PALETTE.successBg,
+      "--warning-ink": PALETTE.warningInk,
+      "--warning-bg": PALETTE.warningBg,
+      "--error-ink": PALETTE.errorInk,
+      "--error-bg": PALETTE.errorBg,
     };
     for (const [name, hex] of Object.entries(tokens)) {
       expect(css, name).toContain(`${name}: ${hex.toLowerCase()};`);

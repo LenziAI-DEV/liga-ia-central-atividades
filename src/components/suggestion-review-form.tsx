@@ -10,7 +10,7 @@ export interface ReviewField {
   proposed: string | string[];
 }
 
-const INPUT = "w-full rounded border border-[var(--line)] bg-[var(--paper)] px-3 py-2";
+const INPUT = "w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2";
 
 /** Aceitar, ajustar e aceitar, ou rejeitar com motivo. Erros em texto, ligados ao campo (F8.2, F8.9, CA-F8.5). */
 export function SuggestionReviewForm({
@@ -27,7 +27,7 @@ export function SuggestionReviewForm({
     <form action={formAction} className="grid max-w-2xl gap-4" noValidate>
       <input type="hidden" name="id" value={id} />
       {state.message ? (
-        <div role="alert" className="rounded border-l-4 border-[var(--danger-ink)] bg-[var(--danger-bg)] px-4 py-3 text-[var(--danger-ink)]">
+        <div role="alert" className="rounded-md border-l-4 border-[var(--error-ink)] bg-[var(--error-bg)] px-4 py-3 text-[var(--error-ink)]">
           <p>
             <strong>Erro:</strong> {state.message}
           </p>
@@ -41,7 +41,7 @@ export function SuggestionReviewForm({
         </div>
       ) : null}
 
-      <fieldset className="grid gap-3 rounded border border-[var(--line)] p-4">
+      <fieldset className="grid gap-3 rounded-md border border-[var(--border)] p-4">
         <legend className="px-1 font-medium">Valores a aplicar (você pode ajustar)</legend>
         {fields.map((f) => {
           const inputId = `adj-${f.key}`;
@@ -87,14 +87,14 @@ export function SuggestionReviewForm({
                 </>
               )}
               {state.errors[f.key] ? (
-                <p id={`${inputId}-erro`} className="text-sm font-medium text-[var(--danger-ink)]">
+                <p id={`${inputId}-erro`} className="text-sm font-medium text-[var(--error-ink)]">
                   Erro: {state.errors[f.key]}
                 </p>
               ) : null}
             </div>
           );
         })}
-        <p className="text-sm text-[var(--ink-muted)]">Apagar um valor significa não aplicar aquele campo.</p>
+        <p className="text-sm text-[var(--text-muted)]">Apagar um valor significa não aplicar aquele campo.</p>
       </fieldset>
 
       <div className="flex flex-wrap gap-3">
@@ -103,7 +103,7 @@ export function SuggestionReviewForm({
           name="action"
           value="accept"
           disabled={pending}
-          className="rounded bg-[var(--lia-blue)] px-5 py-2 font-medium text-[var(--paper)] hover:bg-[var(--lia-blue-dark)] disabled:opacity-60"
+          className="rounded-md bg-[var(--primary)] px-5 py-2 font-medium text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-60"
         >
           Aceitar como proposto
         </button>
@@ -112,13 +112,13 @@ export function SuggestionReviewForm({
           name="action"
           value="adjust"
           disabled={pending}
-          className="rounded border border-[var(--lia-blue)] px-5 py-2 font-medium text-[var(--lia-blue)] disabled:opacity-60"
+          className="rounded-md border border-[var(--primary)] px-5 py-2 font-medium text-[var(--primary)] disabled:opacity-60"
         >
           Ajustar e aceitar
         </button>
       </div>
 
-      <div className="grid gap-2 rounded border border-[var(--line)] p-4">
+      <div className="grid gap-2 rounded-md border border-[var(--border)] p-4">
         <label htmlFor="reason" className="text-sm font-medium">
           Motivo da rejeição (obrigatório para rejeitar)
         </label>
@@ -129,7 +129,7 @@ export function SuggestionReviewForm({
             name="action"
             value="reject"
             disabled={pending}
-            className="rounded border border-[var(--danger-ink)] px-5 py-2 font-medium text-[var(--danger-ink)] disabled:opacity-60"
+            className="rounded-md border border-[var(--error-ink)] px-5 py-2 font-medium text-[var(--error-ink)] disabled:opacity-60"
           >
             Rejeitar
           </button>

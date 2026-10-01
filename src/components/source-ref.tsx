@@ -7,14 +7,14 @@ import type { ActivitySource } from "@/server/activities/activity-queries";
 export function SourceRef({ source }: { source: ActivitySource }) {
   return (
     <>
-      <Link href={`/fontes/${encodeURIComponent(source.fileId)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+      <Link href={`/fontes/${encodeURIComponent(source.fileId)}`} className="text-[var(--primary)] underline underline-offset-2">
         {source.name}
       </Link>
       {source.webUrl?.startsWith("https://") ? (
         <>
           {" "}
           (
-          <a href={source.webUrl} className="text-[var(--lia-blue)] underline underline-offset-2">
+          <a href={source.webUrl} className="text-[var(--primary)] underline underline-offset-2">
             abrir no Drive
           </a>
           )

@@ -20,7 +20,7 @@ export interface FormInitial {
   unresolvedOwners?: string[];
 }
 
-const INPUT = "w-full rounded border border-[var(--line)] bg-[var(--paper)] px-3 py-2";
+const INPUT = "w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2";
 
 /** Formulário de criação e edição: rótulos visíveis e erro em texto ligado ao campo (F6.9, CA-F6.3). */
 export function ActivityForm({
@@ -57,7 +57,7 @@ export function ActivityForm({
         </label>
         {control({ id, describedBy: error ? `${id}-erro` : undefined, invalid: Boolean(error) })}
         {error ? (
-          <p id={`${id}-erro`} className="text-sm font-medium text-[var(--danger-ink)]">
+          <p id={`${id}-erro`} className="text-sm font-medium text-[var(--error-ink)]">
             Erro: {error}
           </p>
         ) : null}
@@ -75,7 +75,7 @@ export function ActivityForm({
       ) : null}
 
       {state.message ? (
-        <div role="alert" className="rounded border-l-4 border-[var(--danger-ink)] bg-[var(--danger-bg)] px-4 py-3 text-[var(--danger-ink)]">
+        <div role="alert" className="rounded-md border-l-4 border-[var(--error-ink)] bg-[var(--error-bg)] px-4 py-3 text-[var(--error-ink)]">
           <p>
             <strong>Erro:</strong> {state.message}
           </p>
@@ -120,11 +120,11 @@ export function ActivityForm({
           ))}
         </div>
         {initial.unresolvedOwners && initial.unresolvedOwners.length > 0 ? (
-          <p className="text-sm text-[var(--ink-muted)]">
+          <p className="text-sm text-[var(--text-muted)]">
             Também consta como responsável a confirmar: {initial.unresolvedOwners.join("; ")} (mantido).
           </p>
         ) : null}
-        {state.errors.ownerIds ? <p id="campo-ownerIds-erro" className="text-sm font-medium text-[var(--danger-ink)]">Erro: {state.errors.ownerIds}</p> : null}
+        {state.errors.ownerIds ? <p id="campo-ownerIds-erro" className="text-sm font-medium text-[var(--error-ink)]">Erro: {state.errors.ownerIds}</p> : null}
       </fieldset>
       {field("nextStep", "Próximo passo", ({ id, describedBy, invalid }) => (
         <input id={id} name="nextStep" defaultValue={value("nextStep")} aria-describedby={describedBy} aria-invalid={invalid} className={INPUT} />
@@ -162,11 +162,11 @@ export function ActivityForm({
           type="submit"
           disabled={pending}
           aria-busy={pending}
-          className="rounded bg-[var(--lia-blue)] px-5 py-2 font-medium text-[var(--paper)] hover:bg-[var(--lia-blue-dark)] disabled:opacity-60"
+          className="rounded-md bg-[var(--primary)] px-5 py-2 font-medium text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-60"
         >
           {pending ? "Salvando…" : editing ? "Salvar alterações" : "Criar atividade"}
         </button>
-        <Link href={cancelHref} className="text-[var(--lia-blue)] underline underline-offset-2">
+        <Link href={cancelHref} className="text-[var(--primary)] underline underline-offset-2">
           Cancelar
         </Link>
       </div>

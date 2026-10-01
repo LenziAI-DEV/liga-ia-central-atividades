@@ -27,7 +27,7 @@ export default function Page() {
         </h2>
         <ol className="mt-3 grid gap-3">
           {PRECEDENCE_RULE_TEXT.map((rule) => (
-            <li key={rule.title} className="rounded border border-[var(--line)] p-4">
+            <li key={rule.title} className="rounded-md border border-[var(--border)] p-4">
               <h3 className="font-semibold">{rule.title}</h3>
               <p className="mt-1">{rule.text}</p>
             </li>
@@ -39,7 +39,7 @@ export default function Page() {
         <h2 id="classes" className="text-xl font-semibold">
           Como cada documento é classificado
         </h2>
-        <p className="mt-2 max-w-3xl text-[var(--ink-muted)]">
+        <p className="mt-2 max-w-3xl text-[var(--text-muted)]">
           A classificação é automática e explicável: vem do que o índice aponta e dos metadados escritos no próprio documento
           (por exemplo, <code>status</code> e <code>data_da_reuniao</code>). Nenhuma IA decide isso. Na dúvida, o documento fica sem
           autoridade definida.
@@ -56,7 +56,7 @@ export default function Page() {
 
       <p>
         Veja a classe e os motivos de cada arquivo em{" "}
-        <Link href="/sincronizacao" className="text-[var(--lia-blue)] underline underline-offset-2">
+        <Link href="/sincronizacao" className="text-[var(--primary)] underline underline-offset-2">
           Estado da sincronização
         </Link>
         .

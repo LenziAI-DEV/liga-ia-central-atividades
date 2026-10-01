@@ -21,12 +21,12 @@ export function AuthorityBadge({ classification }: { classification: Classificat
         {authorityLabel(classification)}
       </StatusBadge>
       {classification.reasons.length > 0 ? (
-        <p className="text-sm text-[var(--ink-muted)]">{classification.reasons.join("; ")}.</p>
+        <p className="text-sm text-[var(--text-muted)]">{classification.reasons.join("; ")}.</p>
       ) : null}
       {classification.class === "sem_autoridade" || classification.class === "historico" ? (
         <p className="text-sm">
           Não altera atividades.{" "}
-          <Link href="/como-decidimos" className="text-[var(--lia-blue)] underline underline-offset-2">
+          <Link href="/como-decidimos" className="text-[var(--primary)] underline underline-offset-2">
             Como o app decide
           </Link>
         </p>

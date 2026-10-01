@@ -75,7 +75,7 @@ const SOURCE_RELATION_LABEL: Record<string, string> = {
   created_by: "Criada a partir de",
 };
 
-const BUTTON = "rounded border border-[var(--line)] px-4 py-2 hover:border-[var(--lia-blue)]";
+const BUTTON = "rounded-md border border-[var(--border)] px-4 py-2 hover:border-[var(--primary)]";
 
 export default async function Page(props: PageProps<"/atividades/[id]">) {
   const [{ id }, query] = await Promise.all([props.params, props.searchParams]);
@@ -157,31 +157,31 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
           Dados
         </h2>
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
-          <dt className="text-[var(--ink-muted)]">Responsáveis</dt>
+          <dt className="text-[var(--text-muted)]">Responsáveis</dt>
           <dd>
             {activity.owners.length === 0
               ? "Sem responsável"
               : activity.owners.map((o) => (o.memberId ? o.name : `responsável a confirmar ("${o.name}")`)).join("; ")}
           </dd>
-          <dt className="text-[var(--ink-muted)]">Prazo</dt>
+          <dt className="text-[var(--text-muted)]">Prazo</dt>
           <dd>
             <DueDate dueDate={activity.dueDate} today={today} />
           </dd>
-          <dt className="text-[var(--ink-muted)]">Frente</dt>
+          <dt className="text-[var(--text-muted)]">Frente</dt>
           <dd>{activity.front ?? "não informada"}</dd>
-          <dt className="text-[var(--ink-muted)]">Prioridade</dt>
+          <dt className="text-[var(--text-muted)]">Prioridade</dt>
           <dd>{activity.priority ?? "não informada"}</dd>
-          <dt className="text-[var(--ink-muted)]">Próximo passo</dt>
+          <dt className="text-[var(--text-muted)]">Próximo passo</dt>
           <dd>{activity.nextStep ?? "não informado"}</dd>
-          <dt className="text-[var(--ink-muted)]">Descrição</dt>
+          <dt className="text-[var(--text-muted)]">Descrição</dt>
           <dd>{activity.description ?? "sem descrição"}</dd>
-          <dt className="text-[var(--ink-muted)]">Notas e bloqueios</dt>
+          <dt className="text-[var(--text-muted)]">Notas e bloqueios</dt>
           <dd>{activity.notes ?? "sem notas"}</dd>
-          <dt className="text-[var(--ink-muted)]">Criada</dt>
+          <dt className="text-[var(--text-muted)]">Criada</dt>
           <dd>
             {formatDateTimeBR(activity.createdAt)} por {actorName(activity.createdBy, members)}
           </dd>
-          <dt className="text-[var(--ink-muted)]">Última atualização</dt>
+          <dt className="text-[var(--text-muted)]">Última atualização</dt>
           <dd>
             {formatDateTimeBR(activity.updatedAt)} por {actorName(activity.updatedBy, members)}
           </dd>
@@ -192,7 +192,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
         <h2 id="acoes" className="text-xl font-semibold">
           Ações
         </h2>
-        <p className="mt-2 text-sm text-[var(--ink-muted)]">
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
           {persona
             ? `A alteração será registrada em nome de ${persona.name}.`
             : "Escolha uma persona no topo da página para alterar."}
@@ -215,7 +215,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
               <input type="hidden" name="status" value="concluida" />
               <button
                 type="submit"
-                className="rounded bg-[var(--lia-blue)] px-4 py-2 text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]"
+                className="rounded-md bg-[var(--primary)] px-4 py-2 text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
               >
                 Concluir
               </button>
@@ -235,9 +235,9 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
               <input type="hidden" name="status" value="bloqueada" />
               <label className="grid gap-1 text-sm">
                 Motivo do bloqueio (opcional; vira as notas)
-                <input name="reason" maxLength={2000} className="rounded border border-[var(--line)] px-3 py-2" />
+                <input name="reason" maxLength={2000} className="rounded-md border border-[var(--border)] px-3 py-2" />
               </label>
-              <button type="submit" className="rounded border border-[var(--danger-ink)] px-4 py-2 text-[var(--danger-ink)]">
+              <button type="submit" className="rounded-md border border-[var(--error-ink)] px-4 py-2 text-[var(--error-ink)]">
                 Bloquear
               </button>
             </form>
@@ -270,7 +270,7 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
         </h2>
         <ol className="mt-3 grid gap-3">
           {events.map((e) => (
-            <li key={e.id} className="rounded border border-[var(--line)] p-3">
+            <li key={e.id} className="rounded-md border border-[var(--border)] p-3">
               <p>
                 <strong>{KIND_LABEL[e.kind] ?? e.kind}</strong> por {e.actor} em{" "}
                 <time dateTime={e.occurredAt}>{formatDateTimeBR(e.occurredAt)}</time>

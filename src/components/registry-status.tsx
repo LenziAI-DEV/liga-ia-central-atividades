@@ -40,7 +40,7 @@ export function RegistryStatus({
           <Notice tone="danger">{report.message}</Notice>
         ) : null}
         {report && report.issues.length > 0 ? (
-          <details className="rounded border border-[var(--line)] p-3">
+          <details className="rounded-md border border-[var(--border)] p-3">
             <summary className="cursor-pointer font-medium">
               {report.issues.length} linha(s) do registro com problema ou ajuste
             </summary>

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ActivityList } from "@/components/activity-list";
 import { StaleNote } from "@/components/stale-note";
-import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/page-header";
+import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getArea } from "@/lib/areas";
 import { isoDateInSaoPaulo } from "@/lib/datetime";
 import { filterActivities, listActivityViews, sortByDue } from "@/server/activities/activity-queries";
@@ -21,7 +22,7 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
     return (
       <>
         <PageHeader title={area.label} description={area.description} />
-        <Notice tone="info">Escolha uma persona no topo da página para ver o que é seu.</Notice>
+        <EmptyState title="Escolha quem você é">Use “Trocar para” no topo da página para ver as atividades que são suas.</EmptyState>
       </>
     );
   }
@@ -37,13 +38,16 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
 
   return (
     <>
-      <PageHeader title={`Minhas atividades — ${persona.name}`} description={area.description} />
-      <p className="mb-4">
-        <Link href="/atividades/nova" className="rounded bg-[var(--lia-blue)] px-4 py-2 text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]">
-          Nova atividade
-        </Link>
-      </p>
-      <p className="mb-4">
+      <PageHeader
+        title="Minhas atividades"
+        description={`Abertas e atribuídas a ${persona.name}, com prazo, próximo passo e fonte.`}
+        actions={
+          <ButtonLink href="/atividades/nova" variant="primary">
+            Nova atividade
+          </ButtonLink>
+        }
+      />
+      <p className="mb-3 text-sm text-[var(--text-muted)]">
         {mine.length === 0
           ? "Nenhuma atividade aberta atribuída a você."
           : `${mine.length} atividade(s) aberta(s), inclusive as compartilhadas`}
@@ -51,7 +55,7 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
         {undated > 0 ? ` · ${undated} sem prazo` : ""}.{" "}
         <Link
           href={descending ? "/minhas-atividades" : "/minhas-atividades?ordem=prazo-desc"}
-          className="text-[var(--lia-blue)] underline underline-offset-2"
+          className="text-[var(--primary)] underline underline-offset-2"
         >
           {descending ? "Ordenar pelo prazo mais próximo" : "Ordenar pelo prazo mais distante"}
         </Link>
@@ -61,7 +65,7 @@ export default async function Page(props: PageProps<"/minhas-atividades">) {
         heading="Suas atividades abertas"
         activities={ordered}
         today={today}
-        empty="Você não tem atividades abertas. Veja “Todas as atividades” para o que a Liga está fazendo."
+        empty="Nenhuma atividade aberta com você. Veja “Todas as atividades” para o que a Liga está fazendo."
       />
     </>
   );

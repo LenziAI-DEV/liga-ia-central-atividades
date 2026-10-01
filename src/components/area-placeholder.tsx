@@ -3,12 +3,12 @@ export function AreaPlaceholder({ phase }: { phase: string }) {
   return (
     <section
       aria-labelledby="em-construcao"
-      className="rounded-md border border-dashed border-[var(--line)] bg-[var(--paper-alt)] p-6"
+      className="rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-6"
     >
-      <h2 id="em-construcao" className="font-semibold text-[var(--ink)]">
+      <h2 id="em-construcao" className="font-semibold text-[var(--text)]">
         Em construção
       </h2>
-      <p className="mt-1 text-[var(--ink-muted)]">Esta área será entregue na {phase} do plano de implementação.</p>
+      <p className="mt-1 text-[var(--text-muted)]">Esta área será entregue na {phase} do plano de implementação.</p>
     </section>
   );
 }

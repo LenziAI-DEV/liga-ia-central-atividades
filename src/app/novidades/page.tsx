@@ -60,8 +60,8 @@ export default async function Page(props: PageProps<"/novidades">) {
                 aria-current={activeParam === p.param ? "true" : undefined}
                 className={
                   activeParam === p.param
-                    ? "font-semibold text-[var(--ink)] underline underline-offset-4"
-                    : "text-[var(--lia-blue)] underline underline-offset-4"
+                    ? "font-semibold text-[var(--text)] underline underline-offset-4"
+                    : "text-[var(--primary)] underline underline-offset-4"
                 }
               >
                 {p.label}
@@ -87,7 +87,7 @@ export default async function Page(props: PageProps<"/novidades">) {
       {feed.uncertain.length > 0 ? <UncertainGroup items={feed.uncertain} /> : null}
       {feed.attention.length > 0 ? <AttentionGroup items={feed.attention} today={today} /> : null}
       <DocumentsGroup items={news} />
-      <p className="text-sm text-[var(--ink-muted)]">
+      <p className="text-sm text-[var(--text-muted)]">
         Todas as fontes da pasta são visíveis a todas as personas neste protótipo. Datas, responsáveis e estados vêm dos registros oficiais; só o resumo de cada documento é gerado por IA.
       </p>
     </>

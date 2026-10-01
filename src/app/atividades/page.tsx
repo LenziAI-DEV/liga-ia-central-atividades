@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ActivityList } from "@/components/activity-list";
 import { StaleNote } from "@/components/stale-note";
 import { PageHeader } from "@/components/page-header";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { CONTROL } from "@/components/ui/field";
 import { getArea } from "@/lib/areas";
 import { isoDateInSaoPaulo } from "@/lib/datetime";
 import { ACTIVITY_STATUS } from "@/lib/labels";
@@ -53,13 +55,16 @@ export default async function Page(props: PageProps<"/atividades">) {
 
   return (
     <>
-      <PageHeader title={area.label} description={area.description} />
-      <p className="mb-4">
-        <Link href="/atividades/nova" className="rounded bg-[var(--lia-blue)] px-4 py-2 text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]">
-          Nova atividade
-        </Link>
-      </p>
-      <form method="get" className="mb-4 grid gap-3 rounded-md border border-[var(--line)] p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <PageHeader
+        title={area.label}
+        description="O painel da Liga: filtre por responsável, frente, estado e prazo."
+        actions={
+          <ButtonLink href="/atividades/nova" variant="primary">
+            Nova atividade
+          </ButtonLink>
+        }
+      />
+      <form method="get" className="mb-4 grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-2 lg:grid-cols-5">
         <Field label="Responsável" name="responsavel" value={wantsMine ? undefined : ownerId}>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -95,20 +100,15 @@ export default async function Page(props: PageProps<"/atividades">) {
               Só as minhas ({persona.name})
             </label>
           ) : null}
-          <button
-            type="submit"
-            className="rounded bg-[var(--lia-blue)] px-4 py-2 text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]"
-          >
-            Filtrar
-          </button>
+          <Button type="submit">Filtrar</Button>
           {filtered ? (
-            <Link href="/atividades" className="py-2 text-[var(--lia-blue)] underline underline-offset-2">
+            <Link href="/atividades" className="py-2 text-sm text-[var(--primary)] underline underline-offset-2">
               Limpar filtros
             </Link>
           ) : null}
         </div>
       </form>
-      <p className="mb-4">
+      <p className="mb-3 text-sm text-[var(--text-muted)]">
         {filtered ? `${shown.length} de ${all.length} atividade(s)` : `${all.length} atividade(s) no total`}
         {" "}(uma atividade com vários responsáveis conta uma vez).
       </p>
@@ -136,8 +136,8 @@ function Field({
 }) {
   return (
     <label className="grid gap-1 text-sm">
-      <span className="text-[var(--ink-muted)]">{label}</span>
-      <select name={name} defaultValue={value ?? ""} className="rounded border border-[var(--line)] bg-[var(--paper)] px-2 py-2">
+      <span className="font-medium">{label}</span>
+      <select name={name} defaultValue={value ?? ""} className={CONTROL}>
         <option value="">Todos</option>
         {children}
       </select>

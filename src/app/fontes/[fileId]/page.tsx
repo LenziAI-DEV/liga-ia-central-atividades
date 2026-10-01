@@ -39,7 +39,7 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
           <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
           <span>{SOURCE_KIND[source.kind]}</span>
           {source.web_url?.startsWith("https://") ? (
-            <a href={source.web_url} className="text-[var(--lia-blue)] underline underline-offset-2">
+            <a href={source.web_url} className="text-[var(--primary)] underline underline-offset-2">
               Abrir no Google Drive
             </a>
           ) : null}
@@ -51,24 +51,24 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
           Estado
         </h2>
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
-          <dt className="text-[var(--ink-muted)]">Detalhe</dt>
+          <dt className="text-[var(--text-muted)]">Detalhe</dt>
           <dd>{source.status_reason ?? "—"}</dd>
-          <dt className="text-[var(--ink-muted)]">Autoridade</dt>
+          <dt className="text-[var(--text-muted)]">Autoridade</dt>
           <dd>
             <AuthorityBadge classification={classification} />
           </dd>
-          <dt className="text-[var(--ink-muted)]">Primeira detecção</dt>
+          <dt className="text-[var(--text-muted)]">Primeira detecção</dt>
           <dd>{dateOrDash(source.first_seen_at)}</dd>
-          <dt className="text-[var(--ink-muted)]">Modificado no Drive</dt>
+          <dt className="text-[var(--text-muted)]">Modificado no Drive</dt>
           <dd>{dateOrDash(source.modified_time)}</dd>
-          <dt className="text-[var(--ink-muted)]">Último processamento</dt>
+          <dt className="text-[var(--text-muted)]">Último processamento</dt>
           <dd>{dateOrDash(source.last_processed_at)}</dd>
-          <dt className="text-[var(--ink-muted)]">Última vez vista na pasta</dt>
+          <dt className="text-[var(--text-muted)]">Última vez vista na pasta</dt>
           <dd>{dateOrDash(source.last_seen_at)}</dd>
-          <dt className="text-[var(--ink-muted)]">Indisponível desde</dt>
+          <dt className="text-[var(--text-muted)]">Indisponível desde</dt>
           <dd>{dateOrDash(source.removed_at)}</dd>
         </dl>
-        <p className="mt-2 text-sm text-[var(--ink-muted)]">
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
           Da primeira detecção ao processamento é o tempo que o app levou para perceber o arquivo (meta interna: até 5 minutos).
         </p>
       </section>
@@ -101,7 +101,7 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
           <ul className="mt-2 list-disc pl-5">
             {citing.map((a) => (
               <li key={`${a.id}-${a.relation}`}>
-                <Link href={`/atividades/${encodeURIComponent(a.id)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+                <Link href={`/atividades/${encodeURIComponent(a.id)}`} className="text-[var(--primary)] underline underline-offset-2">
                   {a.id} · {a.title}
                 </Link>{" "}
                 ({RELATION[a.relation] ?? a.relation})

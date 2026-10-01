@@ -51,7 +51,7 @@ export default async function Page(props: PageProps<"/sugestoes/[id]">) {
             {suggestion.status === "pendente" ? "Pendente" : suggestion.status === "aceita" ? "Aceita" : suggestion.status === "ajustada" ? "Ajustada e aceita" : suggestion.status === "rejeitada" ? "Rejeitada" : "Substituída"}
           </StatusBadge>
           {suggestion.stale ? <StatusBadge tone="warn">Fonte alterada — aguarde a nova análise</StatusBadge> : null}
-          <Link href="/sugestoes" className="text-[var(--lia-blue)] underline underline-offset-2">
+          <Link href="/sugestoes" className="text-[var(--primary)] underline underline-offset-2">
             Voltar à fila
           </Link>
         </p>
@@ -67,9 +67,9 @@ export default async function Page(props: PageProps<"/sugestoes/[id]">) {
         <h2 id="evidencia" className="text-xl font-semibold">
           Evidência na fonte
         </h2>
-        <p className="mt-2 text-sm text-[var(--ink-muted)]">
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
           {suggestion.sourceUrl?.startsWith("https://") ? (
-            <a href={suggestion.sourceUrl} className="text-[var(--lia-blue)] underline underline-offset-2">
+            <a href={suggestion.sourceUrl} className="text-[var(--primary)] underline underline-offset-2">
               {suggestion.sourceName} (abrir no Drive)
             </a>
           ) : (
@@ -80,8 +80,8 @@ export default async function Page(props: PageProps<"/sugestoes/[id]">) {
         <ul className="mt-2 grid gap-2">
           {suggestion.evidence.map((e, i) => (
             <li key={i}>
-              <blockquote className="border-l-4 border-[var(--line)] pl-3 italic">“{displayQuote(e.quote)}”</blockquote>
-              {e.locator ? <p className="pl-3 text-sm text-[var(--ink-muted)]">{e.locator}</p> : null}
+              <blockquote className="border-l-4 border-[var(--border)] pl-3 italic">“{displayQuote(e.quote)}”</blockquote>
+              {e.locator ? <p className="pl-3 text-sm text-[var(--text-muted)]">{e.locator}</p> : null}
             </li>
           ))}
         </ul>
@@ -94,7 +94,7 @@ export default async function Page(props: PageProps<"/sugestoes/[id]">) {
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
           {suggestion.fields.map((f) => (
             <div key={f.field} className="contents">
-              <dt className="text-[var(--ink-muted)]">{SUGGESTION_FIELD_LABEL[f.field] ?? f.field}</dt>
+              <dt className="text-[var(--text-muted)]">{SUGGESTION_FIELD_LABEL[f.field] ?? f.field}</dt>
               <dd>
                 {suggestion.kind === "update" ? `${formatFieldValue(f.field, f.current, memberNames)} → ` : ""}
                 <strong>{formatFieldValue(f.field, f.proposed, memberNames)}</strong>
@@ -105,7 +105,7 @@ export default async function Page(props: PageProps<"/sugestoes/[id]">) {
           ))}
           {suggestion.target?.front ? (
             <div className="contents">
-              <dt className="text-[var(--ink-muted)]">Frente da atividade</dt>
+              <dt className="text-[var(--text-muted)]">Frente da atividade</dt>
               <dd>{suggestion.target.front}</dd>
             </div>
           ) : null}
@@ -134,11 +134,11 @@ export default async function Page(props: PageProps<"/sugestoes/[id]">) {
               : `Decidida por ${suggestion.reviewerName ?? "—"}${suggestion.reviewedAt ? ` em ${formatDateTimeBR(suggestion.reviewedAt)}` : ""}.`}
             {suggestion.reviewReason ? ` Motivo: ${suggestion.reviewReason}.` : ""}{" "}
             {suggestion.createdActivityId ? (
-              <Link href={`/atividades/${encodeURIComponent(suggestion.createdActivityId)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+              <Link href={`/atividades/${encodeURIComponent(suggestion.createdActivityId)}`} className="text-[var(--primary)] underline underline-offset-2">
                 Ver a atividade criada
               </Link>
             ) : suggestion.target ? (
-              <Link href={`/atividades/${encodeURIComponent(suggestion.target.id)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+              <Link href={`/atividades/${encodeURIComponent(suggestion.target.id)}`} className="text-[var(--primary)] underline underline-offset-2">
                 Ver a atividade
               </Link>
             ) : null}

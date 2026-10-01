@@ -45,7 +45,7 @@ function Sources({ sources }: { sources: readonly FeedSource[] }) {
 
 function ActivityLink({ activity }: { activity: { id: string; title: string } }) {
   return (
-    <Link href={`/atividades/${encodeURIComponent(activity.id)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+    <Link href={`/atividades/${encodeURIComponent(activity.id)}`} className="text-[var(--primary)] underline underline-offset-2">
       {activity.id} · {activity.title}
     </Link>
   );
@@ -54,16 +54,16 @@ function ActivityLink({ activity }: { activity: { id: string; title: string } })
 function Group({ id, title, hint, count, children }: { id: string; title: string; hint: string; count: number; children: React.ReactNode }) {
   return (
     <section aria-labelledby={`g-${id}`} className="mb-8">
-      <h2 id={`g-${id}`} className="font-serif text-2xl font-semibold">
-        {title} <span className="text-base font-normal text-[var(--ink-muted)]">({count})</span>
+      <h2 id={`g-${id}`} className="text-2xl font-semibold">
+        {title} <span className="text-base font-normal text-[var(--text-muted)]">({count})</span>
       </h2>
-      <p className="mt-1 text-sm text-[var(--ink-muted)]">{hint}</p>
+      <p className="mt-1 text-sm text-[var(--text-muted)]">{hint}</p>
       {count === 0 ? <p className="mt-3">Nada neste grupo.</p> : <ul className="mt-3 grid gap-3">{children}</ul>}
     </section>
   );
 }
 
-const card = "rounded border border-[var(--line)] p-3";
+const card = "rounded-md border border-[var(--border)] p-3";
 
 export function ConfirmedGroup({ items }: { items: readonly ConfirmedItem[] }) {
   return (
@@ -127,7 +127,7 @@ export function PendingGroup({ items }: { items: readonly PendingItem[] }) {
           ) : null}
           <Sources sources={[p.source]} />
           <p className="mt-1 text-sm">
-            <Link href={`/sugestoes/${p.suggestionId}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+            <Link href={`/sugestoes/${p.suggestionId}`} className="text-[var(--primary)] underline underline-offset-2">
               Ver a sugestão e a evidência
             </Link>
           </p>
@@ -151,7 +151,7 @@ export function UncertainGroup({ items }: { items: readonly UncertainItem[] }) {
           <Sources sources={u.sources} />
           {u.suggestionId !== null ? (
             <p className="mt-1 text-sm">
-              <Link href={`/sugestoes/${u.suggestionId}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+              <Link href={`/sugestoes/${u.suggestionId}`} className="text-[var(--primary)] underline underline-offset-2">
                 Abrir a sugestão
               </Link>
             </p>
@@ -199,11 +199,11 @@ export function DocumentsGroup({ items }: { items: readonly DocumentNews[] }) {
         <li key={d.fileId} className={card}>
           <p className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={DOC_KIND[d.kind].tone}>{DOC_KIND[d.kind].text}</StatusBadge>
-            <Link href={`/fontes/${encodeURIComponent(d.fileId)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+            <Link href={`/fontes/${encodeURIComponent(d.fileId)}`} className="text-[var(--primary)] underline underline-offset-2">
               {d.name}
             </Link>
             {d.webUrl?.startsWith("https://") && d.kind !== "indisponivel" ? (
-              <a href={d.webUrl} className="text-sm text-[var(--lia-blue)] underline underline-offset-2">
+              <a href={d.webUrl} className="text-sm text-[var(--primary)] underline underline-offset-2">
                 abrir no Drive
               </a>
             ) : null}
