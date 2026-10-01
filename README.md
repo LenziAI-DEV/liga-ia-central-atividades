@@ -72,6 +72,7 @@ npm run app        # build + servidor em http://localhost:3000
 
 - O servidor escuta **só em `127.0.0.1`** e recusa qualquer outro host (403). Abra por **`http://localhost:3000`** (abrir por `127.0.0.1` redireciona para `localhost`, por causa do cookie do OAuth).
 - Em desenvolvimento: `npm run dev`.
+- O npm 11 pode imprimir um aviso `allow-scripts` sobre `unrs-resolver` (usado pelas ferramentas de lint e teste). É inofensivo: tudo funciona sem aprovar o script. Testado numa instalação limpa (`npm install`, `npm run setup`, 354 testes, typecheck, lint e 8 testes E2E).
 - Variáveis em `.env.example`, com os padrões entre parênteses:
 
 | Variável | Para quê |
