@@ -68,11 +68,7 @@ export default async function Home() {
             <Link href="/comece-aqui" className={link}>
               Comece aqui
             </Link>{" "}
-            · Dúvidas sobre qual valor vale?{" "}
-            <Link href="/como-decidimos" className={link}>
-              Como o app decide
-            </Link>
-            .
+           .
           </p>
         </>
       )}

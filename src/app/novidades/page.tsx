@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Notice } from "@/components/notice";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { AttentionGroup, ConfirmedGroup, DocumentsGroup, PendingGroup, UncertainGroup } from "@/components/personal-feed";
 import { StaleNote } from "@/components/stale-note";
@@ -29,7 +30,7 @@ export default async function Page(props: PageProps<"/novidades">) {
     return (
       <>
         <PageHeader title={area.label} description={area.description} />
-        <Notice tone="info">Escolha uma persona no topo da página para ver o que mudou para você.</Notice>
+        <EmptyState title="Escolha quem você é">Use “Trocar para” no topo da página para ver o que mudou para você.</EmptyState>
       </>
     );
   }
@@ -47,12 +48,12 @@ export default async function Page(props: PageProps<"/novidades">) {
 
   return (
     <>
-      <PageHeader title={`O que mudou para você — ${persona.name}`} description={area.description} />
-      <p className="mb-2">
+      <PageHeader title={`Novidades de ${persona.name}`} description="O que mudou para você e nos documentos desde a sua última visita." />
+      <p className="mb-3 text-sm text-[var(--text-muted)]">
         Mostrando o que mudou {marker.label}, a partir de <time dateTime={marker.since}>{formatDateTimeBR(marker.since)}</time>.
       </p>
       <nav aria-label="Período do resumo" className="mb-6">
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <ul className="flex flex-wrap gap-1 text-sm">
           {PERIODS.map((p) => (
             <li key={p.label}>
               <Link
@@ -60,8 +61,8 @@ export default async function Page(props: PageProps<"/novidades">) {
                 aria-current={activeParam === p.param ? "true" : undefined}
                 className={
                   activeParam === p.param
-                    ? "font-semibold text-[var(--text)] underline underline-offset-4"
-                    : "text-[var(--primary)] underline underline-offset-4"
+                    ? "block rounded-md bg-[var(--primary-soft)] px-3 py-1.5 font-semibold text-[var(--primary)]"
+                    : "block rounded-md px-3 py-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary)]"
                 }
               >
                 {p.label}

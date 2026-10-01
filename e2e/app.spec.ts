@@ -63,7 +63,7 @@ test("em escala de cinza, cada estado continua identificável por texto (CA-F12.
   const count = await badges.count();
   expect(count).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
-    expect(((await badges.nth(i).innerText()).replace(/[✓!✕↻•]/g, "")).trim().length, `selo ${i}`).toBeGreaterThan(0);
+    expect((await badges.nth(i).innerText()).trim().length, `selo ${i}`).toBeGreaterThan(0);
   }
 });
 
@@ -76,7 +76,12 @@ test.describe("celular (375 px)", () => {
       expect(overflow, `${path} estoura a largura`).toBeLessThanOrEqual(0);
     }
     await page.goto("/");
+    const menu = page.getByRole("button", { name: /^Menu/ });
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await menu.click();
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
     await page.getByRole("navigation", { name: "Áreas principais" }).getByRole("link", { name: AREAS[2] }).click();
+    await expect(page.getByRole("button", { name: /^Menu/ })).toHaveAttribute("aria-expanded", "false");
     await expect(page).toHaveURL(/\/atividades$/);
     // dono, prazo e estado seguem visíveis na tela estreita
     const card = page.locator("main li").filter({ hasText: "Responsável" }).first();

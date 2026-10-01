@@ -102,8 +102,8 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
         {syncResult && <Notice tone={syncResult.tone}>{syncResult.text}</Notice>}
       </div>
 
-      <section aria-labelledby="conexao" className="mt-8">
-        <h2 id="conexao" className="text-lg font-semibold">
+      <section aria-labelledby="conexao" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="conexao" className="text-base font-semibold">
           Conexão com o Google Drive
         </h2>
         <div className="mt-3 space-y-3">
@@ -155,8 +155,8 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
         </div>
       </section>
 
-      <section aria-labelledby="pasta" className="mt-8">
-        <h2 id="pasta" className="text-lg font-semibold">
+      <section aria-labelledby="pasta" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="pasta" className="text-base font-semibold">
           Pasta monitorada
         </h2>
         <div className="mt-3 space-y-1">
@@ -182,8 +182,8 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
 
       <RegistryStatus resolution={resolveRegistry(db, env.INDEX_FILE_NAME)} report={getImportReport(db)} />
 
-      <section aria-labelledby="sincronizacao" className="mt-8">
-        <h2 id="sincronizacao" className="text-lg font-semibold">
+      <section aria-labelledby="sincronizacao" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="sincronizacao" className="text-base font-semibold">
           Sincronização
         </h2>
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
@@ -234,8 +234,8 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
         )}
       </section>
 
-      <section aria-labelledby="arquivos" className="mt-8">
-        <h2 id="arquivos" className="text-lg font-semibold">
+      <section aria-labelledby="arquivos" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="arquivos" className="text-base font-semibold">
           Arquivos da pasta
         </h2>
         <p className="mt-2 text-[var(--text-muted)]">
@@ -250,12 +250,12 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
               <caption className="sr-only">Arquivos da pasta monitorada e o estado de cada um</caption>
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <th scope="col" className="py-2 pr-4">Arquivo</th>
-                  <th scope="col" className="py-2 pr-4">Tipo</th>
-                  <th scope="col" className="py-2 pr-4">Estado</th>
-                  <th scope="col" className="py-2 pr-4">Autoridade</th>
-                  <th scope="col" className="py-2 pr-4">Detalhe</th>
-                  <th scope="col" className="py-2">Modificado no Drive</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Arquivo</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Tipo</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Estado</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Autoridade</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Detalhe</th>
+                  <th scope="col" className="py-2 font-medium text-[var(--text-muted)]">Modificado no Drive</th>
                 </tr>
               </thead>
               <tbody>

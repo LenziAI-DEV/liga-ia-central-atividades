@@ -12,8 +12,8 @@ export function RegistryStatus({
   report: ImportReport | undefined;
 }) {
   return (
-    <section aria-labelledby="registro" className="mt-8">
-      <h2 id="registro" className="text-lg font-semibold">
+    <section aria-labelledby="registro" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+      <h2 id="registro" className="text-base font-semibold">
         Fonte das atividades
       </h2>
       <div className="mt-3 space-y-3">

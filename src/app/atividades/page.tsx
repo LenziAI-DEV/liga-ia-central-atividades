@@ -64,7 +64,7 @@ export default async function Page(props: PageProps<"/atividades">) {
           </ButtonLink>
         }
       />
-      <form method="get" className="mb-4 grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <form method="get" className="mb-4 grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 grid-cols-2 lg:grid-cols-5">
         <Field label="Responsável" name="responsavel" value={wantsMine ? undefined : ownerId}>
           {members.map((m) => (
             <option key={m.id} value={m.id}>

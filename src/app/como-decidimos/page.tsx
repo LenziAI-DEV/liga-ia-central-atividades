@@ -18,7 +18,7 @@ const CLASS_MEANING: Record<AuthorityClass, string> = {
 
 export default function Page() {
   return (
-    <>
+    <div className="max-w-4xl">
       <PageHeader title="Como o app decide o valor oficial" description={PRECEDENCE_SUMMARY} />
 
       <section aria-labelledby="regra" className="mb-10">
@@ -61,6 +61,6 @@ export default function Page() {
         </Link>
         .
       </p>
-    </>
+    </div>
   );
 }
