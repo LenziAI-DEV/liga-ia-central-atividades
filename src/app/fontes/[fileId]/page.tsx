@@ -47,7 +47,7 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
       </PageHeader>
 
       <section aria-labelledby="estado" className="mb-8">
-        <h2 id="estado" className="text-xl font-semibold">
+        <h2 id="estado" className="text-lg font-semibold">
           Estado
         </h2>
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
@@ -74,7 +74,7 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
       </section>
 
       <section aria-labelledby="versoes" className="mb-8">
-        <h2 id="versoes" className="text-xl font-semibold">
+        <h2 id="versoes" className="text-lg font-semibold">
           Versões processadas
         </h2>
         {versions.length === 0 ? (
@@ -92,7 +92,7 @@ export default async function Page(props: PageProps<"/fontes/[fileId]">) {
       </section>
 
       <section aria-labelledby="atividades">
-        <h2 id="atividades" className="text-xl font-semibold">
+        <h2 id="atividades" className="text-lg font-semibold">
           Atividades que citam esta fonte
         </h2>
         {citing.length === 0 ? (

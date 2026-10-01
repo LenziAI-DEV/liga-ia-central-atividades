@@ -60,7 +60,7 @@ function Quote({ snippet }: { snippet: Snippet }) {
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <section aria-labelledby={`passo-${n}`} className="mb-8">
-      <h2 id={`passo-${n}`} className="text-2xl font-semibold">
+      <h2 id={`passo-${n}`} className="text-lg font-semibold">
         Passo {n} · {title}
       </h2>
       <div className="mt-3 grid gap-3">{children}</div>
@@ -100,7 +100,7 @@ export default async function Page() {
         )}
         <ul className="grid gap-3">
           {view.fronts.map((f) => (
-            <li key={f.name} className="rounded-md border border-[var(--border)] p-3">
+            <li key={f.name} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3">
               <p>
                 <strong>{f.name}</strong>
               </p>
@@ -215,7 +215,7 @@ export default async function Page() {
         {!persona ? (
           <p>Escolha uma persona no topo da página para ver a sua primeira ação.</p>
         ) : view.firstAction.kind === "activity" ? (
-          <div className="rounded-md border border-[var(--border)] p-3">
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3">
             <p>
               <Link href={`/atividades/${encodeURIComponent(view.firstAction.activity.id)}`} className={link}>
                 {view.firstAction.activity.id} · {view.firstAction.activity.title}

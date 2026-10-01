@@ -1,3 +1,4 @@
+import { buttonClass } from "@/components/ui/button";
 import type { Metadata } from "next";
 import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/page-header";
@@ -102,7 +103,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
       </div>
 
       <section aria-labelledby="conexao" className="mt-8">
-        <h2 id="conexao" className="text-xl font-semibold">
+        <h2 id="conexao" className="text-lg font-semibold">
           Conexão com o Google Drive
         </h2>
         <div className="mt-3 space-y-3">
@@ -145,7 +146,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
               )}
               <a
                 href="/api/auth/google/start"
-                className="inline-flex items-center rounded-md bg-[var(--primary)] px-4 py-2 font-medium text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
+                className={buttonClass("primary")}
               >
                 {connection?.status === "reauth_required" ? "Reconectar conta Google" : "Conectar conta Google"}
               </a>
@@ -155,7 +156,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
       </section>
 
       <section aria-labelledby="pasta" className="mt-8">
-        <h2 id="pasta" className="text-xl font-semibold">
+        <h2 id="pasta" className="text-lg font-semibold">
           Pasta monitorada
         </h2>
         <div className="mt-3 space-y-1">
@@ -182,7 +183,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
       <RegistryStatus resolution={resolveRegistry(db, env.INDEX_FILE_NAME)} report={getImportReport(db)} />
 
       <section aria-labelledby="sincronizacao" className="mt-8">
-        <h2 id="sincronizacao" className="text-xl font-semibold">
+        <h2 id="sincronizacao" className="text-lg font-semibold">
           Sincronização
         </h2>
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
@@ -234,7 +235,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
       </section>
 
       <section aria-labelledby="arquivos" className="mt-8">
-        <h2 id="arquivos" className="text-xl font-semibold">
+        <h2 id="arquivos" className="text-lg font-semibold">
           Arquivos da pasta
         </h2>
         <p className="mt-2 text-[var(--text-muted)]">

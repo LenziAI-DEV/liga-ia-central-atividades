@@ -4,6 +4,8 @@ import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/page-header";
 import { StaleNote } from "@/components/stale-note";
 import { StatusBadge } from "@/components/status-badge";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getArea } from "@/lib/areas";
 import { formatDateBR, formatDateTimeBR } from "@/lib/datetime";
 import { displayQuote, formatFieldValue, SUGGESTION_FIELD_LABEL } from "@/lib/field-format";
@@ -55,7 +57,7 @@ export default async function Page(props: PageProps<"/sugestoes">) {
       ) : null}
       <div className="mb-6">
         <Notice tone="info" title="A IA só propõe.">
-          Nada aqui muda uma atividade oficial até um revisor aceitar.{" "}
+          Nenhuma atividade oficial muda até um revisor aceitar.{" "}
           {canReview
             ? `Você está como ${persona!.name}, que pode decidir.`
             : persona
@@ -68,11 +70,13 @@ export default async function Page(props: PageProps<"/sugestoes">) {
       </div>
 
       <section aria-labelledby="pendentes" className="mb-10">
-        <h2 id="pendentes" className="text-xl font-semibold">
+        <h2 id="pendentes" className="text-lg font-semibold">
           Aguardando revisão ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <p className="mt-3 rounded-md border border-[var(--border)] p-4">Nenhuma sugestão pendente.</p>
+          <div className="mt-3">
+            <EmptyState title="Nenhuma sugestão aguardando revisão">Quando uma ata nova trouxer mudanças, as propostas da IA aparecem aqui, com a evidência.</EmptyState>
+          </div>
         ) : (
           <ul className="mt-3 grid gap-3">
             {pending.map((s) => (
@@ -83,17 +87,19 @@ export default async function Page(props: PageProps<"/sugestoes">) {
       </section>
 
       <section aria-labelledby="documentos" className="mb-10">
-        <h2 id="documentos" className="text-xl font-semibold">
+        <h2 id="documentos" className="text-lg font-semibold">
           Documentos analisados pela IA
         </h2>
         {analyses.length === 0 ? (
-          <p className="mt-3 rounded-md border border-[var(--border)] p-4">Nenhuma ata foi analisada ainda.</p>
+          <div className="mt-3">
+            <EmptyState title="Nenhuma ata foi analisada ainda">Depois da primeira sincronização, cada ata lida aparece aqui com o resultado da análise.</EmptyState>
+          </div>
         ) : (
           <ul className="mt-3 grid gap-3">
             {analyses.map((a) => {
               const status = ANALYSIS_STATUS[a.status] ?? { label: a.status, tone: "neutral" as const };
               return (
-                <li key={a.id} className="rounded-md border border-[var(--border)] p-4">
+                <li key={a.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <Link href={`/fontes/${encodeURIComponent(a.fileId)}`} className="font-semibold text-[var(--primary)] underline underline-offset-2">
                       {a.fileName}
@@ -121,9 +127,9 @@ export default async function Page(props: PageProps<"/sugestoes">) {
                   {a.status === "failed" || a.status === "disabled" || a.status === "pending" ? (
                     <form action={retryAnalysisAction} className="mt-2">
                       <input type="hidden" name="id" value={a.id} />
-                      <button type="submit" className="rounded-md border border-[var(--border)] px-3 py-1 text-sm hover:border-[var(--primary)]">
+                      <Button type="submit" variant="secondary" size="sm">
                         Tentar novamente
-                      </button>
+                      </Button>
                     </form>
                   ) : null}
                 </li>
@@ -135,7 +141,7 @@ export default async function Page(props: PageProps<"/sugestoes">) {
 
       {decided.length > 0 ? (
         <section aria-labelledby="decididas">
-          <h2 id="decididas" className="text-xl font-semibold">
+          <h2 id="decididas" className="text-lg font-semibold">
             Já decididas ({decided.length})
           </h2>
           <ul className="mt-3 grid gap-3">
@@ -160,7 +166,7 @@ const STATUS_LABEL: Record<SuggestionView["status"], { label: string; tone: "ok"
 function SuggestionCard({ s, memberNames }: { s: SuggestionView; memberNames: ReadonlyMap<string, string> }) {
   const status = STATUS_LABEL[s.status];
   return (
-    <li className="rounded-md border border-[var(--border)] p-4">
+    <li className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-semibold">
           <Link href={`/sugestoes/${s.id}`} className="underline-offset-2 hover:underline">
@@ -177,17 +183,17 @@ function SuggestionCard({ s, memberNames }: { s: SuggestionView; memberNames: Re
         Fonte: {s.sourceName}
         {s.docDate ? ` · reunião de ${formatDateBR(s.docDate)}` : ""}
       </p>
-      <ul className="mt-2 list-disc pl-5 text-sm">
+      <ul className="mt-2 grid gap-0.5 text-sm">
         {s.fields.map((f) => (
           <li key={f.field}>
-            {SUGGESTION_FIELD_LABEL[f.field] ?? f.field}: {s.kind === "update" ? `${formatFieldValue(f.field, f.current, memberNames)} → ` : ""}
+            <span className="text-[var(--text-muted)]">{SUGGESTION_FIELD_LABEL[f.field] ?? f.field}:</span>{" "}{s.kind === "update" ? `${formatFieldValue(f.field, f.current, memberNames)} → ` : ""}
             <strong>{formatFieldValue(f.field, f.adjusted && f.final !== null ? f.final : f.proposed, memberNames)}</strong>
             {f.uncertain ? " (incerto)" : ""}
           </li>
         ))}
       </ul>
       {s.evidence[0] ? (
-        <blockquote className="mt-2 border-l-4 border-[var(--border)] pl-3 text-sm italic">“{displayQuote(s.evidence[0].quote)}”</blockquote>
+        <blockquote className="mt-2 border-l-4 border-[var(--border-strong)] bg-[var(--surface-muted)] px-3 py-2 text-sm">“{displayQuote(s.evidence[0].quote)}”</blockquote>
       ) : null}
       {s.uncertainties.length > 0 ? <p className="mt-2 text-sm">{s.uncertainties.length} ponto(s) a confirmar.</p> : null}
       {s.reviewerName ? (
@@ -197,10 +203,10 @@ function SuggestionCard({ s, memberNames }: { s: SuggestionView; memberNames: Re
           {s.reviewReason ? ` · motivo: ${s.reviewReason}` : ""}
         </p>
       ) : null}
-      <p className="mt-2">
-        <Link href={`/sugestoes/${s.id}`} className="text-[var(--primary)] underline underline-offset-2">
+      <p className="mt-3">
+        <ButtonLink href={`/sugestoes/${s.id}`} variant={s.status === "pendente" ? "primary" : "secondary"} size="sm">
           {s.status === "pendente" ? "Revisar" : "Ver detalhes"}
-        </Link>
+        </ButtonLink>
       </p>
     </li>
   );

@@ -54,7 +54,7 @@ function ActivityLink({ activity }: { activity: { id: string; title: string } })
 function Group({ id, title, hint, count, children }: { id: string; title: string; hint: string; count: number; children: React.ReactNode }) {
   return (
     <section aria-labelledby={`g-${id}`} className="mb-8">
-      <h2 id={`g-${id}`} className="text-2xl font-semibold">
+      <h2 id={`g-${id}`} className="text-lg font-semibold">
         {title} <span className="text-base font-normal text-[var(--text-muted)]">({count})</span>
       </h2>
       <p className="mt-1 text-sm text-[var(--text-muted)]">{hint}</p>
@@ -63,7 +63,7 @@ function Group({ id, title, hint, count, children }: { id: string; title: string
   );
 }
 
-const card = "rounded-md border border-[var(--border)] p-3";
+const card = "rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3";
 
 export function ConfirmedGroup({ items }: { items: readonly ConfirmedItem[] }) {
   return (

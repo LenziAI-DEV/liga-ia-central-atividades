@@ -22,12 +22,12 @@ export default function Page() {
       <PageHeader title="Como o app decide o valor oficial" description={PRECEDENCE_SUMMARY} />
 
       <section aria-labelledby="regra" className="mb-10">
-        <h2 id="regra" className="text-xl font-semibold">
+        <h2 id="regra" className="text-lg font-semibold">
           A regra, do mais forte ao mais fraco
         </h2>
         <ol className="mt-3 grid gap-3">
           {PRECEDENCE_RULE_TEXT.map((rule) => (
-            <li key={rule.title} className="rounded-md border border-[var(--border)] p-4">
+            <li key={rule.title} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
               <h3 className="font-semibold">{rule.title}</h3>
               <p className="mt-1">{rule.text}</p>
             </li>
@@ -36,7 +36,7 @@ export default function Page() {
       </section>
 
       <section aria-labelledby="classes" className="mb-10">
-        <h2 id="classes" className="text-xl font-semibold">
+        <h2 id="classes" className="text-lg font-semibold">
           Como cada documento é classificado
         </h2>
         <p className="mt-2 max-w-3xl text-[var(--text-muted)]">
