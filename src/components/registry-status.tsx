@@ -12,8 +12,8 @@ export function RegistryStatus({
   report: ImportReport | undefined;
 }) {
   return (
-    <section aria-labelledby="registro" className="mt-8">
-      <h2 id="registro" className="text-xl font-semibold">
+    <section aria-labelledby="registro" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+      <h2 id="registro" className="text-base font-semibold">
         Fonte das atividades
       </h2>
       <div className="mt-3 space-y-3">
@@ -40,7 +40,7 @@ export function RegistryStatus({
           <Notice tone="danger">{report.message}</Notice>
         ) : null}
         {report && report.issues.length > 0 ? (
-          <details className="rounded border border-[var(--line)] p-3">
+          <details className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3">
             <summary className="cursor-pointer font-medium">
               {report.issues.length} linha(s) do registro com problema ou ajuste
             </summary>

@@ -7,6 +7,9 @@ import { PageHeader } from "@/components/page-header";
 import { SourceRef } from "@/components/source-ref";
 import { StaleNote } from "@/components/stale-note";
 import { StatusBadge } from "@/components/status-badge";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CONTROL, Field } from "@/components/ui/field";
 import { formatDateBR, formatDateTimeBR, isoDateInSaoPaulo } from "@/lib/datetime";
 import { ACTIVITY_STATUS } from "@/lib/labels";
 import { actorName, getActivityView, listEvents } from "@/server/activities/activity-queries";
@@ -75,8 +78,6 @@ const SOURCE_RELATION_LABEL: Record<string, string> = {
   created_by: "Criada a partir de",
 };
 
-const BUTTON = "rounded border border-[var(--line)] px-4 py-2 hover:border-[var(--lia-blue)]";
-
 export default async function Page(props: PageProps<"/atividades/[id]">) {
   const [{ id }, query] = await Promise.all([props.params, props.searchParams]);
   const members = listMembers();
@@ -103,8 +104,9 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
   return (
     <>
       <StaleNote />
-      <PageHeader title={`${activity.id} · ${activity.title}`}>
-        <p className="mt-3 flex flex-wrap items-center gap-3">
+      <PageHeader title={activity.title}>
+        <p className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="font-mono text-sm font-medium text-[var(--text-muted)]">{activity.id}</span>
           <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
           {activity.origin === "manual" ? <StatusBadge tone="info">Criada manualmente</StatusBadge> : null}
           {activity.origin === "importada" ? <StatusBadge tone="neutral">Importada do registro</StatusBadge> : null}
@@ -152,144 +154,148 @@ export default async function Page(props: PageProps<"/atividades/[id]">) {
         </div>
       ) : null}
 
-      <section aria-labelledby="dados" className="mb-8">
-        <h2 id="dados" className="text-xl font-semibold">
-          Dados
-        </h2>
-        <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
-          <dt className="text-[var(--ink-muted)]">Responsáveis</dt>
-          <dd>
-            {activity.owners.length === 0
-              ? "Sem responsável"
-              : activity.owners.map((o) => (o.memberId ? o.name : `responsável a confirmar ("${o.name}")`)).join("; ")}
-          </dd>
-          <dt className="text-[var(--ink-muted)]">Prazo</dt>
-          <dd>
-            <DueDate dueDate={activity.dueDate} today={today} />
-          </dd>
-          <dt className="text-[var(--ink-muted)]">Frente</dt>
-          <dd>{activity.front ?? "não informada"}</dd>
-          <dt className="text-[var(--ink-muted)]">Prioridade</dt>
-          <dd>{activity.priority ?? "não informada"}</dd>
-          <dt className="text-[var(--ink-muted)]">Próximo passo</dt>
-          <dd>{activity.nextStep ?? "não informado"}</dd>
-          <dt className="text-[var(--ink-muted)]">Descrição</dt>
-          <dd>{activity.description ?? "sem descrição"}</dd>
-          <dt className="text-[var(--ink-muted)]">Notas e bloqueios</dt>
-          <dd>{activity.notes ?? "sem notas"}</dd>
-          <dt className="text-[var(--ink-muted)]">Criada</dt>
-          <dd>
-            {formatDateTimeBR(activity.createdAt)} por {actorName(activity.createdBy, members)}
-          </dd>
-          <dt className="text-[var(--ink-muted)]">Última atualização</dt>
-          <dd>
-            {formatDateTimeBR(activity.updatedAt)} por {actorName(activity.updatedBy, members)}
-          </dd>
-        </dl>
-      </section>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid gap-6">
+          <Card className="p-5">
+            <h2 id="dados" className="text-base font-semibold">
+              Dados
+            </h2>
+            <dl className="mt-3 grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-[max-content_1fr]">
+              <Row label="Responsáveis">
+                {activity.owners.length === 0
+                  ? "Sem responsável"
+                  : activity.owners.map((o) => (o.memberId ? o.name : `responsável a confirmar ("${o.name}")`)).join("; ")}
+              </Row>
+              <Row label="Prazo">
+                <DueDate dueDate={activity.dueDate} today={today} />
+              </Row>
+              <Row label="Frente">{activity.front ?? "não informada"}</Row>
+              <Row label="Prioridade">{activity.priority ?? "não informada"}</Row>
+              <Row label="Próximo passo">{activity.nextStep ?? "não informado"}</Row>
+              <Row label="Descrição">{activity.description ?? "sem descrição"}</Row>
+              <Row label="Notas e bloqueios">{activity.notes ?? "sem notas"}</Row>
+              <Row label="Criada">
+                {formatDateTimeBR(activity.createdAt)} por {actorName(activity.createdBy, members)}
+              </Row>
+              <Row label="Última atualização">
+                {formatDateTimeBR(activity.updatedAt)} por {actorName(activity.updatedBy, members)}
+              </Row>
+            </dl>
+          </Card>
 
-      <section aria-labelledby="acoes" className="mb-8">
-        <h2 id="acoes" className="text-xl font-semibold">
-          Ações
-        </h2>
-        <p className="mt-2 text-sm text-[var(--ink-muted)]">
-          {persona
-            ? `A alteração será registrada em nome de ${persona.name}.`
-            : "Escolha uma persona no topo da página para alterar."}
-        </p>
-        <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-4">
-          <Link href={`/atividades/${encodeURIComponent(activity.id)}/editar`} className={BUTTON}>
-            Editar
-          </Link>
-          {done ? (
-            <form action={quickStatusAction}>
-              {hidden}
-              <input type="hidden" name="status" value="em_andamento" />
-              <button type="submit" className={BUTTON}>
-                Reabrir (em andamento)
-              </button>
-            </form>
-          ) : (
-            <form action={quickStatusAction}>
-              {hidden}
-              <input type="hidden" name="status" value="concluida" />
-              <button
-                type="submit"
-                className="rounded bg-[var(--lia-blue)] px-4 py-2 text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]"
-              >
-                Concluir
-              </button>
-            </form>
-          )}
-          {blocked ? (
-            <form action={quickStatusAction}>
-              {hidden}
-              <input type="hidden" name="status" value="em_andamento" />
-              <button type="submit" className={BUTTON}>
-                Desbloquear (em andamento)
-              </button>
-            </form>
-          ) : (
-            <form action={quickStatusAction} className="flex flex-wrap items-end gap-2">
-              {hidden}
-              <input type="hidden" name="status" value="bloqueada" />
-              <label className="grid gap-1 text-sm">
-                Motivo do bloqueio (opcional; vira as notas)
-                <input name="reason" maxLength={2000} className="rounded border border-[var(--line)] px-3 py-2" />
-              </label>
-              <button type="submit" className="rounded border border-[var(--danger-ink)] px-4 py-2 text-[var(--danger-ink)]">
-                Bloquear
-              </button>
-            </form>
-          )}
+          <section aria-labelledby="historico">
+            <h2 id="historico" className="mb-3 text-base font-semibold">
+              Histórico
+            </h2>
+            <ol className="grid gap-2">
+              {events.map((e) => (
+                <li key={e.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm">
+                  <p>
+                    <strong>{KIND_LABEL[e.kind] ?? e.kind}</strong> por {e.actor} em{" "}
+                    <time dateTime={e.occurredAt} className="font-mono text-xs">
+                      {formatDateTimeBR(e.occurredAt)}
+                    </time>
+                    {e.reason ? ` · motivo: ${e.reason}` : ""}
+                  </p>
+                  {e.changes.length > 0 ? (
+                    <ul className="mt-1 grid gap-0.5 text-[var(--text-muted)]">
+                      {e.changes.map((c, i) => (
+                        <li key={`${c.field}-${i}`}>
+                          {FIELD_LABEL[c.field] ?? c.field}: {show(c.field, c.before, memberNames)} → {" "}
+                          <span className="text-[var(--text)]">{show(c.field, c.after, memberNames)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          </section>
         </div>
-      </section>
 
-      <section aria-labelledby="fontes" className="mb-8">
-        <h2 id="fontes" className="text-xl font-semibold">
-          Fontes
-        </h2>
-        {activity.sources.length === 0 ? (
-          <p className="mt-2">Sem fonte registrada: atividade criada pela interface.</p>
-        ) : (
-          <ul className="mt-2 list-disc pl-5">
-            {activity.sources.map((s, i) => (
-              <li key={`${s.fileId}-${s.relation}-${i}`}>
-                {SOURCE_RELATION_LABEL[s.relation] ?? s.relation}:{" "}
-                <SourceRef source={s} />
-                {s.locator ? ` (${s.locator})` : ""}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <div className="grid gap-6 lg:sticky lg:top-4">
+          <Card className="p-5">
+            <h2 id="acoes" className="text-base font-semibold">
+              Ações
+            </h2>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              {persona
+                ? `A alteração será registrada em nome de ${persona.name}.`
+                : "Escolha uma persona no topo da página para alterar."}
+            </p>
+            <div className="mt-4 grid gap-3">
+              {done ? (
+                <form action={quickStatusAction}>
+                  {hidden}
+                  <input type="hidden" name="status" value="em_andamento" />
+                  <Button type="submit" variant="secondary" className="w-full">
+                    Reabrir (em andamento)
+                  </Button>
+                </form>
+              ) : (
+                <form action={quickStatusAction}>
+                  {hidden}
+                  <input type="hidden" name="status" value="concluida" />
+                  <Button type="submit" className="w-full">
+                    Concluir
+                  </Button>
+                </form>
+              )}
+              <ButtonLink href={`/atividades/${encodeURIComponent(activity.id)}/editar`} variant="secondary">
+                Editar
+              </ButtonLink>
+              {blocked ? (
+                <form action={quickStatusAction}>
+                  {hidden}
+                  <input type="hidden" name="status" value="em_andamento" />
+                  <Button type="submit" variant="secondary" className="w-full">
+                    Desbloquear (em andamento)
+                  </Button>
+                </form>
+              ) : (
+                <form action={quickStatusAction} className="grid gap-2 border-t border-[var(--border)] pt-3">
+                  {hidden}
+                  <input type="hidden" name="status" value="bloqueada" />
+                  <Field label="Motivo do bloqueio" hint="Opcional; vira as notas.">
+                    <input name="reason" maxLength={2000} className={CONTROL} />
+                  </Field>
+                  <Button type="submit" variant="danger">
+                    Bloquear
+                  </Button>
+                </form>
+              )}
+            </div>
+          </Card>
 
-      <section aria-labelledby="historico">
-        <h2 id="historico" className="text-xl font-semibold">
-          Histórico
-        </h2>
-        <ol className="mt-3 grid gap-3">
-          {events.map((e) => (
-            <li key={e.id} className="rounded border border-[var(--line)] p-3">
-              <p>
-                <strong>{KIND_LABEL[e.kind] ?? e.kind}</strong> por {e.actor} em{" "}
-                <time dateTime={e.occurredAt}>{formatDateTimeBR(e.occurredAt)}</time>
-                {e.reason ? ` · motivo: ${e.reason}` : ""}
-              </p>
-              {e.changes.length > 0 ? (
-                <ul className="mt-1 list-disc pl-5 text-sm">
-                  {e.changes.map((c, i) => (
-                    <li key={`${c.field}-${i}`}>
-                      {FIELD_LABEL[c.field] ?? c.field}: {show(c.field, c.before, memberNames)} →{" "}
-                      {show(c.field, c.after, memberNames)}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </li>
-          ))}
-        </ol>
-      </section>
+          <Card className="p-5">
+            <h2 id="fontes" className="text-base font-semibold">
+              Fontes
+            </h2>
+            {activity.sources.length === 0 ? (
+              <p className="mt-2 text-sm">Sem fonte registrada: atividade criada pela interface.</p>
+            ) : (
+              <ul className="mt-2 grid gap-2 text-sm">
+                {activity.sources.map((s, i) => (
+                  <li key={`${s.fileId}-${s.relation}-${i}`}>
+                    <span className="block text-xs text-[var(--text-muted)]">{SOURCE_RELATION_LABEL[s.relation] ?? s.relation}</span>
+                    <SourceRef source={s} />
+                    {s.locator ? ` (${s.locator})` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <>
+      <dt className="text-[var(--text-muted)]">{label}</dt>
+      <dd>{children}</dd>
     </>
   );
 }

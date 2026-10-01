@@ -29,7 +29,7 @@ const ATTENTION_LABEL: Record<AttentionItem["reason"], { text: string; tone: "da
 function Sources({ sources }: { sources: readonly FeedSource[] }) {
   if (sources.length === 0) return null;
   return (
-    <p className="mt-1 text-sm">
+    <p className="mt-1 text-xs text-[var(--text-muted)]">
       Fontes:{" "}
       {sources.map((s, i) => (
         <span key={s.fileId}>
@@ -45,40 +45,40 @@ function Sources({ sources }: { sources: readonly FeedSource[] }) {
 
 function ActivityLink({ activity }: { activity: { id: string; title: string } }) {
   return (
-    <Link href={`/atividades/${encodeURIComponent(activity.id)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+    <Link href={`/atividades/${encodeURIComponent(activity.id)}`} className="text-[var(--primary)] underline underline-offset-2">
       {activity.id} · {activity.title}
     </Link>
   );
 }
 
-function Group({ id, title, hint, count, children }: { id: string; title: string; hint: string; count: number; children: React.ReactNode }) {
+function Group({ id, title, hint, count, empty, children }: { id: string; title: string; hint: string; count: number; empty: string; children: React.ReactNode }) {
   return (
     <section aria-labelledby={`g-${id}`} className="mb-8">
-      <h2 id={`g-${id}`} className="font-serif text-2xl font-semibold">
-        {title} <span className="text-base font-normal text-[var(--ink-muted)]">({count})</span>
+      <h2 id={`g-${id}`} className="text-lg font-semibold">
+        {title} <span className="text-base font-normal text-[var(--text-muted)]">({count})</span>
       </h2>
-      <p className="mt-1 text-sm text-[var(--ink-muted)]">{hint}</p>
-      {count === 0 ? <p className="mt-3">Nada neste grupo.</p> : <ul className="mt-3 grid gap-3">{children}</ul>}
+      <p className="mt-1 text-sm text-[var(--text-muted)]">{hint}</p>
+      {count === 0 ? <p className="mt-3 text-sm text-[var(--text-muted)]">{empty}</p> : <ul className="mt-3 grid gap-3">{children}</ul>}
     </section>
   );
 }
 
-const card = "rounded border border-[var(--line)] p-3";
+const card = "rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm";
 
 export function ConfirmedGroup({ items }: { items: readonly ConfirmedItem[] }) {
   return (
-    <Group id="confirmadas" title="Mudanças confirmadas" hint="Já aprovadas e registradas no histórico oficial." count={items.length}>
+    <Group id="confirmadas" title="Mudanças confirmadas" hint="Já aprovadas e registradas no histórico oficial." count={items.length} empty="Nenhuma mudança aprovada nesse período.">
       {items.map((e) => (
         <li key={e.eventId} className={card}>
           <p>
             <ActivityLink activity={{ id: e.activityId, title: e.activityTitle }} />
           </p>
-          <p className="text-sm">
+          <p className="text-[var(--text-muted)]">
             {KIND_LABEL[e.kind] ?? e.kind} por <strong>{e.actor}</strong> em <time dateTime={e.occurredAt}>{formatDateTimeBR(e.occurredAt)}</time>
             {e.reason ? ` · motivo: ${e.reason}` : ""}
           </p>
           {e.changes.length > 0 ? (
-            <ul className="mt-1 list-disc pl-5 text-sm">
+            <ul className="mt-1 grid gap-0.5">
               {e.changes.map((c, i) => (
                 <li key={`${c.label}-${i}`}>
                   {c.label}: {c.before} → <strong>{c.after}</strong>
@@ -100,6 +100,7 @@ export function PendingGroup({ items }: { items: readonly PendingItem[] }) {
       title="Propostas pendentes de aprovação"
       hint="A IA sugeriu, mas nada mudou ainda: um revisor precisa decidir."
       count={items.length}
+      empty="Nenhuma proposta da IA aguardando decisão."
     >
       {items.map((p) => (
         <li key={p.suggestionId} className={card}>
@@ -108,7 +109,7 @@ export function PendingGroup({ items }: { items: readonly PendingItem[] }) {
             {p.isNew ? <StatusBadge tone="info">Nova</StatusBadge> : null}
             {p.stale ? <StatusBadge tone="warn">Desatualizada</StatusBadge> : null}
           </p>
-          <ul className="mt-1 list-disc pl-5 text-sm">
+          <ul className="mt-1 grid gap-0.5">
             {p.fields.map((f) => (
               <li key={f.label}>
                 {f.label}: {p.kind === "update" ? `${f.current} → ` : ""}
@@ -127,7 +128,7 @@ export function PendingGroup({ items }: { items: readonly PendingItem[] }) {
           ) : null}
           <Sources sources={[p.source]} />
           <p className="mt-1 text-sm">
-            <Link href={`/sugestoes/${p.suggestionId}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+            <Link href={`/sugestoes/${p.suggestionId}`} className="text-[var(--primary)] underline underline-offset-2">
               Ver a sugestão e a evidência
             </Link>
           </p>
@@ -139,7 +140,7 @@ export function PendingGroup({ items }: { items: readonly PendingItem[] }) {
 
 export function UncertainGroup({ items }: { items: readonly UncertainItem[] }) {
   return (
-    <Group id="incertos" title="Dados incertos ou em conflito" hint="O sistema não decide por você: confira as fontes." count={items.length}>
+    <Group id="incertos" title="Dados incertos ou em conflito" hint="O sistema não decide por você: confira as fontes." count={items.length} empty="Nada incerto ou em conflito.">
       {items.map((u) => (
         <li key={u.key} className={card}>
           {u.activity ? (
@@ -151,7 +152,7 @@ export function UncertainGroup({ items }: { items: readonly UncertainItem[] }) {
           <Sources sources={u.sources} />
           {u.suggestionId !== null ? (
             <p className="mt-1 text-sm">
-              <Link href={`/sugestoes/${u.suggestionId}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+              <Link href={`/sugestoes/${u.suggestionId}`} className="text-[var(--primary)] underline underline-offset-2">
                 Abrir a sugestão
               </Link>
             </p>
@@ -164,7 +165,7 @@ export function UncertainGroup({ items }: { items: readonly UncertainItem[] }) {
 
 export function AttentionGroup({ items, today }: { items: readonly AttentionItem[]; today: string }) {
   return (
-    <Group id="atencao" title="Precisam de atenção" hint="Suas atividades bloqueadas, vencidas ou perto do prazo." count={items.length}>
+    <Group id="atencao" title="Precisam de atenção" hint="Suas atividades bloqueadas, vencidas ou perto do prazo." count={items.length} empty="Nenhuma atividade sua bloqueada, vencida ou perto do prazo.">
       {items.map((a) => (
         <li key={a.activityId} className={card}>
           <p className="flex flex-wrap items-center gap-2">
@@ -194,16 +195,17 @@ export function DocumentsGroup({ items }: { items: readonly DocumentNews[] }) {
       title="Novidades dos documentos"
       hint="Documentos novos, alterados ou indisponíveis na pasta do Drive. O resumo vem da análise por IA."
       count={items.length}
+      empty="Nenhum documento novo, alterado ou indisponível nesse período."
     >
       {items.map((d) => (
         <li key={d.fileId} className={card}>
           <p className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={DOC_KIND[d.kind].tone}>{DOC_KIND[d.kind].text}</StatusBadge>
-            <Link href={`/fontes/${encodeURIComponent(d.fileId)}`} className="text-[var(--lia-blue)] underline underline-offset-2">
+            <Link href={`/fontes/${encodeURIComponent(d.fileId)}`} className="text-[var(--primary)] underline underline-offset-2">
               {d.name}
             </Link>
             {d.webUrl?.startsWith("https://") && d.kind !== "indisponivel" ? (
-              <a href={d.webUrl} className="text-sm text-[var(--lia-blue)] underline underline-offset-2">
+              <a href={d.webUrl} className="text-sm text-[var(--primary)] underline underline-offset-2">
                 abrir no Drive
               </a>
             ) : null}

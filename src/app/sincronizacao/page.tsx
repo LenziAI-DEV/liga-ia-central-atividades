@@ -1,3 +1,4 @@
+import { buttonClass } from "@/components/ui/button";
 import type { Metadata } from "next";
 import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/page-header";
@@ -101,8 +102,8 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
         {syncResult && <Notice tone={syncResult.tone}>{syncResult.text}</Notice>}
       </div>
 
-      <section aria-labelledby="conexao" className="mt-8">
-        <h2 id="conexao" className="text-xl font-semibold">
+      <section aria-labelledby="conexao" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="conexao" className="text-base font-semibold">
           Conexão com o Google Drive
         </h2>
         <div className="mt-3 space-y-3">
@@ -145,7 +146,7 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
               )}
               <a
                 href="/api/auth/google/start"
-                className="inline-flex items-center rounded bg-[var(--lia-blue)] px-4 py-2 font-medium text-[var(--paper)] hover:bg-[var(--lia-blue-dark)]"
+                className={buttonClass("primary")}
               >
                 {connection?.status === "reauth_required" ? "Reconectar conta Google" : "Conectar conta Google"}
               </a>
@@ -154,15 +155,15 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
         </div>
       </section>
 
-      <section aria-labelledby="pasta" className="mt-8">
-        <h2 id="pasta" className="text-xl font-semibold">
+      <section aria-labelledby="pasta" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="pasta" className="text-base font-semibold">
           Pasta monitorada
         </h2>
         <div className="mt-3 space-y-1">
           {root ? (
             <p>
               {root.url ? (
-                <a href={root.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--lia-blue)] underline">
+                <a href={root.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--primary)] underline">
                   {root.name}
                   <span className="sr-only"> (abre no Google Drive)</span>
                 </a>
@@ -171,9 +172,9 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
               )}
             </p>
           ) : (
-            <p className="text-[var(--ink-muted)]">Ainda não lida.</p>
+            <p className="text-[var(--text-muted)]">Ainda não lida.</p>
           )}
-          <p className="text-[var(--ink-muted)]">
+          <p className="text-[var(--text-muted)]">
             Escopo: esta pasta e todas as suas subpastas. Nada fora dela é lido, e nada é alterado no Drive.
           </p>
         </div>
@@ -181,8 +182,8 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
 
       <RegistryStatus resolution={resolveRegistry(db, env.INDEX_FILE_NAME)} report={getImportReport(db)} />
 
-      <section aria-labelledby="sincronizacao" className="mt-8">
-        <h2 id="sincronizacao" className="text-xl font-semibold">
+      <section aria-labelledby="sincronizacao" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="sincronizacao" className="text-base font-semibold">
           Sincronização
         </h2>
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
@@ -233,11 +234,11 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
         )}
       </section>
 
-      <section aria-labelledby="arquivos" className="mt-8">
-        <h2 id="arquivos" className="text-xl font-semibold">
+      <section aria-labelledby="arquivos" className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 id="arquivos" className="text-base font-semibold">
           Arquivos da pasta
         </h2>
-        <p className="mt-2 text-[var(--ink-muted)]">
+        <p className="mt-2 text-[var(--text-muted)]">
           {count("processed")} processado(s) · {count("unsupported")} não processado(s) · {count("failed")} com falha ·{" "}
           {count("unavailable", "out_of_scope")} indisponível(is)
         </p>
@@ -248,30 +249,30 @@ export default async function Page(props: PageProps<"/sincronizacao">) {
             <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
               <caption className="sr-only">Arquivos da pasta monitorada e o estado de cada um</caption>
               <thead>
-                <tr className="border-b border-[var(--line)]">
-                  <th scope="col" className="py-2 pr-4">Arquivo</th>
-                  <th scope="col" className="py-2 pr-4">Tipo</th>
-                  <th scope="col" className="py-2 pr-4">Estado</th>
-                  <th scope="col" className="py-2 pr-4">Autoridade</th>
-                  <th scope="col" className="py-2 pr-4">Detalhe</th>
-                  <th scope="col" className="py-2">Modificado no Drive</th>
+                <tr className="border-b border-[var(--border)]">
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Arquivo</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Tipo</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Estado</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Autoridade</th>
+                  <th scope="col" className="py-2 pr-4 font-medium text-[var(--text-muted)]">Detalhe</th>
+                  <th scope="col" className="py-2 font-medium text-[var(--text-muted)]">Modificado no Drive</th>
                 </tr>
               </thead>
               <tbody>
                 {sources.map((source) => {
                   const status = SOURCE_STATUS[source.sync_status];
                   return (
-                    <tr key={source.file_id} className="border-b border-[var(--line)] align-top">
+                    <tr key={source.file_id} className="border-b border-[var(--border)] align-top">
                       <td className="py-2 pr-4">
                         {source.web_url ? (
-                          <a href={source.web_url} target="_blank" rel="noopener noreferrer" className="text-[var(--lia-blue)] underline">
+                          <a href={source.web_url} target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] underline">
                             {source.path}
                             <span className="sr-only"> (abre no Google Drive)</span>
                           </a>
                         ) : (
                           source.path
                         )}{" "}
-                        <a href={`/fontes/${encodeURIComponent(source.file_id)}`} className="inline-block min-h-6 text-sm leading-6 text-[var(--lia-blue)] underline">
+                        <a href={`/fontes/${encodeURIComponent(source.file_id)}`} className="inline-block min-h-6 text-sm leading-6 text-[var(--primary)] underline">
                           detalhes<span className="sr-only"> de {source.path}</span>
                         </a>
                       </td>

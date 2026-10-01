@@ -14,7 +14,7 @@ import { getCurrentPersona, listMembers } from "@/server/persona/current-persona
 const area = getArea("/comece-aqui");
 export const metadata: Metadata = { title: area.label };
 
-const link = "text-[var(--lia-blue)] underline underline-offset-2";
+const link = "text-[var(--primary)] underline underline-offset-2";
 
 function DocLink({ doc }: { doc: DocRef }) {
   return (
@@ -59,11 +59,17 @@ function Quote({ snippet }: { snippet: Snippet }) {
 
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
-    <section aria-labelledby={`passo-${n}`} className="mb-8">
-      <h2 id={`passo-${n}`} className="font-serif text-2xl font-semibold">
-        Passo {n} · {title}
+    <section aria-labelledby={`passo-${n}`} className="mb-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5">
+      <h2 id={`passo-${n}`} className="flex items-center gap-3 text-base font-semibold">
+        <span aria-hidden="true" className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--primary-soft)] font-mono text-sm text-[var(--primary)]">
+          {n}
+        </span>
+        <span>
+          <span className="sr-only">Passo {n}: </span>
+          {title}
+        </span>
       </h2>
-      <div className="mt-3 grid gap-3">{children}</div>
+      <div className="mt-4 grid gap-3 text-sm">{children}</div>
     </section>
   );
 }
@@ -74,7 +80,7 @@ export default async function Page() {
   const view = getOnboarding(getDb(), listMembers(), persona, getEnv().INDEX_FILE_NAME, today);
 
   return (
-    <>
+    <div className="max-w-4xl">
       <PageHeader
         title={area.label}
         description="Quatro passos, com links, para entender a Liga e começar. O texto vem dos documentos de direção da pasta; nada é reescrito nem completado."
@@ -100,7 +106,7 @@ export default async function Page() {
         )}
         <ul className="grid gap-3">
           {view.fronts.map((f) => (
-            <li key={f.name} className="rounded border border-[var(--line)] p-3">
+            <li key={f.name} className="rounded-md bg-[var(--surface-muted)] p-3">
               <p>
                 <strong>{f.name}</strong>
               </p>
@@ -215,7 +221,7 @@ export default async function Page() {
         {!persona ? (
           <p>Escolha uma persona no topo da página para ver a sua primeira ação.</p>
         ) : view.firstAction.kind === "activity" ? (
-          <div className="rounded border border-[var(--line)] p-3">
+          <div className="rounded-md bg-[var(--surface-muted)] p-3">
             <p>
               <Link href={`/atividades/${encodeURIComponent(view.firstAction.activity.id)}`} className={link}>
                 {view.firstAction.activity.id} · {view.firstAction.activity.title}
@@ -249,6 +255,6 @@ export default async function Page() {
           </>
         )}
       </Step>
-    </>
+    </div>
   );
 }

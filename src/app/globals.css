@@ -1,34 +1,55 @@
 @import "tailwindcss";
 
-/* Paleta da Liga (ver src/lib/contrast.ts — pares de contraste testados ≥ 4,5:1). */
+/*
+ * Design tokens da interface (docs/DESIGN_SYSTEM.md). Os valores de cor também estão em
+ * src/lib/contrast.ts, onde cada par texto/fundo é testado (≥ 4,5:1, WCAG 2.2 AA).
+ */
 :root {
   color-scheme: light;
-  --lia-blue: #1433bd;
-  --lia-blue-dark: #0e2690;
-  --lia-cyan: #19dce3; /* acento: nunca com texto branco */
-  --lia-cyan-soft: #e6fbfc;
-  --ink: #111827;
-  --ink-muted: #4b5563;
-  --paper: #ffffff;
-  --paper-alt: #f5f7fb;
-  --line: #d1d5db;
-  --ok-ink: #166534;
-  --ok-bg: #dcfce7;
-  --warn-ink: #92400e;
-  --warn-bg: #fef3c7;
-  --danger-ink: #991b1b;
-  --danger-bg: #fee2e2;
-  --focus: #1433bd;
+
+  /* Marca: índigo da logo da Liga */
+  --primary: #32439b;
+  --primary-hover: #28367f;
+  --primary-soft: #edeffa;
+  --on-primary: #ffffff;
+
+  /* Superfícies e linhas */
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-muted: #eceef6;
+  --border: #d3d8e6;
+  --border-strong: #7c84a0; /* contorno de campos (≥ 3:1 sobre o fundo) */
+
+  /* Texto */
+  --text: #151a2d;
+  --text-muted: #525a73;
+
+  /* Estados (texto + fundo; nunca só cor) */
+  --success-ink: #166534;
+  --success-bg: #dcfce7;
+  --warning-ink: #8a4b08;
+  --warning-bg: #fdf1d3;
+  --error-ink: #991b1b;
+  --error-bg: #fee2e2;
+
+  --focus: #32439b;
+
+  /* Raios: dois níveis. O espaço usa a escala de 4 px do Tailwind; não há sombras. */
+  --radius: 6px;
+  --radius-lg: 10px;
 }
 
-/* Fontes do sistema: nada é baixado da internet no build (execução offline pela banca). */
+/* Fontes servidas pelo próprio app (@fontsource): nada vem de CDN, a banca roda offline. */
 @theme inline {
-  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: Georgia, Cambria, "Times New Roman", serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
 }
 
 body {
   font-family: var(--font-sans);
+  font-size: 0.9375rem;
   line-height: 1.55;
 }
 
@@ -43,11 +64,22 @@ body {
   top: -4rem;
   z-index: 50;
   padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
-  background: var(--lia-blue);
-  color: var(--paper);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .skip-link:focus {
   top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

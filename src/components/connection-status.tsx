@@ -20,7 +20,7 @@ export function ConnectionStatus() {
   );
   if (online) return null;
   return (
-    <div role="status" className="mb-6 rounded border-l-4 border-[var(--warn-ink)] bg-[var(--warn-bg)] px-4 py-3 text-[var(--warn-ink)]">
+    <div role="status" className="mb-6 rounded-md border-l-4 border-[var(--warning-ink)] bg-[var(--warning-bg)] px-4 py-3 text-[var(--warning-ink)]">
       <strong>Sem conexão:</strong> o navegador está sem rede. O que já está na tela continua válido, mas a sincronização com o Drive e a análise da IA só voltam quando a conexão voltar.
     </div>
   );

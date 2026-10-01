@@ -12,6 +12,8 @@ import { assertLocalRequest } from "@/server/security/assert-local-request";
 export interface ReviewState {
   message: string | null;
   errors: Record<string, string>;
+  /** O que foi digitado, devolvido junto do erro para o formulário não perder o texto. */
+  values?: Record<string, string | string[]>;
 }
 
 const ACTIONS: readonly ReviewAction[] = ["accept", "adjust", "reject"];
@@ -21,6 +23,14 @@ const text = (data: FormData, key: string) => {
   const value = data.get(key);
   return typeof value === "string" ? value : "";
 };
+
+/** Valores enviados nos campos de ajuste e no motivo (só texto; nada sensível). */
+function submitted(data: FormData): Record<string, string | string[]> {
+  const values: Record<string, string | string[]> = { reason: text(data, "reason").slice(0, 2000) };
+  for (const key of ADJUSTABLE) if (data.has(`adj_${key}`)) values[key] = text(data, `adj_${key}`);
+  values.ownerIds = data.getAll("adj_ownerIds").filter((v): v is string => typeof v === "string");
+  return values;
+}
 
 function isRedirect(error: unknown): boolean {
   return typeof error === "object" && error !== null && "digest" in error && String((error as { digest: unknown }).digest).startsWith("NEXT_REDIRECT");
@@ -46,13 +56,13 @@ export async function reviewAction(_previous: ReviewState, data: FormData): Prom
       listMembers(),
       systemClock,
     );
-    if (!outcome.ok) return { message: outcome.message, errors: outcome.errors ?? {} };
+    if (!outcome.ok) return { message: outcome.message, errors: outcome.errors ?? {}, values: submitted(data) };
     if (outcome.activityId && action !== "reject") redirect(`/atividades/${encodeURIComponent(outcome.activityId)}?aviso=${outcome.changed ? "salva" : "semmudanca"}`);
     redirect(`/sugestoes?aviso=${outcome.status}`);
   } catch (error) {
     if (isRedirect(error)) throw error;
     logger.error("suggestion.review_failed", { error });
-    return { message: "Não foi possível registrar a decisão. Nada foi alterado.", errors: {} };
+    return { message: "Não foi possível registrar a decisão. Nada foi alterado.", errors: {}, values: submitted(data) };
   }
 }
 

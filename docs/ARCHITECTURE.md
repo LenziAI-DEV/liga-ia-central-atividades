@@ -272,7 +272,7 @@ Partes 100% determinísticas: fonte das atividades (arquivo, aba, data da import
 
 **Alternativas:** Tailwind (padrão do `create-next-app`, tokens por variáveis CSS) × CSS Modules × biblioteca (shadcn/Radix).
 
-**Decisão:** Tailwind 4 com tokens da marca (`--lia-blue: #1433BD`, `--lia-cyan: #19DCE3`) e elementos HTML semânticos (`table`, `form`, `label`, `fieldset`, `details`, `dialog`), que já são acessíveis sem biblioteca. Estados sempre com texto (componente `StatusBadge` com rótulo). Filtros como `<form method="get">`: a URL é compartilhável e funciona sem JS. **Motivo:** S, AR-21.
+**Decisão:** Tailwind 4 com tokens semânticos em CSS (`--primary: #32439B` da logo, `--surface`, `--text-muted`, etc.; ver `docs/DESIGN_SYSTEM.md` e DEC-026), fonte IBM Plex servida pelo próprio app, e elementos HTML semânticos (`table`, `form`, `label`, `fieldset`, `details`, `dialog`), que já são acessíveis sem biblioteca. Estados sempre com texto (componente `StatusBadge` com rótulo). Filtros como `<form method="get">`: a URL é compartilhável e funciona sem JS. **Motivo:** S, AR-21.
 
 ### ADR-15: Modo "Drive local" para demonstração offline (opcional)
 
