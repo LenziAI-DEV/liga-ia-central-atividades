@@ -56,7 +56,7 @@
 |---|---|---|---|
 | ~~P-3~~ | ~~Corrigir os 3 MEDIUM da 4ª rodada e fazer o merge~~ | Assistente | ✅ 2026-09-30: corrigidos com teste (170 testes), `verification-loop` verde, merge feito. LOW da 4ª rodada seguem como dívida menor (lista na DEC-013): `[m]`/`[mm]` virando data; colisão da chave `#E`; abas repetidas relidas; `ENETUNREACH` sem retry; erro de rede no `exchangeCode`; texto "veja a tabela" no aviso parcial; "Desconectar" em `reauth_required`; UTF-8 com BOM + byte inválido; cerca mais curta; `forceRefreshOnFailure`; comentário do exceljs em `lib/datetime.ts` |
 | **P-4** | **Fase 2** (painel pessoal): personas, índice e registro vigente, importação da planilha, "Minhas" e "Todas" | Assistente | Meta: quarta 09-30 |
-| P-6 | **A `LunkiBR` precisa aceitar o convite de colaboradora** (reenviado em 2026-10-02; o de 29/09 nunca foi aceito). Conferir com `gh api repos/LenziAI-DEV/liga-ia-central-atividades/collaborators/LunkiBR/permission` (esperado: `write`) | Usuário/assistente | Convite pendente em https://github.com/LenziAI-DEV/liga-ia-central-atividades/invitations (vale 7 dias) |
+| ~~P-6~~ | ~~A `LunkiBR` aceitar o convite de colaboradora~~ | — | **Resolvida em 2026-10-02:** convite reenviado e aceito; permissão `write` conferida pela API |
 | ~~P-7~~ | ~~Anotar para o README~~ | — | **Feita** na Fase 10 (README completo) |
 | P-8 | Reautorizar o Google no dia da demo (a autorização de teste expira por volta de 06/10) | Usuário | Checklist pré-demo (Fase 10.4) |
 | P-9 | Itens adiados pela auditoria (DEC-013, "Adiado de propósito") | Assistente | Com o scheduler (Fase 4): corrida de reconexão, lease, backoff, falha permanente. Na Fase 9: tabela a 375 px, confirmação em "Desconectar" |
