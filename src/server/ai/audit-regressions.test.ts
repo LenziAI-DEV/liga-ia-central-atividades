@@ -15,7 +15,7 @@ import { OFFICIAL_ACTIVITIES } from "../../../tests/helpers/ai-context";
 import { enqueueAnalyses, processQueue } from "./analysis-service";
 import { fixtureProvider, RecordedProvider } from "./recorded-provider";
 import type { ExtractionItem } from "./schema";
-import { pendingChangesFor } from "./suggestion-queries";
+import { listAnalyses, pendingChangesFor } from "./suggestion-queries";
 import { reviewSuggestion } from "./suggestion-service";
 import { validateExtraction, type ValidationContext } from "./validator";
 
@@ -128,6 +128,16 @@ describe("auditoria Fases 5 e 6 — fila e revisão", () => {
     expect(w.db.get<{ error_code: string }>("SELECT error_code FROM document_analyses WHERE file_id = ?", w.id)?.error_code).toBe("obsolete");
     // A chamada paga continua registrada.
     expect(w.db.get<{ n: number }>("SELECT COUNT(*) AS n FROM ai_calls")?.n).toBeGreaterThan(0);
+  });
+
+  it("a análise concluída (error_code nulo) aparece em 'Documentos analisados'; a obsoleta não", async () => {
+    const w = await world();
+    await w.run();
+    const listed = listAnalyses(w.db);
+    expect(listed.length).toBeGreaterThan(0);
+    expect(listed.every((a) => a.status === "done")).toBe(true);
+    w.db.run("UPDATE document_analyses SET error_code = 'obsolete'");
+    expect(listAnalyses(w.db)).toEqual([]);
   });
 
   it("HIGH-4/MEDIUM-6: sugestão de versão antiga não pode ser aceita, mas pode ser rejeitada", async () => {

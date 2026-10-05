@@ -1,14 +1,14 @@
 # PROGRESS — Estado do projeto
 
 > Documento canônico de continuidade. **Consulte antes de iniciar qualquer tarefa relevante** e atualize ao concluir cada marco.
-> Última atualização: **2026-09-30 (quarta, noite) — Fases 1 a 9 concluídas e redesign do frontend (DEC-026, `docs/DESIGN_SYSTEM.md`); Fase 10 (pacote de entrega) com os documentos prontos; faltam só os passos do usuário (ver Pendências).**
+> Última atualização: **2026-10-05 (segunda, manhã) — dia da apresentação (12h30). Todas as fases entregues; app preparado para a demo (banco limpo, Google reconectado) e defeito de "Documentos analisados" corrigido (DEC-027). Faltam só os passos do usuário (ver Pendências).**
 
 ## Prazo
 
 **Entrega: domingo, 2026-10-04, até 23h59 (horário de Brasília).**
 - Enviar **no privado ao organizador** o **link do repositório** e o **diário de bordo**.
 - Commits finais enviados ao GitHub.
-- A conta `LunkiBR` precisa estar como **colaboradora** do repositório privado `LenziAI-DEV/liga-ia-central-atividades` (DEC-004). **Convite ainda pendente.**
+- A conta `LunkiBR` precisa estar como **colaboradora** do repositório privado `LenziAI-DEV/liga-ia-central-atividades` (DEC-004). **Convite aceito (P-6).**
 
 ## ▶ Como retomar (primeira coisa a fazer na próxima sessão)
 
@@ -49,6 +49,7 @@
 
 | 2026-09-30 | **Redesign do frontend** (tokens, IBM Plex, logo, abas, lista densa, revisão de sugestão em duas colunas); QA de navegador e revisão por agentes | DEC-026, `docs/DESIGN_SYSTEM.md` |
 | 2026-09-30 | **Fase 10 — pacote de entrega** (10.1 a 10.4): README completo, registro de validação fechado, diário com declaração de IA (E-7), roteiro da demo; instalação limpa testada; varredura de segredos limpa | `README.md`, `docs/DEMO.md`, `docs/VALIDACAO.md`, `docs/DIARIO_DE_BORDO.md` |
+| 2026-10-05 | **Preparação da demo:** `.env.local` (debounce 0, sync 30 s), banco limpo, Google reconectado, carga inicial conferida (6 processados, 4 atividades, personas ok); **correção** de "Documentos analisados" que escondia análises concluídas (`error_code` nulo); 355 testes, typecheck e lint limpos | DEC-027 |
 
 ## Pendências (em ordem)
 
@@ -58,10 +59,10 @@
 | **P-4** | **Fase 2** (painel pessoal): personas, índice e registro vigente, importação da planilha, "Minhas" e "Todas" | Assistente | Meta: quarta 09-30 |
 | ~~P-6~~ | ~~A `LunkiBR` aceitar o convite de colaboradora~~ | — | **Resolvida em 2026-10-02:** convite reenviado e aceito; permissão `write` conferida pela API |
 | ~~P-7~~ | ~~Anotar para o README~~ | — | **Feita** na Fase 10 (README completo) |
-| P-8 | Reautorizar o Google no dia da demo (a autorização de teste expira por volta de 06/10) | Usuário | Checklist pré-demo (Fase 10.4) |
+| ~~P-8~~ | ~~Reautorizar o Google no dia da demo~~ | — | ✅ 2026-10-05: reconectado após `data:clear`; sincronização real ok (7 vistos, 6 processados, 0 falhas) |
 | P-9 | Itens adiados pela auditoria (DEC-013, "Adiado de propósito") | Assistente | Com o scheduler (Fase 4): corrida de reconexão, lease, backoff, falha permanente. Na Fase 9: tabela a 375 px, confirmação em "Desconectar" |
 | P-10 | Ensaio cronometrado da demo com `docs/DEMO.md` (pasta e banco limpos) | Usuário | Checklist pré-demo |
-| P-11 | **Enviar no privado ao organizador o link do repositório e o diário de bordo (`docs/DIARIO_DE_BORDO.md`) até 2026-10-04, 23h59** | Usuário | E-1 |
+| P-11 | **(prazo vencido em 2026-10-04 23h59; confirmar se foi enviado)** Enviar no privado ao organizador o link do repositório e o diário de bordo (`docs/DIARIO_DE_BORDO.md`) até 2026-10-04, 23h59 | Usuário | E-1 |
 | P-12 | Conferência manual com teclado e leitor de tela (V-14) | Usuário | Opcional |
 
 ## Próximas fases (plano §5)

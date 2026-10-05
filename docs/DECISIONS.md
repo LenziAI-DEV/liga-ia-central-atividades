@@ -402,3 +402,11 @@ Um revisor (Sonnet, somente leitura). **Sem CRITICAL.** 1 HIGH, 5 MEDIUM e 4 LOW
 - **`<img>` em vez de `next/image`:** o `sharp` não roda neste ambiente e a imagem já tem 12 KB; o `eslint-disable` está justificado no layout.
 - **Verificação:** 354 testes unitários, 8 E2E com axe (WCAG 2.2 AA) e escala de cinza, browser QA a 1280 e 375 px (navegação, filtro, concluir/reabrir/bloquear, erro de validação, rejeitar sem motivo, 404) sem erro de console nem HTTP ≥ 400, auditoria de tokens (nenhum hex, raio ou cor fora do sistema) e revisão por agente React. Documento do sistema: `docs/DESIGN_SYSTEM.md`.
 - **Limites:** sem modo escuro (fora do escopo); a conferência manual com teclado e leitor de tela segue pendente (V-14).
+
+## DEC-027 — Preparação da demo e defeito em "Documentos analisados" (2026-10-05)
+
+- **Defeito achado na preparação da demo:** `listAnalyses` (`src/server/ai/suggestion-queries.ts`) filtrava `NOT (status = 'done' AND error_code = 'obsolete')`. Numa análise concluída com sucesso `error_code` é `NULL`, a comparação vira NULL e `NOT NULL` também; a linha era descartada. Resultado: **toda análise bem-sucedida ficava fora** de "Documentos analisados pela IA" (aparecia "Nenhuma ata foi analisada ainda" com a análise no banco). Só falhas e pendentes apareciam.
+- **Correção:** `a.error_code IS 'obsolete'` (SQLite trata NULL como falso). As análises obsoletas continuam escondidas. Teste de regressão em `audit-regressions.test.ts` (falhava antes, passa depois). 355 testes, typecheck e lint limpos.
+- **Por que a auditoria e os E2E não pegaram:** os testes anteriores cobriam só o caso `obsolete` e as falhas, nunca "concluída com `error_code` nulo" lida pela tela.
+- **Preparação:** `.env.local` com `AI_DEBOUNCE_SECONDS=0` e `SYNC_INTERVAL_SECONDS=30`; banco limpo (`npm run data:clear`) e Google reconectado em 2026-10-05; carga inicial: 7 itens vistos, 6 processados, 0 falhas; registro importado com 4 atividades; personas conferidas (Ana: ACT-101 e ACT-104; Davi: ACT-102 e ACT-104; Carla: ACT-103).
+- **Observação para a demo:** a `Ata_2026-10-01.md` da carga inicial já gera 1 sugestão pendente (ACT-103: prazo 10/10 → 09/10, com 1 ponto a confirmar). É o comportamento esperado, não sobra de ensaio.

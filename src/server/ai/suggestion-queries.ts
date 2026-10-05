@@ -144,7 +144,7 @@ export function listAnalyses(db: Db): AnalysisView[] {
       `SELECT a.id, a.file_id, a.status, a.attempts, a.error_message, a.document_summary, a.no_action_json, a.invalid_json, a.finished_at,
               s.name, s.web_url
          FROM document_analyses a LEFT JOIN sources s ON s.file_id = a.file_id
-        WHERE a.purpose = 'extract' AND NOT (a.status = 'done' AND a.error_code = 'obsolete')
+        WHERE a.purpose = 'extract' AND NOT (a.status = 'done' AND a.error_code IS 'obsolete')
         ORDER BY a.id DESC`,
     )
     .map((a) => ({
