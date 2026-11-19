@@ -1,8 +1,52 @@
-# Central de contexto e atividades — Liga IA UFSCar (case técnico)
+<p align="center">
+  <img src="public/brand/logo-96.png" alt="Logo da Liga IA UFSCar" height="80">
+</p>
 
-Aplicação web **local** que lê uma pasta de teste do Google Drive, organiza as atividades da Liga num painel pessoal e usa IA para transformar informação nova das atas em **sugestões verificáveis, sempre com a fonte visível e revisão humana**. Só dados fictícios; nenhuma credencial é versionada.
+<h1 align="center">Central de contexto e atividades</h1>
 
-**Entrega:** 2026-10-04, 23h59 (Brasília). **Estado e próximos passos:** [`docs/PROGRESS.md`](docs/PROGRESS.md).
+<p align="center">
+  <strong>A ata da reunião vira atualização no painel, com evidência e revisão humana. A IA só propõe.</strong><br>
+  Case técnico da Liga de IA da UFSCar · entregue em 04/10/2026
+</p>
+
+<p align="center">
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
+  <img alt="Claude" src="https://img.shields.io/badge/IA-Claude-D97757?logo=anthropic&logoColor=white">
+  <img alt="Testes" src="https://img.shields.io/badge/testes-355%20unit%20%2B%208%20E2E-2EA043">
+  <img alt="Acessibilidade" src="https://img.shields.io/badge/axe-WCAG%202.x%20AA-6F42C1">
+</p>
+
+Toda equipe tem o mesmo problema: a decisão sai na reunião, fica na ata, e a planilha de atividades continua desatualizada. Este app lê a pasta do Google Drive da Liga, entende o que mudou em cada ata nova e **propõe** a alteração no registro oficial, com o trecho literal da fonte. Nada muda até um revisor aceitar, e cada decisão fica no histórico.
+
+<p align="center">
+  <img src="docs/img/sugestao.png" alt="Tela de revisão: a IA propõe mudar o prazo de 05/10 para 07/10 e mostra o trecho da ata que justifica; o revisor aceita, ajusta ou rejeita" width="860">
+</p>
+
+<details>
+<summary>Mais uma tela: o painel pessoal de cada membro</summary>
+<p align="center">
+  <img src="docs/img/inicio.png" alt="Painel da persona Ana com a próxima ação, prazos vencidos destacados e a fonte de cada atividade" width="860">
+</p>
+</details>
+
+## O que eu construí
+
+- **IA com humano no loop:** o modelo devolve um JSON validado (zod) com evidência literal por campo. Sugestão sem evidência é descartada, dado ausente fica marcado como incerto, e texto de ata com instruções para a IA não vira tarefa.
+- **Integração Google:** OAuth 2.0 com escopo `drive.readonly` (o app nunca escreve no Drive), tokens cifrados em AES-256-GCM no banco local e sincronização a cada 60 s que lê `.md`, `.xlsx` e Google Docs.
+- **Regra de precedência explícita:** a planilha apontada pelo `INDEX.md` é a fonte oficial na importação, e depois o banco SQLite (`node:sqlite`) passa a ser o registro, com autor, horário e valor anterior de cada mudança. Um arquivo mais novo com nome parecido não derruba o registro.
+- **Custo medido, não estimado:** cada chamada grava tokens, latência e custo no banco. O custo medido ficou em **cerca de US$ 0,012 por ata**, com debounce para não reanalisar a cada edição e um provedor "gravado" para testar e demonstrar sem chave.
+- **Qualidade:** 355 testes unitários (Vitest) e 8 testes E2E (Playwright) com Drive falso e IA gravada, sem rede. Os E2E cobrem navegação só por teclado, auditoria axe WCAG 2.x A/AA, celular a 375 px e persistência após reinício do servidor.
+- **Documentação de engenharia:** PRD, arquitetura, decisões registradas (ADRs), análise do case e diário de bordo em [`docs/`](docs/).
+
+| Se você quer... | Vá para |
+|---|---|
+| Entender o fluxo em 1 minuto | [Como funciona](#1-como-funciona-em-linguagem-simples) |
+| Rodar sem conta Google nem chave de API | [Testes](#11-testes): `npm run test:e2e` sobe o app com Drive falso e IA gravada |
+| Rodar com o seu Drive | [Instalação](#3-instalação-e-execução) e [Google Cloud](#4-google-cloud-e-pasta-do-drive-passo-a-passo) |
+| Ver as decisões de arquitetura | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e [`docs/DECISIONS.md`](docs/DECISIONS.md) |
+
+**Estado e próximos passos:** [`docs/PROGRESS.md`](docs/PROGRESS.md). Só dados fictícios; nenhuma credencial é versionada.
 
 ## Sumário
 
